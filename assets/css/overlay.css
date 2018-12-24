@@ -1,0 +1,81 @@
+.pull-left { float: left; }
+.pull-right { float: right; }
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+ 
+.wpdfv-fullscreen-overlay-container{
+    width: 100%;
+    display: block;
+    height: 100%;
+    background-color: #FFFFFF;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999999;
+}
+
+.wpdfv-overlay-wrap h1 {
+    font-size: 34px;
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.wpdfv-fullscreen-overlay-header div {
+	width: 50%;	
+}
+
+.wpdfv-fullscreen-overlay-container hr {
+    margin: 10px 0;
+}
+
+.wpdfv-overlay-wrap ul, .wpdfv-overlay-wrap ol {
+	margin-left: 60px;
+}
+
+/*button.wpdfv-overlay-btn {
+    background: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+	font-size: 28px;
+    font-weight: lighter;
+	padding: 6px 20px;
+}
+
+button.wpdfv-overlay-btn span {
+    font-size: 28px;
+}*/
+
+.wpdfv-fullscreen-overlay-header {
+    padding: 5px 20px;
+    min-height: 30px;
+    background-color: #EEEEEE;
+    border-bottom: 1px solid #DDDDDD;
+    display: block;
+    overflow: hidden;
+}
+
+.wpdfv-overlay-wrap {
+    width: 100%;
+    padding: 20px;
+    text-align: justify;
+	display: block;
+    height: 94.5%;
+}
+
+.wpdfv-fullscreen-container a span {
+    margin: 5px 0px;
+}
+
+/*.wpdfv-fullscreen-container a, .wpdfv-fullscreen-container a:hover, .wpdfv-fullscreen-container a:visited {
+    padding: 5px 10px;
+    background-color: #000;
+    color: #FFF;
+    border-bottom: none !important;
+}*/
+
+.wpdfv-fullscreen-container a:first-child{
+    border-right: 2px solid #FFF;
+}
