@@ -6,7 +6,8 @@
  * Version: 1.4.1
  * Author: Mehul Gohil
  * Author URI: http://mehulgohil.in/
- * License: GPLv2 or later
+ * License: GPLv3
+ * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: wpdfv
  * 
  * WP Distraction Free View is free software: you can redistribute it and/or modify
