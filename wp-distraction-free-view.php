@@ -49,8 +49,8 @@ if ( ! defined( 'WPDFV_PLUGIN_DIR' ) ) {
 }
 
 # Issue Fixed | Generates unwanted characters issue
-register_activation_hook( __FILE__, array( 'WPDFV', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'WPDFV', 'deactivate' ) );
+register_activation_hook( WPDFV_PLUGIN_FILE, array( 'WPDFV', 'activate' ) );
+register_deactivation_hook( WPDFV_PLUGIN_FILE, array( 'WPDFV', 'deactivate' ) );
 
 class WPDFV {
     
