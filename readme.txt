@@ -2,11 +2,11 @@
 Contributors: mehul0810
 Tags: wp couch mode, couch mode, distraction free, distraction free reading, fullscreen, fullscreen mode
 Donate link: http://mehulgohil.in/donate
-Requires at least: 4.0
-Tested up to: 4.5.1
-Stable tag: 1.4
-License: GPLv2
-License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
+Requires at least: 4.8
+Tested up to: 5.1
+Stable tag: 1.4.1
+License: GPLv3
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
 WP Distraction Free View is a WordPress plugin which provides distraction free viewing mode to the website users. 
 
