@@ -6,14 +6,20 @@ add_action( 'admin_init', 'wpdfv_settings_init' );
  
 # Functions
 function wpdfv_add_settings_page_callback(){
-	add_options_page( PLUGIN_TITLE, PLUGIN_TITLE, 'manage_options', 'wpdfv_settings_page', 'wpdfv_settings_page_callback');
+	add_options_page(
+		__( 'WP Distraction Free View', 'wpdfv' ),
+		__( 'WP Distraction Free View', 'wpdfv' ),
+		'manage_options',
+		'wpdfv_settings_page',
+		'wpdfv_settings_page_callback'
+	);
 }
 
 function wpdfv_settings_page_callback(){
 	
 	?>
     <div class="wrap">
-    <h1><?php echo PLUGIN_TITLE.' Settings';?></h1>
+    <h1><?php echo __( 'WP Distraction Free View', 'wpdfv' ) . ' Settings';?></h1>
     <form method="POST" action="options.php">
 		<?php
         settings_fields( 'wpdfv_general' );

@@ -1,41 +1,51 @@
 <?php
 /**
- * @package WP Distraction Free View
+ * Plugin Name: WP Distraction Free View
+ * Plugin URI: https://wordpress.org/plugins/wp-distraction-free-view/
+ * Description: "WP Distraction Free View" plugin provides distraction free viewing mode to the users of the website/blog. 
+ * Version: 1.4.1
+ * Author: Mehul Gohil
+ * Author URI: http://mehulgohil.in/
+ * License: GPLv2 or later
+ * Text Domain: wpdfv
+ * 
+ * WP Distraction Free View is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by the Free 
+ * Software Foundation, either version 2 of the License, or any later version.
+ * 
+ * WP Distraction Free View is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * WP Distraction Free View. If not, see https://www.gnu.org/licenses/gpl-2.0.html.
+ * 
+ * @package    WordPress
+ * @subpackage WP Distraction Free View
+ * @author     Mehul Gohil <hello@mehulgohil.in>
  */
-/*
-Plugin Name: WP Distraction Free View
-Plugin URI: https://wordpress.org/plugins/wp-distraction-free-view/
-Description: "WP Distraction Free View" plugin provides distraction free viewing mode to the users of the website/blog. 
-Version: 1.4
-Author: Mehul Gohil
-Author URI: http://mehulgohil.in/
-License: GPLv2 or later
-Text Domain: wpdfv
 
-WP Distraction Free View is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-any later version.
- 
-WP Distraction Free View is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
- 
-You should have received a copy of the GNU General Public License
-along with WP Distraction Free View. If not, see https://www.gnu.org/licenses/gpl-2.0.html.
-*/
-
-// Make sure we don't expose any info if called directly
-if ( !function_exists( 'add_action' ) ) {
-    echo 'Hi there!  I\'m just a plugin, not much I can do when called directly.';
+// Bailout, if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'WPDFV_VERSION', '1.4' );
-define( 'WPDFV_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'WPDFV_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'PLUGIN_TITLE', 'Distraction Free View' );
+if ( ! defined( 'WPDFV_VERSION' ) ) {
+  define( 'WPDFV_VERSION', '1.4.1' );
+}
+
+if ( ! defined( 'WPDFV_PLUGIN_FILE' ) ) {
+  define( 'WPDFV_PLUGIN_FILE', __FILE__ );
+}
+
+if ( ! defined( 'WPDFV_PLUGIN_URL' ) ) {
+  define( 'WPDFV_PLUGIN_URL', plugin_dir_url( WPDFV_PLUGIN_FILE ) );
+}
+
+if ( ! defined( 'WPDFV_PLUGIN_DIR' ) ) {
+  define( 'WPDFV_PLUGIN_DIR', plugin_dir_path( WPDFV_PLUGIN_FILE ) );
+}
 
 # Issue Fixed | Generates unwanted characters issue
 register_activation_hook( __FILE__, array( 'WPDFV', 'activate' ) );
