@@ -14,33 +14,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-# Actions
-add_action('wp_enqueue_scripts','wpdfv_enqueue_scripts');
-add_action('wp_footer','wpdfv_scripts_to_footer');
-add_action( 'wp_enqueue_scripts', 'wpdfv_dynamic_css' );
-add_action('admin_enqueue_scripts','wpdfv_add_scripts_to_admin');
-
-/*
- *	@since 1.0
- *	@updated 1.3
- *	@usage Add Styles and Scripts to Admin Settings API
+/**
+ * Enqueue Frontend Assets (JS and CSS).
+ *
+ * @since 1.0.0
+ *
+ * @return void
  */
-function wpdfv_enqueue_scripts(){
+function wpdfv_enqueue_assets(){
 
-	if(get_option('wpdfv_settings_enable_font_awesome')) {
+	if ( get_option('wpdfv_settings_enable_font_awesome')) {
 		wp_enqueue_style('font-awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css','', WPDFV_VERSION);
 	}
 
-	wp_enqueue_style('overlay',WPDFV_PLUGIN_URL.'assets/css/overlay.css','', WPDFV_VERSION);
+	wp_enqueue_style('wpdfv-overlay',WPDFV_PLUGIN_URL.'assets/css/overlay.css','', WPDFV_VERSION);
 }
+add_action( 'wp_enqueue_scripts', 'wpdfv_enqueue_assets' );
 
-
-
-
-/*
- *	@since 1.0
- *	@updated 1.3
- *	@usage Updates Overlay Content using AJAX Call Data
+/**
+ * Display Overlay Content.
+ *
+ * @since 1.0.0
+ *
+ * @return mixed
  */
 function wpdfv_scripts_to_footer(){
 	?>
@@ -140,45 +136,32 @@ function wpdfv_scripts_to_footer(){
 	</div>
 	<?php
 }
+add_action( 'wp_footer', 'wpdfv_scripts_to_footer' );
 
-/*
- *	@since 1.3
- *	@usage Add Styles and Scripts to Admin Settings API
+/**
+ * Generate Dynamic CSS.
+ *
+ * @since 1.0.0
+ *
+ * @return void
  */
-function wpdfv_add_scripts_to_admin(){
+function wpdfv_generate_dynamic_css() {
 
-	# Added WP Color Picker Support
-	wp_enqueue_style( 'wp-color-picker' );
-	wp_enqueue_script( 'wp-color-picker' );
-
-	# Added Custom Settings JS for Options Page
-	wp_enqueue_script('settings',plugins_url('wp-distraction-free-view').'/assets/js/settings.js');
-}
-
-/*
- *	@since 1.3
- *	@usage Generates Dynamic CSS
- */
-function wpdfv_dynamic_css() {
-
-	wp_enqueue_style( 'dynamic-style', plugins_url('wp-distraction-free-view') . '/assets/css/dynamic.css' );
-
-	# Fetch Already Defined Variables
-	$btn_text_fontsize = get_option('wpdfv_settings_btn_text_fontsize');
-	$btn_icon_fontsize = get_option('wpdfv_settings_btn_icon_fontsize');
-	$btn_bg_color = get_option('wpdfv_settings_btn_bg_color');
-	$btn_text_color = get_option('wpdfv_settings_btn_text_color');
-	$btn_hover_bg_color = get_option('wpdfv_settings_btn_hover_bg_color');
+	// Fetch the dynamic styling values.
+	$btn_text_fontsize    = get_option('wpdfv_settings_btn_text_fontsize');
+	$btn_icon_fontsize    = get_option('wpdfv_settings_btn_icon_fontsize');
+	$btn_bg_color         = get_option('wpdfv_settings_btn_bg_color');
+	$btn_text_color       = get_option('wpdfv_settings_btn_text_color');
+	$btn_hover_bg_color   = get_option('wpdfv_settings_btn_hover_bg_color');
 	$btn_hover_text_color = get_option('wpdfv_settings_btn_hover_text_color');
-	$btn_padding = get_option('wpdfv_settings_btn_padding');
+	$btn_padding          = get_option('wpdfv_settings_btn_padding');
 
-	# Generate Custom CSS Dynamically
+	// Generate Custom CSS.
 	$custom_css = "";
 	$custom_css .= " .wpdfv-overlay-btn span { font-size: ".$btn_icon_fontsize."px; } ";
 	$custom_css .= " .wpdfv-overlay-btn { background-color: ".$btn_bg_color."; color: ".$btn_text_color."; font-size: ".$btn_text_fontsize."px; padding: ".$btn_padding."; } ";
 	$custom_css .= " button.wpdfv-overlay-btn:hover, button.wpdfv-overlay-btn:focus, button.wpdfv-overlay-btn:visited, button.wpdfv-overlay-btn:active { background-color: ".$btn_hover_bg_color."; color: ".$btn_hover_text_color."; } ";
 
-	# Add Dynamic CSS using WP Inline Style Function
-	wp_add_inline_style( 'dynamic-style', $custom_css );
+	wp_add_inline_style( 'wpdfv-overlay', $custom_css );
 }
-
+add_action( 'wp_enqueue_scripts', 'wpdfv_generate_dynamic_css' );
