@@ -32,231 +32,190 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! defined( 'WPDFV_VERSION' ) ) {
-  define( 'WPDFV_VERSION', '1.4.2' );
-}
+if ( ! class_exists( 'WPDFV' ) ) {
 
-if ( ! defined( 'WPDFV_PLUGIN_FILE' ) ) {
-  define( 'WPDFV_PLUGIN_FILE', __FILE__ );
-}
+	/**
+	 * Class WPDFV
+     *
+     * @since 1.0.0
+	 */
+    final class WPDFV {
 
-if ( ! defined( 'WPDFV_PLUGIN_URL' ) ) {
-  define( 'WPDFV_PLUGIN_URL', plugin_dir_url( WPDFV_PLUGIN_FILE ) );
-}
+	    /** Singleton *************************************************************/
 
-if ( ! defined( 'WPDFV_PLUGIN_DIR' ) ) {
-  define( 'WPDFV_PLUGIN_DIR', plugin_dir_path( WPDFV_PLUGIN_FILE ) );
-}
+	    /**
+	     * Instance
+	     *
+	     * @since  1.0.0
+	     * @access protected
+	     *
+	     * @var    WPDFV() The one true instance
+	     */
+	    protected static $_instance;
 
-# Issue Fixed | Generates unwanted characters issue
-register_activation_hook( __FILE__, array( 'WPDFV', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'WPDFV', 'deactivate' ) );
+	    /**
+	     * Main Instance
+	     *
+	     * Ensures that only one instance exists in memory at any one
+	     * time. Also prevents needing to define globals all over the place.
+	     *
+	     * @since  1.0.0
+	     * @access public
+	     *
+	     * @static
+	     * @see    WPDFV()
+	     *
+	     * @return WPDFV()
+	     */
+	    public static function instance() {
 
-class WPDFV {
-    
-    static function activate(){
-        update_option( 'wpdfv_settings_readmore_button_text', 'Read more' );
-        update_option( 'wpdfv_settings_enable_print','0' );
-        update_option( 'wpdfv_settings_enable_font_awesome','1' );
-        update_option( 'wpdfv_settings_enable_fullscreen','0' );
-        update_option( 'wpdfv_settings_btn_bg_color','#000000' );
-        update_option( 'wpdfv_settings_btn_text_color','#FFFFFF' );
-        update_option( 'wpdfv_settings_btn_hover_bg_color','#E5E5E5' );
-        update_option( 'wpdfv_settings_btn_hover_text_color','#FFFFFF' );
-        update_option( 'wpdfv_settings_btn_text_fontsize','20' );
-        update_option( 'wpdfv_settings_btn_icon_fontsize','26' );
-        update_option( 'wpdfv_settings_btn_padding','10px 20px' );
-    }
-    
-    static function deactivate(){
-        delete_option( 'wpdfv_settings_readmore_button_text' );
-        delete_option( 'wpdfv_settings_enable_print' );
-        delete_option( 'wpdfv_settings_enable_font_awesome' );
-        delete_option( 'wpdfv_settings_enable_fullscreen' );
-        delete_option( 'wpdfv_settings_btn_bg_color' );
-        delete_option( 'wpdfv_settings_btn_text_color' );
-        delete_option( 'wpdfv_settings_btn_hover_bg_color' );
-        delete_option( 'wpdfv_settings_btn_hover_text_color' );
-        delete_option( 'wpdfv_settings_btn_text_fontsize' );
-        delete_option( 'wpdfv_settings_btn_icon_fontsize' );
-        delete_option( 'wpdfv_settings_btn_padding' );
-    }
-    
-}
+	        if ( is_null( self::$_instance ) ) {
+			    self::$_instance = new self();
+		    }
 
-if ( is_admin() ) {
-	require_once( WPDFV_PLUGIN_DIR . 'admin/class.settings.php' );
-}
+		    return self::$_instance;
+	    }
 
-require_once( WPDFV_PLUGIN_DIR . 'class.shortcodes.php' );
+	    /**
+	     * Throw error on object clone
+	     *
+	     * The whole idea of the singleton design pattern is that there is a single
+	     * object, therefore we don't want the object to be cloned.
+	     *
+	     * @since  1.0
+	     * @access protected
+	     *
+	     * @return void
+	     */
+	    public function __clone() {
+		    // Cloning instances of the class is forbidden.
+		    _doing_it_wrong( __FUNCTION__, __( 'Cheatin&#8217; huh?', 'wpdfv' ), '1.0.0' );
+	    }
+	    /**
+	     * Disable unserializing of the class
+	     *
+	     * @since  1.0
+	     * @access protected
+	     *
+	     * @return void
+	     */
+	    public function __wakeup() {
+		    // Unserializing instances of the class is forbidden.
+		    _doing_it_wrong( __FUNCTION__, __( 'Cheatin&#8217; huh?', 'wpdfv' ), '1.0.0' );
+	    }
 
-# Actions
-add_action('wp_enqueue_scripts','wpdfv_enqueue_scripts');
-add_action('wp_footer','wpdfv_scripts_to_footer');
-add_action( 'wp_enqueue_scripts', 'wpdfv_dynamic_css' );
-add_action('admin_enqueue_scripts','wpdfv_add_scripts_to_admin');
+	    /**
+	     * WPDFV constructor.
+         *
+         * @since  1.0.0
+         * @access public
+         *
+         * @return void
+	     */
+	    public function __construct() {
 
-/*
- *	@since 1.0
- *	@updated 1.3
- *	@usage Add Styles and Scripts to Admin Settings API
- */
-function wpdfv_enqueue_scripts(){
-    
-    if(get_option('wpdfv_settings_enable_font_awesome')) {
-        wp_enqueue_style('font-awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css','', WPDFV_VERSION);    
-    }
-    
-    wp_enqueue_style('overlay',WPDFV_PLUGIN_URL.'assets/css/overlay.css','', WPDFV_VERSION);    
-}
+	        $this->setup_constants();
+		    $this->includes();
+		    $this->init_hooks();
+	    }
+
+	    /**
+	     * Setup Constants
+         *
+         * @since  1.0.0
+         * @access public
+         *
+         * @return void
+	     */
+	    public function setup_constants() {
+		    if ( ! defined( 'WPDFV_VERSION' ) ) {
+			    define( 'WPDFV_VERSION', '1.4.2' );
+		    }
+
+		    if ( ! defined( 'WPDFV_PLUGIN_FILE' ) ) {
+			    define( 'WPDFV_PLUGIN_FILE', __FILE__ );
+		    }
+
+		    if ( ! defined( 'WPDFV_PLUGIN_URL' ) ) {
+			    define( 'WPDFV_PLUGIN_URL', plugin_dir_url( WPDFV_PLUGIN_FILE ) );
+		    }
+
+		    if ( ! defined( 'WPDFV_PLUGIN_DIR' ) ) {
+			    define( 'WPDFV_PLUGIN_DIR', plugin_dir_path( WPDFV_PLUGIN_FILE ) );
+		    }
+	    }
+
+	    /**
+	     * Include required files.
+         *
+         * @since  1.0.0
+         * @access public
+	     */
+        public function includes() {
+
+            if ( is_admin() ) {
+		        require_once WPDFV_PLUGIN_DIR . 'includes/admin/class.settings.php';
+	        }
 
 
+            require_once WPDFV_PLUGIN_DIR . 'includes/install.php';
+	        require_once WPDFV_PLUGIN_DIR . 'includes/class.shortcodes.php';
 
-
-/*
- *	@since 1.0
- *	@updated 1.3
- *	@usage Updates Overlay Content using AJAX Call Data
- */
-function wpdfv_scripts_to_footer(){
-    ?>
-    <script type="text/javascript">
-        jQuery(document).ready(function(){
-            jQuery('.wpdfv-fullscreen-container a.wpdfv-fullscreen-btn').click(function(e){
-                
-                var post_id = jQuery(this).data('post-id');
-                var data = {
-                    'action': 'display_post_details',
-                    'id': post_id
-                };
-
-                // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-                jQuery.post('<?php echo admin_url(); ?>admin-ajax.php', data, function(response) {
-					jQuery('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-					jQuery('body').css('overflow-y','hidden');	
-                   	jQuery('.wpdfv-fullscreen-overlay-container .wpdfv-overlay-wrap').html(response);
-                   	jQuery('.wpdfv-fullscreen-overlay-container').fadeIn('slow');
-                });
-                e.preventDefault();
-            });
-            
-            jQuery('.wpdfv-overlay-close').click(function(e){
-				jQuery('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-				jQuery('body').css('overflow-y','scroll');	
-				jQuery('.wpdfv-fullscreen-overlay-container').fadeOut('slow');
-                e.preventDefault();
-            });
-        });
-				
-		function toggleFullScreen() {
-		  if (!document.fullscreenElement &&    // alternative standard method
-			  !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {  // current working methods
-			if (document.documentElement.requestFullscreen) {
-			  document.documentElement.requestFullscreen();
-			} else if (document.documentElement.msRequestFullscreen) {
-			  document.documentElement.msRequestFullscreen();
-			} else if (document.documentElement.mozRequestFullScreen) {
-			  document.documentElement.mozRequestFullScreen();
-			} else if (document.documentElement.webkitRequestFullscreen) {
-			  document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-			}
-			jQuery('.wpdfv-overlay-close').hide();
-		  } else {
-			if (document.exitFullscreen) {
-			  document.exitFullscreen();
-			} else if (document.msExitFullscreen) {
-			  document.msExitFullscreen();
-			} else if (document.mozCancelFullScreen) {
-			  document.mozCancelFullScreen();
-			} else if (document.webkitExitFullscreen) {
-			  document.webkitExitFullscreen();
-			}
-			jQuery('.wpdfv-overlay-close').show();
-		  }
-		}
-		
-		function printDiv(divID) {
-            //Get the HTML of div
-            var divElements = document.getElementById(divID).innerHTML;
-            //Get the HTML of whole page
-            var oldPage = document.body.innerHTML;
-
-            //Reset the page's HTML with div's HTML only
-            document.body.innerHTML = 
-              "<html><head><title></title></head><body>" + 
-              divElements + "</body>";
-
-            //Print Page
-            window.print();
-
-            //Restore orignal HTML
-            document.body.innerHTML = oldPage;
-
-          
         }
-    </script>
-   
-    <div class="wpdfv-fullscreen-overlay-container" style="display:none;">
-        <div class="wpdfv-fullscreen-overlay-header">
-        	<div class="pull-right text-right">
-            	<?php if(get_option('wpdfv_settings_enable_fullscreen') > 0){ ?>
-	                <button onclick="javascript:toggleFullScreen(); " class="btn btn-primary wpdfv-overlay-btn"><i class="fa fa-arrows-alt"></i></button>
-                <?php } ?>
-                <button class="btn btn-primary wpdfv-overlay-close wpdfv-overlay-btn"><i class="fa fa-times"></i></button>
-            </div>
-            <div class="pull-left">
-            <?php if(get_option('wpdfv_settings_enable_print') > 0){ ?>
-            <button onclick="javascript:printDiv('print');" class="btn btn-primary pull-left wpdfv-overlay-print wpdfv-overlay-btn"><i class="fa fa-print"></i>Print</button>
-            <?php } ?>
-            </div>
-        </div>
-        <div class="wpdfv-overlay-wrap" id="print">
-            
-        </div>
-    </div>
-    <?php
+
+        public function init_hooks() {
+
+            // Trigger Plugin Activation Hook.
+            register_activation_hook( WPDFV_PLUGIN_FILE, 'wpdfv_install' );
+
+            // Initialize Plugin.
+            add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+        }
+
+        public function init() {
+
+	        // Set up localization.
+	        $this->load_textdomain();
+
+        }
+
+	    /**
+	     * Loads the plugin language files.
+	     *
+	     * @since  1.0.0
+	     * @access public
+	     *
+	     * @return void
+	     */
+	    public function load_textdomain() {
+
+	        // Set filter for languages directory.
+		    $lang_dir = dirname( plugin_basename( WPDFV_PLUGIN_FILE ) ) . '/languages/';
+		    $lang_dir = apply_filters( 'wpdfv_languages_directory', $lang_dir );
+
+		    // Traditional WordPress plugin locale filter.
+		    $locale = is_admin() && function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale();
+		    $locale = apply_filters( 'plugin_locale', $locale, 'wpdfv' );
+
+		    // Unload textdomain.
+		    unload_textdomain( 'wpdfv' );
+
+		    // Load textdomain.
+		    load_textdomain( 'wpdfv', WP_LANG_DIR . '/wpdfv/wpdfv-' . $locale . '.mo' );
+		    load_plugin_textdomain( 'wpdfv', false, $lang_dir );
+	    }
+    }
+
+	/**
+     * Start WP Distration Free View plugin.
+     *
+     * @since 1.0.0
+     *
+	 * @return WPDFV
+	 */
+    function wpdfv() {
+        return WPDFV::instance();
+    }
+
+    wpdfv();
 }
-
-/*
- *	@since 1.3
- *	@usage Add Styles and Scripts to Admin Settings API
- */
-function wpdfv_add_scripts_to_admin(){
-	
-	# Added WP Color Picker Support
-	wp_enqueue_style( 'wp-color-picker' ); 
-	wp_enqueue_script( 'wp-color-picker' ); 
-	
-	# Added Custom Settings JS for Options Page
-	wp_enqueue_script('settings',plugins_url('wp-distraction-free-view').'/assets/js/settings.js');
-}
-
-/*
- *	@since 1.3
- *	@usage Generates Dynamic CSS
- */	
-function wpdfv_dynamic_css() {
-	
-	wp_enqueue_style( 'dynamic-style', plugins_url('wp-distraction-free-view') . '/assets/css/dynamic.css' );
-	
-	# Fetch Already Defined Variables
-	$btn_text_fontsize = get_option('wpdfv_settings_btn_text_fontsize');
-	$btn_icon_fontsize = get_option('wpdfv_settings_btn_icon_fontsize');
-	$btn_bg_color = get_option('wpdfv_settings_btn_bg_color');
-	$btn_text_color = get_option('wpdfv_settings_btn_text_color');
-	$btn_hover_bg_color = get_option('wpdfv_settings_btn_hover_bg_color');
-	$btn_hover_text_color = get_option('wpdfv_settings_btn_hover_text_color');
-	$btn_padding = get_option('wpdfv_settings_btn_padding');
-	
-	# Generate Custom CSS Dynamically
-	$custom_css = ""; 
-	$custom_css .= " .wpdfv-overlay-btn span { font-size: ".$btn_icon_fontsize."px; } ";
-	$custom_css .= " .wpdfv-overlay-btn { background-color: ".$btn_bg_color."; color: ".$btn_text_color."; font-size: ".$btn_text_fontsize."px; padding: ".$btn_padding."; } ";
-	$custom_css .= " button.wpdfv-overlay-btn:hover, button.wpdfv-overlay-btn:focus, button.wpdfv-overlay-btn:visited, button.wpdfv-overlay-btn:active { background-color: ".$btn_hover_bg_color."; color: ".$btn_hover_text_color."; } ";
-
-	# Add Dynamic CSS using WP Inline Style Function
-	wp_add_inline_style( 'dynamic-style', $custom_css );
-}
-
-
-?>
