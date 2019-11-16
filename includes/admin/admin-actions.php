@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return void
  */
-function wpdfv_enqueue_assets(){
+function wpdfv_enqueue_admin_assets(){
 
 	// Add Color Picker support.
 	wp_enqueue_style( 'wp-color-picker' );
@@ -37,4 +37,4 @@ function wpdfv_enqueue_assets(){
 	);
 }
 
-add_action( 'admin_enqueue_scripts', 'wpdfv_enqueue_assets' );
+add_action( 'admin_enqueue_scripts', 'wpdfv_enqueue_admin_assets' );
