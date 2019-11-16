@@ -24,7 +24,7 @@
  * 
  * @package    WordPress
  * @subpackage WP Distraction Free View
- * @author     Mehul Gohil <hello@mehulgohil.in>
+ * @author     Mehul Gohil <hello@mehulgohil.com>
  */
 
 // Bailout, if accessed directly.
