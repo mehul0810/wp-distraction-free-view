@@ -7,6 +7,7 @@ const MiniCSSExtractPlugin = require( 'mini-css-extract-plugin' );
 const ImageminPlugin = require( 'imagemin-webpack-plugin' ).default;
 const CleanWebpackPlugin = require( 'clean-webpack-plugin' );
 const WebpackRTLPlugin = require( 'webpack-rtl-plugin' );
+const UglifyJsPlugin = require( 'uglifyjs-webpack-plugin' );
 const wpPot = require( 'wp-pot' );
 
 const inProduction = ( 'production' === process.env.NODE_ENV );
@@ -31,15 +32,16 @@ const config = {
 		lodash: 'lodash',
 	},
 	devtool: ! inProduction ? 'source-map' : '',
+	optimization: {
+		minimizer: [
+			new UglifyJsPlugin({
+				test: /\.js(\?.*)?$/i,
+				sourceMap: true,
+			}),
+		],
+	},
 	module: {
 		rules: [
-
-			// Use Babel to compile JS.
-			{
-				test: /\.js$/,
-				exclude: /node_modules/,
-				loader: 'babel-loader',
-			},
 
 			// Create RTL styles.
 			{
