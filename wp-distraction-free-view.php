@@ -166,6 +166,14 @@ if ( ! class_exists( 'WPDFV' ) ) {
 
         }
 
+	    /**
+	     * Initialize Essential Hooks
+	     *
+	     * @since  1.0.0
+	     * @access public
+	     *
+	     * @return void
+	     */
         public function init_hooks() {
 
             // Trigger Plugin Activation Hook.
@@ -175,6 +183,14 @@ if ( ! class_exists( 'WPDFV' ) ) {
             add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
         }
 
+	    /**
+	     * Init Plugin.
+	     *
+	     * @since  1.0.0
+	     * @access public
+	     *
+	     * @return void
+	     */
         public function init() {
 
 	        // Set up localization.
