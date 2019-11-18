@@ -41,7 +41,7 @@ function wpdfv_display_read_mode_button( $id = 0 ) {
 		</button>
 	</div>
 	<?php
-	return ob_get_contents();
+	ob_get_contents();
 }
 
 /**
