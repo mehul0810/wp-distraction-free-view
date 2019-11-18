@@ -18,13 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This helper function is used to display read mode button.
  *
  * @param int    $id       Post ID.
- * @param string $btn_text Button Text.
  *
  * @since 1.4.2
  *
  * @return mixed
  */
-function wpdfv_display_read_mode_button( $id = 0, $btn_text = '' ) {
+function wpdfv_display_read_mode_button( $id = 0 ) {
 
 	// If `$id` is `0`, then get it from `$post` global variable.
 	if ( 0 === $id ) {
@@ -32,10 +31,7 @@ function wpdfv_display_read_mode_button( $id = 0, $btn_text = '' ) {
 		$id = $post->ID;
 	}
 
-	// If read mode button text doesn't exist then display default button text.
-	if ( empty( $btn_text ) ) {
-		$btn_text = __( 'Read Mode', 'wpdfv' );
-	}
+	$btn_text = wpdfv_get_button_text();
 
 	ob_start();
 	?>
