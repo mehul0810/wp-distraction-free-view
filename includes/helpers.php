@@ -47,3 +47,17 @@ function wpdfv_display_read_mode_button( $id = 0, $btn_text = '' ) {
 	<?php
 	return ob_get_contents();
 }
+
+/**
+ * This function is used to get default button text.
+ *
+ * @since 1.4.2
+ *
+ * @return string
+ */
+function wpdfv_get_button_text() {
+
+	$default_text =  __( 'Read Mode', 'wpdfv' );
+
+	return get_option( 'wpt_wpdfv_view_btn_text', $default_text );
+}
