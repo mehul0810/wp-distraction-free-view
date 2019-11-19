@@ -4,13 +4,25 @@ on:
   push:
     tags:
       - "*.*.*"
-jobs:
-  build:
 
+env:
+  NODE_VERSION: '10.3.0'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@master
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+          uses: actions/setup-node@v1
+          with:
+            node-version: ${{ env.NODE_VERSION }}
+      - name: Build
+          run: |
+            npm install
+            npm run production
       - name: Deploy
         run: chmod +x ./deploy.sh && ./deploy.sh
         env:
