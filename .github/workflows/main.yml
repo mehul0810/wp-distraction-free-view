@@ -15,6 +15,7 @@ jobs:
         run: |
           npm install
           npm run production
+          rm -rf node_modules
       - name: Deploy
         run: chmod +x ./deploy.sh && ./deploy.sh
         env:
