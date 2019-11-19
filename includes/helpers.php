@@ -31,17 +31,18 @@ function wpdfv_display_read_mode_button( $id = 0 ) {
 		$id = $post->ID;
 	}
 
+	$html = '';
 	$btn_text = wpdfv_get_button_text();
 
-	ob_start();
-	?>
-	<div class="wpdfv-fullscreen-container">
-		<button class="btn btn-primary wpdfv-fullscreen-btn" data-post-id="<?php echo $id; ?>" type="button" >
-			<?php echo $btn_text; ?>
-		</button>
-	</div>
-	<?php
-	ob_get_contents();
+	$html .= '<div class="wpdfv-fullscreen-container">';
+	$html .= sprintf(
+		'<a class="wpdfv-fullscreen-btn" data-post-id="%1$s">%2$s</a>',
+		$id,
+		$btn_text
+	);
+	$html .= '</div>';
+
+	return $html;
 }
 
 /**
