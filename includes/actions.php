@@ -23,11 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function wpdfv_enqueue_assets(){
 
-	if ( get_option('wpdfv_settings_enable_font_awesome')) {
-		wp_enqueue_style('font-awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css','', WPDFV_VERSION);
-	}
+	wp_enqueue_script( 'wpdfv-core', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv.js', array( 'jquery' ), WPDFV_VERSION, true );
 
-	wp_enqueue_style('wpdfv-overlay',WPDFV_PLUGIN_URL.'assets/css/overlay.css','', WPDFV_VERSION);
+	$wpdfv_args = array(
+		'ajaxurl' => admin_url( 'admin-ajax.php' ),
+	);
+	wp_localize_script( 'wpdfv-core', 'wpdfv', $wpdfv_args );
+
+	wp_enqueue_style( 'wpdfv-core',WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv.css','', WPDFV_VERSION );
 }
 add_action( 'wp_enqueue_scripts', 'wpdfv_enqueue_assets' );
 
