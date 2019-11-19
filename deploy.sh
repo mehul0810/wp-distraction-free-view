@@ -7,8 +7,8 @@ PLUGIN_SLUG="${PWD##*/}"
 TAG=$(sed -e "s/refs\/tags\///g" <<< $GITHUB_REF)
 
 # Replace the version in these 2 files.
-sed -i -e "s/__STABLE_TAG__/$TAG/g" ./src/readme.txt
-sed -i -e "s/__STABLE_TAG__/$TAG/g" "./src/$PLUGIN_SLUG.php"
+sed -i -e "s/__STABLE_TAG__/$TAG/g" ./readme.txt
+sed -i -e "s/__STABLE_TAG__/$TAG/g" "./$PLUGIN_SLUG.php"
 
 # Get the SVN data from wp.org in a folder named `svn`
 svn co --depth immediates "https://plugins.svn.wordpress.org/$PLUGIN_SLUG" ./svn
@@ -17,14 +17,17 @@ svn update --set-depth infinity ./svn/trunk
 svn update --set-depth infinity ./svn/assets
 svn update --set-depth infinity ./svn/tags/$TAG
 
-# Copy files from `src` to `svn/trunk`
-cp -R ./src/* ./svn/trunk
+# Copy files from repository to `svn/trunk`
+cp -R ./* ./svn/trunk
 
 # Copy the images from `assets` to `svn/assets`
 cp -R ./wp-org-assets/* ./svn/assets
 
 # 3. Switch to SVN directory
 cd ./svn
+
+# Remove `wp-org-assets` folder from `trunk`
+rm -rf ./trunk/wp-org-assets
 
 # Prepare the files for commit in SVN
 svn add --force trunk
