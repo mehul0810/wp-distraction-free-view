@@ -57,3 +57,27 @@ function wpdfv_get_button_text() {
 
 	return get_option( 'wpt_wpdfv_view_btn_text', $default_text );
 }
+
+/**
+ * Get the value of a settings field
+ *
+ * @param string $option  settings field name.
+ * @param string $section the section name this field belongs to.
+ * @param string $default default text if it's not found.
+ *
+ * @since 1.0.0
+ *
+ * @return string
+ */
+function wpdfv_get_option( $option, $section, $default = '' ) {
+
+	$options = get_option( $section );
+
+	if ( isset( $options[ $option ] ) ) {
+		return $options[ $option ];
+	}
+
+	return $default;
+
+}
+
