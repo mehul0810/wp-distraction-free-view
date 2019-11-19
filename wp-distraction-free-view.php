@@ -155,7 +155,8 @@ if ( ! class_exists( 'WPDFV' ) ) {
 
             if ( is_admin() ) {
 		        require_once WPDFV_PLUGIN_DIR . 'includes/admin/admin-actions.php';
-		        require_once WPDFV_PLUGIN_DIR . 'includes/admin/class.settings.php';
+		        require_once WPDFV_PLUGIN_DIR . 'includes/admin/class-wpdfv-admin-settings-api.php';
+		        require_once WPDFV_PLUGIN_DIR . 'includes/admin/class-wpdfv-admin-settings.php';
 	        }
 
             require_once WPDFV_PLUGIN_DIR . 'includes/install.php';
@@ -226,7 +227,7 @@ if ( ! class_exists( 'WPDFV' ) ) {
     }
 
 	/**
-     * Start WP Distration Free View plugin.
+     * Start WP Distraction Free View plugin.
      *
      * @since 1.0.0
      *
