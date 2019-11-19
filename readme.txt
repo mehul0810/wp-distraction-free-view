@@ -68,15 +68,25 @@ Yes. Plugin has the capability to enable and disable print feature from admin pa
 With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's viewport) and then again clicking on fullscreen button will hide browser and display whole article occupying your system screen.
 
 == Screenshots ==
-1. A SneakPeak to Powerful Admin Settings
-2. A SneakPeak to Full Screen Mode
+1. Refreshed Admin Settings
+2. Refreshed Fullscreen mode
 
 == Changelog ==
-**Major Update - v1.4**
+
+= 1.4.2: 19th November 2019 =
+- Shortcode renamed from `[dfview]` to `[wpdfv]`
+- Fix: refactor plugin for stability [#4](https://github.com/mehul0810/wp-distraction-free-view/issues/4)
+- Feat: update code to support latest WP 5.3 [#1](https://github.com/mehul0810/wp-distraction-free-view/issues/1)
+- Security Improvements
+- UI Improvements
+- Stability Improvements
+- Removed Font Awesome support
+
+= 1.4.0 =
 - Removed Genericons Support
 - Added Font Awesome Support using CDN
 
-**Major Update - v1.3**
+= 1.3.0 =
 - Improved Print Support
 - Improved Fullscreen support
 - Powerful Admin Settings Panel Support Added
@@ -84,15 +94,15 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 - Added Flexibility
 - Improved User Experience
 
-**Urgent Update - v1.2**
+= 1.2.0 =
 - Fixed overlay issues on mostly all the themes
 
-**Major Update - v1.1**
+= 1.1.0 =
 - Fixed few alignment and validation errors
 - Fixed popup inconsistency
 - Added Print Support
 
-**Initial Release - v1.0**
+= 1.0.0: Initial Release =
 - Ability to display button at specified location in a post.
 - [dfview] Shortcode supported.
 - Ability to change "DF View" button text.
