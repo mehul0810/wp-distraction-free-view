@@ -1,14 +1,14 @@
 === WP Distraction Free View ===
 Contributors: mehul0810
-Tags: wp couch mode, couch mode, distraction free, distraction free reading, fullscreen, fullscreen mode
-Donate link: http://mehulgohil.in/donate
+Tags: wp couch mode, distraction free,  zen view, distraction free reading, fullscreen, fullscreen mode,
+Donate link: https://mehulgohil.com/donate
 Requires at least: 4.8
-Tested up to: 5.1
-Stable tag: 1.4.1
+Tested up to: 5.3
+Stable tag: __STABLE_TAG__
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-WP Distraction Free View is a WordPress plugin which provides distraction free viewing mode to the website users. 
+This WordPress plugin will provide you a distraction free view for posts, pages and any custom post type which will help your visitors to effectively read your content without any distraction.
 
 == Description ==
 **WP Distraction Free View** is a WordPress plugin which provides distraction free viewing mode to the website users. This plugin will provide a platform to your site users to view the articles or posts in a dual full page view. There will not be any advertisements which can distract your site users from reading your well written article or post.
@@ -17,43 +17,44 @@ Now-a-days, we can see lots of website and blog are developed providing content 
 
 This plugin will be of great benefit, if you have articles or post for your site users. This plugin will definitely boost your website traffic.
 
-**Features**
+=Features=
 
-1. Supports Viewport Pop Up mode
+1. Fullscreen Mode (kind of ZenView)
+2. Print Support
+3. Clean Code
+4. Clean UI
+5. Light Weight
+6. Shortcode `[wpdfv]` Supprot
+7. Gutenberg Block support (coming soon)
 
-2. Supports Full Screen mode
-
-3. Supports Print Friendly Environment
-
-4. Suports Font Awesome
-
-5. Powerful Admin Settings Panel
-
-6. Light Weight
-
-**Benefits**
-
-1. Engage users to your website
-
+=Benefits=
+1. Engage your site visitors
 2. Boost your website traffic
+3. No Advertisements while viewing content of pages, posts and any custom post type.
 
-3. No Advertisements while viewing posts or articles
+= Connect with WP Distraction Free View - WordPress Plugin =
 
-**Technical Support**
+Stay in touch with us for important plugin news and updates:
 
-If you have any query or suggestions, please feel free to contact me via Support Forums
+* **[GitHub](https://github.com/mehul0810/wp-distraction-free-view "Visit the development of WP Distraction Free View")**
 
-**Note**
+= Contribute to WP Distraction Free View  - WordPress Plugin =
 
-If you liked my plugin, please do not forget to review it.
+This plugin is proudly open source (GPL license) and we're always looking for more contributors. Whether you know another language, can code like no one's business, or just have an idea, we would love your help and input.
+
+Here's a few ways you can contribute to the plugin:
+
+* Star/fork/watch the [GitHub repository](https://github.com/mehul0810/wp-distraction-free-view "Visit the GitHub Repository") to learn more about what issues we're tackling and the project is developing. If you've never worked with Github before, learn about [pull requests here](https://help.github.com/articles/about-pull-requests/) and submit one for WP Distraction Free View, we'd love to provide you our feedback.
+
+* Translate "WP Distraction Free View" into your native language. The best place to do that is here on wordpress.org. Go to [https://translate.wordpress.org/](https://translate.wordpress.org/projects/wp-plugins/wp-distraction-free-view), then search for your language, click the "Plugins" tab, then search for "WP Distraction Free View". When you've submitted at least 95% of "WP Distraction Free View" plugin strings, the language moderators will review and approve your translations and then they will be available to all WordPress users for your native language.
 
 
 == Installation ==
-Please follow below instructions to install this plugin manually: 
+Please follow below instructions to install this plugin manually:
 
-1. Upload "wp-distraction-free-view" to the "wp-content/plugins/" directory. 
+1. Upload "wp-distraction-free-view" to the "wp-content/plugins/" directory.
 
-2. Activate the plugin through the "Plugins" menu in WordPress. 
+2. Activate the plugin through the "Plugins" menu in WordPress.
 
 3. Change the settings from "Settings > Distraction Free View" submenu in WordPress Admin Panel.
 
@@ -80,7 +81,7 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 - Improved Fullscreen support
 - Powerful Admin Settings Panel Support Added
 - Light weight Adjustments
-- Added Flexibility 
+- Added Flexibility
 - Improved User Experience
 
 **Urgent Update - v1.2**
@@ -89,7 +90,7 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 **Major Update - v1.1**
 - Fixed few alignment and validation errors
 - Fixed popup inconsistency
-- Added Print Support 
+- Added Print Support
 
 **Initial Release - v1.0**
 - Ability to display button at specified location in a post.

@@ -1,0 +1,52 @@
+.wpdfv-fullscreen-overlay-container{
+	width: 100%;
+	display: block;
+	height: 100%;
+	background-color: #FFFFFF;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 999999;
+
+	.wpdfv-icon {
+		width: 24px;
+	}
+
+	.wpdfv-container {
+		width: 1024px;
+		margin: 0 auto;
+	}
+
+	.wpdfv-fullscreen-overlay-header {
+		display: flex;
+		justify-content: flex-end;
+		border-bottom: 1px solid #f9f9f9;
+
+		.wpdfv-actions {
+			display: flex;
+			align-items: center;
+
+			.wpdfv-overlay-btn {
+				display: block;
+				padding: 20px;
+				cursor: pointer;
+				border-left: 1px solid #f9f9f9;
+			}
+
+			.wpdfv-overlay-print {
+				display: flex;
+				align-items: center;
+
+				.wpdfv-icon {
+					width: 32px;
+				}
+			}
+
+			.wpdfv-overlay-close {
+				.wpdfv-icon {
+					width: 32px;
+				}
+			}
+		}
+	}
+}
