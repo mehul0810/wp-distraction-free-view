@@ -29,6 +29,9 @@ cd ./svn
 # Remove `wp-org-assets` folder from `trunk`
 rm -rf ./trunk/wp-org-assets
 
+# Remove `node_modules` folder from `trunk`
+rm -rf ./trunk/node_modules
+
 # Prepare the files for commit in SVN
 svn add --force trunk
 svn add --force assets
