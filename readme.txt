@@ -56,7 +56,7 @@ Please follow below instructions to install this plugin manually:
 
 2. Activate the plugin through the "Plugins" menu in WordPress.
 
-3. Change the settings from "Settings > Distraction Free View" submenu in WordPress Admin Panel.
+3. Change the settings from "Settings > Distraction Free Mode" submenu in WordPress Admin Panel.
 
 == Frequently Asked Questions ==
 **Do the plugin support Print feature?**
@@ -69,7 +69,8 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 
 == Screenshots ==
 1. Refreshed Admin Settings
-2. Refreshed Fullscreen mode
+2. Read Mode button on posts listing
+3. Refreshed Fullscreen mode
 
 == Changelog ==
 
