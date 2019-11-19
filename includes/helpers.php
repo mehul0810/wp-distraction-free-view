@@ -55,7 +55,7 @@ function wpdfv_get_button_text() {
 
 	$default_text =  __( 'Read Mode', 'wpdfv' );
 
-	return get_option( 'wpt_wpdfv_view_btn_text', $default_text );
+	return wpdfv_get_option( 'read_mode_btn_text', 'general', $default_text );
 }
 
 /**
