@@ -3,7 +3,7 @@
  * Plugin Name: WP Distraction Free View
  * Plugin URI: https://wordpress.org/plugins/wp-distraction-free-view/
  * Description: "WP Distraction Free View" plugin provides distraction free viewing mode to the users of the website/blog.
- * Version: 1.4.2
+ * Version: __STABLE_TAG__
  * Author: Mehul Gohil
  * Author URI: http://mehulgohil.in/
  * License: GPLv3
