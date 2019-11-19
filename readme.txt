@@ -59,11 +59,12 @@ Please follow below instructions to install this plugin manually:
 3. Change the settings from "Settings > Distraction Free Mode" submenu in WordPress Admin Panel.
 
 == Frequently Asked Questions ==
-**Do the plugin support Print feature?**
+
+= Do the plugin support Print feature? =
 
 Yes. Plugin has the capability to enable and disable print feature from admin panel.
 
-**What is dual fullscreen mode?**
+= What is dual fullscreen mode? =
 
 With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's viewport) and then again clicking on fullscreen button will hide browser and display whole article occupying your system screen.
 
