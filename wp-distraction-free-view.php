@@ -163,7 +163,7 @@ if ( ! class_exists( 'WPDFV' ) ) {
             require_once WPDFV_PLUGIN_DIR . 'includes/helpers.php';
             require_once WPDFV_PLUGIN_DIR . 'includes/filters.php';
             require_once WPDFV_PLUGIN_DIR . 'includes/actions.php';
-	        require_once WPDFV_PLUGIN_DIR . 'includes/class.shortcodes.php';
+	        require_once WPDFV_PLUGIN_DIR . 'includes/class-wpdfv-shortcodes.php';
 
         }
 
