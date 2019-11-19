@@ -63,7 +63,7 @@ jQuery( document ).ready( function( $ ) {
 	$( '.wpdfv-fullscreen-overlay-container .wpdfv-overlay-print' ).on( 'click', function( e ) {
 
 		// Get the HTML of div.
-		var divElements = document.getElementById( divID ).innerHTML;
+		var divElements = document.getElementById( 'wpdfv-print' ).innerHTML;
 
 		// Get the HTML of whole page.
 		var oldPage = document.body.innerHTML;

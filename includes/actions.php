@@ -62,7 +62,7 @@ function wpdfv_scripts_to_footer(){
 				</a>
 			</div>
 		</div>
-		<div class="wpdfv-overlay-wrap" id="print"></div>
+		<div class="wpdfv-overlay-wrap" id="wpdfv-print"></div>
 	</div>
 	<?php
 }
