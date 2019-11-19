@@ -46,17 +46,12 @@ function wpdfv_scripts_to_footer(){
 	<div class="wpdfv-fullscreen-overlay-container" style="display:none;">
 		<div class="wpdfv-fullscreen-overlay-header">
 			<div class="wpdfv-actions">
-				<?php if(get_option('wpdfv_settings_enable_print') > 0){ ?>
-					<a class="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
-					</a>
-				<?php } ?>
-
-				<?php if(get_option('wpdfv_settings_enable_fullscreen') > 0){ ?>
-					<a class="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
-					</a>
-				<?php } ?>
+				<a class="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn">
+					<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
+				</a>
+				<a class="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn">
+					<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
+				</a>
 				<a class="wpdfv-overlay-close wpdfv-overlay-btn">
 					<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/close.svg' ); ?>" alt="<?php esc_html_e( 'Close', 'wpdfv' ); ?>" />
 				</a>
