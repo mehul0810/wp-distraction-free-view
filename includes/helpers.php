@@ -65,7 +65,7 @@ function wpdfv_get_button_text() {
  * @param string $section the section name this field belongs to.
  * @param string $default default text if it's not found.
  *
- * @since 1.0.0
+ * @since 1.4.2
  *
  * @return string
  */
@@ -79,5 +79,16 @@ function wpdfv_get_option( $option, $section, $default = '' ) {
 
 	return $default;
 
+}
+
+/**
+ * This helper function is used to display read mode button at.
+ *
+ * @since 1.4.2
+ *
+ * @return string
+ */
+function wpdfv_display_read_mode_btn_at() {
+	return wpdfv_get_option( 'display_read_mode_at', 'general', 'after_content' );
 }
 
