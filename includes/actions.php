@@ -5,7 +5,7 @@
  * @since 1.4.2
  *
  * @package    WordPress
- * @subpackage WP Distration Free View
+ * @subpackage WP Distraction Free View
  * @author     Mehul Gohil <hello@mehulgohil.com>
  */
 
