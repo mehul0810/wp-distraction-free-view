@@ -40,99 +40,26 @@ add_action( 'wp_enqueue_scripts', 'wpdfv_enqueue_assets' );
  */
 function wpdfv_scripts_to_footer(){
 	?>
-	<script type="text/javascript">
-        jQuery(document).ready(function(){
-            jQuery('.wpdfv-fullscreen-container a.wpdfv-fullscreen-btn').click(function(e){
-
-                var post_id = jQuery(this).data('post-id');
-                var data = {
-                    'action': 'display_post_details',
-                    'id': post_id
-                };
-
-                // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-                jQuery.post('<?php echo admin_url(); ?>admin-ajax.php', data, function(response) {
-                    jQuery('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-                    jQuery('body').css('overflow-y','hidden');
-                    jQuery('.wpdfv-fullscreen-overlay-container .wpdfv-overlay-wrap').html(response);
-                    jQuery('.wpdfv-fullscreen-overlay-container').fadeIn('slow');
-                });
-                e.preventDefault();
-            });
-
-            jQuery('.wpdfv-overlay-close').click(function(e){
-                jQuery('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-                jQuery('body').css('overflow-y','scroll');
-                jQuery('.wpdfv-fullscreen-overlay-container').fadeOut('slow');
-                e.preventDefault();
-            });
-        });
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement &&    // alternative standard method
-                !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {  // current working methods
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                } else if (document.documentElement.mozRequestFullScreen) {
-                    document.documentElement.mozRequestFullScreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-                }
-                jQuery('.wpdfv-overlay-close').hide();
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                }
-                jQuery('.wpdfv-overlay-close').show();
-            }
-        }
-
-        function printDiv(divID) {
-            //Get the HTML of div
-            var divElements = document.getElementById(divID).innerHTML;
-            //Get the HTML of whole page
-            var oldPage = document.body.innerHTML;
-
-            //Reset the page's HTML with div's HTML only
-            document.body.innerHTML =
-                "<html><head><title></title></head><body>" +
-                divElements + "</body>";
-
-            //Print Page
-            window.print();
-
-            //Restore orignal HTML
-            document.body.innerHTML = oldPage;
-
-
-        }
-	</script>
-
 	<div class="wpdfv-fullscreen-overlay-container" style="display:none;">
 		<div class="wpdfv-fullscreen-overlay-header">
-			<div class="pull-right text-right">
-				<?php if(get_option('wpdfv_settings_enable_fullscreen') > 0){ ?>
-					<button onclick="javascript:toggleFullScreen(); " class="btn btn-primary wpdfv-overlay-btn"><i class="fa fa-arrows-alt"></i></button>
-				<?php } ?>
-				<button class="btn btn-primary wpdfv-overlay-close wpdfv-overlay-btn"><i class="fa fa-times"></i></button>
-			</div>
-			<div class="pull-left">
+			<div class="wpdfv-actions">
 				<?php if(get_option('wpdfv_settings_enable_print') > 0){ ?>
-					<button onclick="javascript:printDiv('print');" class="btn btn-primary pull-left wpdfv-overlay-print wpdfv-overlay-btn"><i class="fa fa-print"></i>Print</button>
+					<a class="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn">
+						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
+					</a>
 				<?php } ?>
+
+				<?php if(get_option('wpdfv_settings_enable_fullscreen') > 0){ ?>
+					<a class="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn">
+						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
+					</a>
+				<?php } ?>
+				<a class="wpdfv-overlay-close wpdfv-overlay-btn">
+					<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/close.svg' ); ?>" alt="<?php esc_html_e( 'Close', 'wpdfv' ); ?>" />
+				</a>
 			</div>
 		</div>
-		<div class="wpdfv-overlay-wrap" id="print">
-
-		</div>
+		<div class="wpdfv-overlay-wrap" id="print"></div>
 	</div>
 	<?php
 }
