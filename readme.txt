@@ -4,7 +4,7 @@ Tags: wp couch mode, distraction free,  zen view, distraction free reading, full
 Donate link: https://mehulgohil.com/donate
 Requires at least: 4.8
 Tested up to: 5.3
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
