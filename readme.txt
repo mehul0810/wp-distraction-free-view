@@ -17,7 +17,7 @@ Now-a-days, we can see lots of website and blog are developed providing content 
 
 This plugin will be of great benefit, if you have articles or post for your site users. This plugin will definitely boost your website traffic.
 
-=Features=
+= Features =
 
 1. Fullscreen Mode (kind of ZenView)
 2. Print Support
@@ -27,7 +27,7 @@ This plugin will be of great benefit, if you have articles or post for your site
 6. Shortcode `[wpdfv]` Supprot
 7. Gutenberg Block support (coming soon)
 
-=Benefits=
+= Benefits =
 1. Engage your site visitors
 2. Boost your website traffic
 3. No Advertisements while viewing content of pages, posts and any custom post type.
