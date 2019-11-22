@@ -5,7 +5,7 @@
  * Description: "WP Distraction Free View" plugin provides distraction free viewing mode to the users of the website/blog.
  * Version: 1.4.4
  * Author: Mehul Gohil
- * Author URI: http://mehulgohil.in/
+ * Author URI: https://mehulgohil.com/
  * License: GPLv3
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: wpdfv
