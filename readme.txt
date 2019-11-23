@@ -75,6 +75,9 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 
 == Changelog ==
 
+= 1.4.4: 23rd November 2019 =
+- Updated CSS for the "Read Mode" button to have cursor pointer.
+
 = 1.4.3: 19th November 2019 =
 - Included Automated Development Process
 - Fix for Fullscreen and Print icon
