@@ -72,6 +72,7 @@ function wpdfv_get_button_text() {
  */
 function wpdfv_get_option( $option, $section, $default = '' ) {
 
+	$section = "wpdfv_{$section}";
 	$options = get_option( $section );
 
 	if ( isset( $options[ $option ] ) ) {
