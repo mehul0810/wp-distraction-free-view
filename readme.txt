@@ -4,7 +4,7 @@ Tags: wp couch mode, distraction free,  zen view, distraction free reading, full
 Donate link: https://mehulgohil.com/donate
 Requires at least: 4.8
 Tested up to: 5.3
-Stable tag: 1.4.4
+Stable tag: 1.4.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -74,6 +74,9 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 3. Refreshed Fullscreen mode
 
 == Changelog ==
+
+= 1.4.5: 26th November 2019 =
+- Ensure that "Read Mode" button text can be changed from settings
 
 = 1.4.4: 23rd November 2019 =
 - Updated CSS for the "Read Mode" button to have cursor pointer.
