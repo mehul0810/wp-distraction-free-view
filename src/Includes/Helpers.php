@@ -33,7 +33,7 @@ class Helpers {
 		}
 
 		$html     = '';
-		$btn_text = wpdfv_get_button_text();
+		$btn_text = self::get_button_text();
 
 		$html .= '<div class="wpdfv-fullscreen-container">';
 		$html .= sprintf(
@@ -57,7 +57,7 @@ class Helpers {
 	public static function get_button_text() {
 		$default_text = __( 'Read Mode', 'wpdfv' );
 
-		return wpdfv_get_option( 'read_mode_btn_text', 'general', $default_text );
+		return self::get_option( 'read_mode_btn_text', 'general', $default_text );
 	}
 
 	/**
@@ -93,6 +93,6 @@ class Helpers {
 	 * @return string
 	 */
 	public static function display_read_mode_btn_at() {
-		return wpdfv_get_option( 'display_read_mode_at', 'general', 'after_content' );
+		return self::get_option( 'display_read_mode_at', 'general', 'after_content' );
 	}
 }
