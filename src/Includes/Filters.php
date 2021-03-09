@@ -41,8 +41,8 @@ class Filters {
 		global $post;
 
 		$new_content    = '';
-		$display_btn_at = wpdfv_display_read_mode_btn_at();
-		$button_html    = wpdfv_display_read_mode_button( $post->ID );
+		$display_btn_at = Helpers::display_read_mode_btn_at();
+		$button_html    = Helpers::display_read_mode_button( $post->ID );
 
 		// Bailout, if the display button at setting is disabled.
 		if ( 'disable' === $display_btn_at ) {

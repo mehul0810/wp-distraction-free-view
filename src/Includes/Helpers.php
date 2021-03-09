@@ -92,7 +92,7 @@ class Helpers {
 	 *
 	 * @return string
 	 */
-	public static function wpdfv_display_read_mode_btn_at() {
+	public static function display_read_mode_btn_at() {
 		return wpdfv_get_option( 'display_read_mode_at', 'general', 'after_content' );
 	}
 }
