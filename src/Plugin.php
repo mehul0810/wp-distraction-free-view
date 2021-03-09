@@ -43,9 +43,12 @@ final class Plugin {
 	 */
 	public function register_services() {
 		// Load Admin Files.
+		new Admin\Actions();
+		new Admin\Filters();
 
 		// Load Frontend Files.
-
+		new Includes\Actions();
+		new Includes\Filters();
 	}
 
 	/**
