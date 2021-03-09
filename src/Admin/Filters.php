@@ -24,6 +24,32 @@ class Filters {
 	 * @return void
 	 */
 	public function __construct() {
+		add_filter( 'plugin_action_links_' . PERFORM_PLUGIN_BASENAME, [ $this, 'add_plugin_action_links' ] );
+	}
 
+	/**
+	 * Plugin page action links.
+	 *
+	 * @param array $actions An array of plugin action links.
+	 *
+	 * @since 1.0.1
+	 *
+	 * @return array
+	 */
+	public function add_plugin_action_links( $actions ) {
+		$new_actions = [
+			'settings' => sprintf(
+				'<a href="%1$s">%2$s</a>',
+				admin_url( 'admin.php?page=wp_distraction_free_view' ),
+				esc_html__( 'Settings', 'wpdfv' )
+			),
+			'support'  => sprintf(
+				'<a target="_blank" href="%1$s">%2$s</a>',
+				esc_url_raw( 'https://wordpress.org/support/plugin/wp-distraction-free-view/' ),
+				esc_html__( 'Support', 'wpdfv' )
+			),
+		];
+
+		return array_merge( $new_actions, $actions );
 	}
 }
