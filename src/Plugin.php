@@ -1,6 +1,9 @@
 <?php
 namespace WPDFV;
 
+use WPDFV\Admin as Admin;
+use WPDFV\Includes as Includes;
+
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

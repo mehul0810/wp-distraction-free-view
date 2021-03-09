@@ -24,7 +24,7 @@ class Filters {
 	 * @return void
 	 */
 	public function __construct() {
-		add_filter( 'plugin_action_links_' . PERFORM_PLUGIN_BASENAME, [ $this, 'add_plugin_action_links' ] );
+		add_filter( 'plugin_action_links_' . WPDFV_PLUGIN_BASENAME, [ $this, 'add_plugin_action_links' ] );
 	}
 
 	/**
