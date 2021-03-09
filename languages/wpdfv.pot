@@ -1,4 +1,4 @@
-# Copyright (C) 2019 WP Distraction Free View
+# Copyright (C) 2021 WP Distraction Free View
 # This file is distributed under the same license as the WP Distraction Free View package.
 msgid ""
 msgstr ""
@@ -15,62 +15,66 @@ msgstr ""
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: includes/actions.php:51
-msgid "Print"
+#: src/Admin/Filters.php:44
+msgid "Settings"
 msgstr ""
 
-#: includes/actions.php:57
-msgid "Fullscreen"
+#: src/Admin/Filters.php:49
+msgid "Support"
 msgstr ""
 
-#: includes/actions.php:61
-msgid "Close"
-msgstr ""
-
-#: includes/helpers.php:56, includes/admin/class-wpdfv-admin-settings.php:136
-msgid "Read Mode"
-msgstr ""
-
-#: includes/admin/class-wpdfv-admin-settings-api.php:724
-msgid "Settings - WP Distraction Free View"
-msgstr ""
-
-#: includes/admin/class-wpdfv-admin-settings.php:55
+#: src/Admin/Settings.php:51
 msgid "General"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:77, includes/admin/class-wpdfv-admin-settings.php:78
+#: src/Admin/Settings.php:72, src/Admin/Settings.php:73
 msgid "Distraction Free Mode"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:118
+#: src/Admin/Settings.php:111
 msgid "Display Read Mode"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:119
+#: src/Admin/Settings.php:112
 msgid "Enabling this will display \"Read Mode\" link at your preferred location."
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:121
+#: src/Admin/Settings.php:114
 msgid "Disable"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:122
+#: src/Admin/Settings.php:115
 msgid "Before Content"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:123
+#: src/Admin/Settings.php:116
 msgid "After Content"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:134
+#: src/Admin/Settings.php:127
 msgid "Read Mode Button Text"
 msgstr ""
 
-#: includes/admin/class-wpdfv-admin-settings.php:135
+#: src/Admin/Settings.php:128
 msgid "This setting will help you change the default text of the \"Read Mode\" button."
 msgstr ""
 
-#: wp-distraction-free-view.php:92, wp-distraction-free-view.php:104
-msgid "Cheatin&#8217; huh?"
+#: src/Admin/Settings.php:129, src/Includes/Helpers.php:58
+msgid "Read Mode"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:726
+msgid "Settings - WP Distraction Free View"
+msgstr ""
+
+#: src/Includes/Actions.php:64
+msgid "Print"
+msgstr ""
+
+#: src/Includes/Actions.php:67
+msgid "Fullscreen"
+msgstr ""
+
+#: src/Includes/Actions.php:70
+msgid "Close"
 msgstr ""
