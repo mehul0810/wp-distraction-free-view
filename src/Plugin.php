@@ -53,6 +53,7 @@ final class Plugin {
 		// Load Frontend Files.
 		new Includes\Actions();
 		new Includes\Filters();
+		new Includes\Shortcodes\Main();
 	}
 
 	/**
