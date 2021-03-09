@@ -17,7 +17,7 @@ const config = {
 	mode,
 
 	entry: {
-		'wpdfv': [ './assets/src/css/frontend/wpdfv.scss', './assets/src/js/frontend/wpdfv.js' ],
+		wpdfv: [ './assets/src/css/frontend/wpdfv.scss', './assets/src/js/frontend/wpdfv.js' ],
 		'wpdfv-admin': [ './assets/src/css/admin/wpdfv-admin.scss', './assets/src/js/admin/wpdfv-admin.js' ],
 	},
 	output: {
@@ -34,10 +34,10 @@ const config = {
 	devtool: ! inProduction ? 'source-map' : '',
 	optimization: {
 		minimizer: [
-			new UglifyJsPlugin({
+			new UglifyJsPlugin( {
 				test: /\.js(\?.*)?$/i,
 				sourceMap: true,
-			}),
+			} ),
 		],
 	},
 	module: {
@@ -117,7 +117,14 @@ const config = {
 			filename: 'css/[name].css',
 		} ),
 
-		new CopyWebpackPlugin( [ { from: 'assets/src/images', to: 'images' } ] ),
+		new CopyWebpackPlugin( {
+			patterns: [
+				{
+					from: 'assets/src/images',
+					to: 'images',
+				},
+			],
+		} ),
 	],
 };
 

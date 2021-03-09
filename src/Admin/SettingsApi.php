@@ -9,6 +9,8 @@
  * @author     Mehul Gohil <hello@mehulgohil.com>
  */
 
+namespace WPDFV\Admin;
+
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,14 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
+if ( ! class_exists( 'SettingsApi' ) ) :
 
 	/**
 	 * WPDFV_Admin_Settings_API Class
 	 *
 	 * @since 1.0.0
 	 */
-	class WPDFV_Admin_Settings_API {
+	class SettingsApi {
 
 		/**
 		 * Base Prefix for Settings.
@@ -45,7 +47,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 		 * @var   array
 		 * @since 1.0.0
 		 */
-		private $sections_array = array();
+		private $sections_array = [];
 
 		/**
 		 * Fields array.
@@ -53,7 +55,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 		 * @var   array
 		 * @since 1.0.0
 		 */
-		private $fields_array = array();
+		private $fields_array = [];
 
 		/**
 		 * Constructor.
@@ -63,7 +65,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 		public function __construct() {
 
 			// Hook it up.
-			add_action( 'admin_init', array( $this, 'admin_init' ) );
+			add_action( 'admin_init', [ $this, 'admin_init' ] );
 
 		}
 
@@ -147,12 +149,12 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 		public function add_field( $section, $fields ) {
 
 			// Set the defaults
-			$defaults = array(
+			$defaults = [
 				'id'   => '',
 				'name' => '',
 				'desc' => '',
 				'type' => 'text',
-			);
+			];
 
 			// Combine the defaults with user's arguements.
 			$args = wp_parse_args( $fields, $defaults );
@@ -282,7 +284,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 					// Sanitize Callback.
 					$sanitize_callback = isset( $field['sanitize_callback'] ) ? $field['sanitize_callback'] : '';
 
-					$args = array(
+					$args = [
 						'id'                => $id,
 						'type'              => $type,
 						'name'              => $name,
@@ -294,10 +296,10 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 						'std'               => $default,
 						'placeholder'       => $placeholder,
 						'sanitize_callback' => $sanitize_callback,
-					);
+					];
 
 					// Help Link.
-					$help_link  = isset( $field['help_link'] ) ? $field['help_link'] : '';
+					$help_link = isset( $field['help_link'] ) ? $field['help_link'] : '';
 
 					// Add help icon next to the name of the field.
 					if ( ! empty( $help_link ) ) {
@@ -324,7 +326,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 					add_settings_field(
 						$field_id,
 						$name,
-						array( $this, 'callback_' . $type ),
+						[ $this, 'callback_' . $type ],
 						$section,
 						$section,
 						$args
@@ -342,7 +344,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 				 * @param callable  $sanitize_callback = ''
 				 * @since 1.0.0
 				 */
-				register_setting( $section['id'], $section['id'], array( $this, 'sanitize_fields' ) );
+				register_setting( $section['id'], $section['id'], [ $this, 'sanitize_fields' ] );
 			} // foreach ended.
 
 		} // admin_init() ended.
@@ -477,7 +479,7 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 			$html  = '<fieldset>';
 			$html .= sprintf( '<legend class="screen-reader-text"><span>%1$s</span></legend>', $args['section'] );
 			$html .= sprintf( '<label for="wpdfv-%1$s[%2$s]">', $args['section'], $args['id'] );
-//			$html .= sprintf( '<input type="hidden" name="%1$s[%2$s]" value="off" />', $args['section'], $args['id'] );
+			//          $html .= sprintf( '<input type="hidden" name="%1$s[%2$s]" value="off" />', $args['section'], $args['id'] );
 			$html .= sprintf( '<input type="checkbox" class="checkbox" id="wpdfv-%1$s-%2$s" name="%1$s[%2$s]" value="1" %3$s />', $args['section'], $args['id'], checked( $value, '1', false ) );
 			$html .= sprintf( '%1$s</label>', $args['desc'] );
 			$html .= '</fieldset>';
@@ -586,11 +588,11 @@ if ( ! class_exists( 'WPDFV_Admin_Settings_API' ) ) :
 
 			echo '<div style="max-width: ' . $size . ';">';
 
-			$editor_settings = array(
+			$editor_settings = [
 				'teeny'         => true,
 				'textarea_name' => $args['section'] . '[' . $args['id'] . ']',
 				'textarea_rows' => 10,
-			);
+			];
 			if ( isset( $args['options'] ) && is_array( $args['options'] ) ) {
 				$editor_settings = array_merge( $editor_settings, $args['options'] );
 			}
