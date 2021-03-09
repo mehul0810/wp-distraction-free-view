@@ -48,6 +48,7 @@ final class Plugin {
 		// Load Admin Files.
 		new Admin\Actions();
 		new Admin\Filters();
+		new Admin\Settings();
 
 		// Load Frontend Files.
 		new Includes\Actions();
