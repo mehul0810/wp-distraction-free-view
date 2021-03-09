@@ -24,6 +24,29 @@ class Actions {
 	 * @return void
 	 */
 	public function __construct() {
+		add_action( 'admin_enqueue_scripts', [ $this, 'register_admin_assets' ] );
+	}
 
+	/**
+	 * Register Admin Assets.
+	 *
+	 * @since  1.0.0
+	 * @access public
+	 *
+	 * @return void
+	 */
+	public function register_admin_assets() {
+		// Add Color Picker support.
+		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_script( 'wp-color-picker' );
+
+		// Load admin settings JS.
+		wp_enqueue_script(
+			'wpdfv-settings',
+			WPDFV_PLUGIN_URL . 'assets/js/settings.js',
+			[ 'jquery' ],
+			WPDFV_VERSION,
+			true
+		);
 	}
 }
