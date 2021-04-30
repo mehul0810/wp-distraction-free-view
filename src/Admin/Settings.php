@@ -19,23 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class Settings extends SettingsApi {
-
-	/**
-	 * Admin Settings API.
-	 *
-	 * @since  1.0.0
-	 * @access public
-	 */
-	public $settings_api = [];
-
-	/**
-	 * List of Tabs.
-	 *
-	 * @since  1.0.0
-	 * @access public
-	 */
-	public $tabs = [];
-
 	/**
 	 * Main constructor.
 	 *
@@ -45,19 +28,41 @@ class Settings extends SettingsApi {
 	public function __construct() {
 		parent::__construct();
 
-		$this->prefix = 'wpdfv_';
-
-		$this->tabs = [
-			'general' => __( 'General', 'wpdfv' ),
+		$args = [
+			'public'   => true,
+			'_builtin' => true,
 		];
 
-		$this->add_tabs();
-		$this->add_fields();
+		$this->prefix = 'wpdfv';
+		$this->fields = [
+			[
+				'type'    => 'radio_inline',
+				'label'   => esc_html__( 'Where to display?', 'wpdfv' ),
+				'name'    => 'where_to_display',
+				'options' => get_post_types( $args, 'names', 'and' ),
+				'default' => 'after_content',
+			],
+			[
+				'type'    => 'radio_inline',
+				'label'   => esc_html__( 'Display Location', 'wpdfv' ),
+				'name'    => 'display_location',
+				'options' => [
+					'before_content' => esc_html__( 'Before Content', 'wpdfv' ),
+					'after_content'  => esc_html__( 'After Content', 'wpdfv' ),
+				],
+				'default' => 'after_content',
+			],
+			[
+				'type'    => 'text',
+				'label'   => esc_html__( 'Read More Button Text', 'wpdfv' ),
+				'name'    => 'read_more_btn_text',
+				'default' => esc_html__( 'Read More', 'wpdfv' ),
+			],
+		];
 
 		// Admin Menu.
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ], 9 );
 		add_action( 'in_admin_header', [ $this, 'render_settings_page_header' ] );
-
 	}
 
 	/**
@@ -87,6 +92,12 @@ class Settings extends SettingsApi {
 	 * @return void
 	 */
 	public function render_settings_page_header() {
+		$screen = get_current_screen();
+
+		// Bailout, if screen id doesn't match.
+		if ( 'settings_page_wpdfv_settings' !== $screen->id ) {
+			return;
+		}
 		?>
 		<div class="wpdfv-dashboard-header">
 			<div class="wpdfv-dashboard-header-title">
