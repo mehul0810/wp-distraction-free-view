@@ -48,5 +48,7 @@ class Actions {
 			WPDFV_VERSION,
 			true
 		);
+
+		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv-admin.css' );
 	}
 }
