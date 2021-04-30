@@ -18,7 +18,7 @@ const config = {
 
 	entry: {
 		wpdfv: [ './assets/src/css/frontend/wpdfv.scss', './assets/src/js/frontend/wpdfv.js' ],
-		'wpdfv-admin': [ './assets/src/css/admin/wpdfv-admin.scss', './assets/src/js/admin/wpdfv-admin.js' ],
+		'wpdfv-admin': [ './assets/src/css/admin/main.scss', './assets/src/js/admin/wpdfv-admin.js' ],
 	},
 	output: {
 		path: path.join( __dirname, './assets/dist/' ),
