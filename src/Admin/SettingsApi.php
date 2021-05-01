@@ -13,7 +13,7 @@ namespace WPDFV\Admin;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	wp_die( 'Cheating Huh?' );
 }
 
 /**
@@ -65,7 +65,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 * @return string
 		 */
 		public function get_active_tab() {
-			return ! empty( $_GET['tab'] ) ? $_GET['tab'] : '';
+			return ! empty( $_GET['tab'] ) ? wp_unslash( $_GET['tab'] ) : '';
 		}
 
 		/**
@@ -79,14 +79,18 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		public function settings_page() {
 			$active_tab = $this->get_active_tab();
 			?>
-			<div class="wrap">
-				<?php
-				if ( 'recommended_plugins' === $active_tab ) {
+			<div class="wrap wpdfv-form-field-group-wrap">
+				<div class="wpdfv-form-field-group-content">
+					<?php
+					if ( 'recommended_plugins' === $active_tab ) {
 
-				} else {
-					$this->render_settings_form();
-				}
-				?>
+					} else {
+						$this->render_settings_form();
+					}
+					?>
+				</div>
+				<div class="wpdfv-form-field-group-sidebar">
+				</div>
 			</div>
 			<?php
 		}
@@ -126,8 +130,15 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 * @return mixed
 		 */
 		public function render_form_field( $args ) {
-			$html = '';
-			$name = $args['name'];
+			$html        = '';
+			$name        = ! empty( $args['name'] ) ? $args['name'] : '';
+			$label       = ! empty( $args['label'] ) ? $args['label'] : '';
+			$description = ! empty( $args['description'] ) ? $args['description'] : '';
+
+			$html .= sprintf(
+				'<div class="wpdfv-form-field-group-title">%1$s</div>',
+				$label
+			);
 
 			switch ( $args['type'] ) {
 				case 'text':
@@ -148,7 +159,23 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 						);
 					}
 					break;
+				case 'checkbox_inline':
+					foreach ( $args['options'] as $key => $value ) {
+						$html .= sprintf(
+							'<input type="checkbox" name="%1$s[%2$s]" value="%3$s"/> %4$s',
+							"{$this->prefix}_settings",
+							$name,
+							$key,
+							$value
+						);
+					}
+					break;
 			}
+
+			$html .= sprintf(
+				'<p class="wpdfv-form-field-group-description">%1$s</p>',
+				$description
+			);
 
 			return $html;
 		}
