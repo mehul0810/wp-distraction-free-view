@@ -85,6 +85,11 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 					if ( 'recommended_plugins' === $active_tab ) {
 
 					} else {
+						?>
+						<h2 class="wpdfv-form-field-group-content-title">
+							<?php esc_html_e( 'Settings', 'wpdfv' ); ?>
+						</h2>
+						<?php
 						$this->render_settings_form();
 					}
 					?>
@@ -115,6 +120,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 					<?php
 				}
 				?>
+				<input type="button" class="button button-primary" value="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"/>
 			</form>
 			<?php
 		}
@@ -134,6 +140,8 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			$name        = ! empty( $args['name'] ) ? $args['name'] : '';
 			$label       = ! empty( $args['label'] ) ? $args['label'] : '';
 			$description = ! empty( $args['description'] ) ? $args['description'] : '';
+			$default     = ! empty( $args['default'] ) ? $args['default'] : '';
+			$settings    = get_option( "{$this->prefix}_settings" );
 
 			$html .= sprintf(
 				'<div class="wpdfv-form-field-group-title">%1$s</div>',
@@ -143,30 +151,39 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			switch ( $args['type'] ) {
 				case 'text':
 					$html .= sprintf(
-						'<input type="text" name="%1$s[%2$s]"/>',
+						'<input type="text" name="%1$s[%2$s]" value="%3$s"/>',
 						"{$this->prefix}_settings",
-						"{$name}"
+						$name,
+						! empty( $settings[ $name ] ) ? $settings[ $name ] : $default
 					);
 					break;
 				case 'radio_inline':
 					foreach ( $args['options'] as $key => $value ) {
+						$field_value = ! empty( $settings[ $name ] ) ? $settings[ $name ] : $default;
+						$checked     = checked( $field_value, $key, false );
+
 						$html .= sprintf(
-							'<input type="radio" name="%1$s[%2$s]" value="%3$s"/> %4$s',
+							'<div class="wpdfv-form-field-group-item"><input type="radio" name="%1$s[%2$s]" value="%3$s" %4$s/>%5$s</div>',
 							"{$this->prefix}_settings",
 							$name,
 							$key,
+							$checked,
 							$value
 						);
 					}
 					break;
 				case 'checkbox_inline':
-					foreach ( $args['options'] as $key => $value ) {
+					foreach ( $args['options'] as $option ) {
+						$field_value = ! empty( $settings[ $name ] ) ? $settings[ $name ] : $default;
+						$checked     = checked( in_array( $option->name, $field_value, true ), true, false );
+
 						$html .= sprintf(
-							'<input type="checkbox" name="%1$s[%2$s]" value="%3$s"/> %4$s',
+							'<div class="wpdfv-form-field-group-item"><input type="checkbox" name="%1$s[%2$s]" value="%3$s" %4$s/>%5$s</div>',
 							"{$this->prefix}_settings",
 							$name,
-							$key,
-							$value
+							$option->name,
+							$checked,
+							$option->label
 						);
 					}
 					break;

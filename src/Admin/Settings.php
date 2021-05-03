@@ -36,17 +36,21 @@ class Settings extends SettingsApi {
 		$this->prefix = 'wpdfv';
 		$this->fields = [
 			[
-				'type'    => 'radio_inline',
+				'type'    => 'checkbox_inline',
 				'label'   => esc_html__( 'Where to display?', 'wpdfv' ),
 				'name'    => 'where_to_display',
-				'options' => get_post_types( $args, 'names', 'and' ),
-				'default' => 'after_content',
+				'options' => get_post_types( $args, 'objects', 'and' ),
+				'default' => [
+					'post',
+					'page',
+				],
 			],
 			[
 				'type'    => 'radio_inline',
 				'label'   => esc_html__( 'Display Location', 'wpdfv' ),
 				'name'    => 'display_location',
 				'options' => [
+					'custom'         => esc_html__( 'Custom', 'wpdfv' ),
 					'before_content' => esc_html__( 'Before Content', 'wpdfv' ),
 					'after_content'  => esc_html__( 'After Content', 'wpdfv' ),
 				],
@@ -54,8 +58,8 @@ class Settings extends SettingsApi {
 			],
 			[
 				'type'    => 'text',
-				'label'   => esc_html__( 'Read More Button Text', 'wpdfv' ),
-				'name'    => 'read_more_btn_text',
+				'label'   => esc_html__( 'Button Text', 'wpdfv' ),
+				'name'    => 'button_text',
 				'default' => esc_html__( 'Read More', 'wpdfv' ),
 			],
 		];
