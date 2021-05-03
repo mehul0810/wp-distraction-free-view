@@ -83,7 +83,12 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 				<div class="wpdfv-form-field-group-content">
 					<?php
 					if ( 'recommended_plugins' === $active_tab ) {
-
+						?>
+						<h2 class="wpdfv-form-field-group-content-title">
+							<?php esc_html_e( 'Recommended Plugins', 'wpdfv' ); ?>
+						</h2>
+						<?php
+						$this->render_recommended_plugins();
 					} else {
 						?>
 						<h2 class="wpdfv-form-field-group-content-title">
@@ -195,6 +200,48 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			);
 
 			return $html;
+		}
+
+		/**
+		 * Render Recommended Plugins.
+		 *
+		 * @since  1.6.0
+		 * @access public
+		 *
+		 * @return void
+		 */
+		public function render_recommended_plugins() {
+			$plugins = [
+				[
+					'label'       => esc_html__( 'Perform', 'wpdfv' ),
+					'description' => esc_html__( 'This plugin helps you optimize your WordPress site in addition to caching.', 'wpdfv' ),
+					'url'         => esc_url( 'https://wordpress.org/plugins/perform' ),
+				],
+				[
+					'label'       => esc_html__( 'Klaive - Integrates Klaviyo + GiveWP', 'wpdfv' ),
+					'description' => esc_html__( 'This plugin helps you grow your email list on Klaviyo using GiveWP donations plugin.', 'wpdfv' ),
+					'url'         => esc_url( 'https://wordpress.org/plugins/klaive' ),
+				],
+			];
+			?>
+			<div class="wpdfv-plugin-card-wrap">
+				<?php
+				foreach ( $plugins as $plugin ) {
+					?>
+					<div class="wpdfv-plugin-card">
+						<h3><?php print_r( $plugin['label'] ); ?></h3>
+						<p>
+							<?php print_r( $plugin['description'] ); ?>
+						</p>
+						<a class="button button-secondary" target="_blank" href="<?php print_r( $plugin['url'] ); ?>">
+							<?php esc_html_e( 'Know more', 'wpdfv' ); ?>
+						</a>
+					</div>
+					<?php
+				}
+				?>
+			</div>
+			<?php
 		}
 	}
 
