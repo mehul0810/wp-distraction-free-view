@@ -54,7 +54,9 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 *
 		 * @since  1.0.0
 		 */
-		public function __construct() {}
+		public function __construct() {
+			add_action( 'wp_ajax_wpdfv_save_admin_settings', [ $this, 'save_settings' ] );
+		}
 
 		/**
 		 * Get Active Tab.
@@ -115,7 +117,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 */
 		public function render_settings_form() {
 			?>
-			<form method="POST" action="options.php">
+			<form id="wpdfv-admin-settings-form" method="POST" action="options.php">
 				<?php
 				foreach ( $this->fields as $field ) {
 					?>
@@ -125,7 +127,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 					<?php
 				}
 				?>
-				<input type="button" class="button button-primary" value="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"/>
+				<input id="wpdfv-save-settings" type="button" class="button button-primary" value="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"/>
 			</form>
 			<?php
 		}
@@ -147,6 +149,9 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			$description = ! empty( $args['description'] ) ? $args['description'] : '';
 			$default     = ! empty( $args['default'] ) ? $args['default'] : '';
 			$settings    = get_option( "{$this->prefix}_settings" );
+			echo '<pre>';
+			print_r( $settings );
+			echo '</pre>';
 
 			$html .= sprintf(
 				'<div class="wpdfv-form-field-group-title">%1$s</div>',
@@ -183,7 +188,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 						$checked     = checked( in_array( $option->name, $field_value, true ), true, false );
 
 						$html .= sprintf(
-							'<div class="wpdfv-form-field-group-item"><input type="checkbox" name="%1$s[%2$s]" value="%3$s" %4$s/>%5$s</div>',
+							'<div class="wpdfv-form-field-group-item"><input type="checkbox" name="%1$s[%2$s][]" value="%3$s" %4$s/>%5$s</div>',
 							"{$this->prefix}_settings",
 							$name,
 							$option->name,
@@ -242,6 +247,29 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 				?>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Save Settings
+		 *
+		 * @since  1.6.0
+		 * @access public
+		 *
+		 * @return void
+		 */
+		public function save_settings() {
+			$key  = "{$this->prefix}_settings";
+			$data = $_POST[ $key ];
+
+			// Save settings to options table.
+			$is_updated = update_option( $key, $data );
+
+			// Return response based on the need.
+			if ( $is_updated ) {
+				wp_send_json_success();
+			} else {
+				wp_send_json_error();
+			}
 		}
 	}
 
