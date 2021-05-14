@@ -122,4 +122,18 @@ class Helpers {
 	public static function get_default_button_text() {
 		return esc_html__( 'Read Mode', 'wpdfv' );
 	}
+
+	/**
+	 * Where to display?
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public static function where_to_display() {
+		$settings = self::get_settings();
+
+		return ! empty( $settings['where_to_display'] ) ? $settings['where_to_display'] : [ 'post', 'page' ];
+	}
 }
