@@ -12,6 +12,7 @@
 namespace WPDFV\Admin;
 
 use WPDFV\Admin\SettingsApi as SettingsApi;
+use WPDFV\Includes\Helpers;
 
 // Bail out, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,7 +61,7 @@ class Settings extends SettingsApi {
 				'type'    => 'text',
 				'label'   => esc_html__( 'Button Text', 'wpdfv' ),
 				'name'    => 'button_text',
-				'default' => esc_html__( 'Read More', 'wpdfv' ),
+				'default' => Helpers::get_default_button_text(),
 			],
 		];
 
