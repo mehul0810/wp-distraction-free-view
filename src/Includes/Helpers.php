@@ -107,4 +107,16 @@ class Helpers {
 	public static function get_settings() {
 		return get_option( 'wpdfv_settings', [] );
 	}
+
+	/**
+	 * Get default button text.
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return string
+	 */
+	public static function get_default_button_text() {
+		return esc_html__( 'Read Mode', 'wpdfv' );
+	}
 }
