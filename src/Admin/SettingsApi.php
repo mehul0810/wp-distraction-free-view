@@ -127,7 +127,15 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 					<?php
 				}
 				?>
-				<input id="wpdfv-save-settings" type="button" class="button button-primary" value="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"/>
+				<input
+					id="wpdfv-save-settings"
+					type="button"
+					class="button button-primary"
+					value="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"
+					data-processing-text="<?php esc_html_e( 'Saving...', 'wpdfv' ); ?>"
+					data-default-text="<?php esc_html_e( 'Save', 'wpdfv' ); ?>"
+					data-saved-text="<?php esc_html_e( 'Saved!', 'wpdfv' ); ?>"
+				/>
 			</form>
 			<?php
 		}
