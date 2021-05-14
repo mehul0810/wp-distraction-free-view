@@ -40,15 +40,7 @@ class Actions {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
 
-		// Load admin settings JS.
-		wp_enqueue_script(
-			'wpdfv-settings',
-			WPDFV_PLUGIN_URL . 'assets/js/settings.js',
-			[ 'jquery' ],
-			WPDFV_VERSION,
-			true
-		);
-
 		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv-admin.css' );
+		wp_enqueue_script( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js' );
 	}
 }
