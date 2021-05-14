@@ -95,4 +95,16 @@ class Helpers {
 	public static function display_read_mode_btn_at() {
 		return self::get_option( 'display_read_mode_at', 'general', 'after_content' );
 	}
+
+	/**
+	 * Get Settings.
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public static function get_settings() {
+		return get_option( 'wpdfv_settings', [] );
+	}
 }
