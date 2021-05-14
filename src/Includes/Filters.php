@@ -41,7 +41,7 @@ class Filters {
 		global $post;
 
 		$new_content    = '';
-		$display_btn_at = Helpers::display_read_mode_btn_at();
+		$display_btn_at = Helpers::display_location();
 		$button_html    = Helpers::display_read_mode_button( $post->ID );
 
 		// Bailout, if the display button at setting is disabled.

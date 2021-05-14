@@ -88,13 +88,15 @@ class Helpers {
 	/**
 	 * This helper function is used to display read mode button at.
 	 *
-	 * @since  1.4.2
+	 * @since  1.6.0
 	 * @access public
 	 *
 	 * @return string
 	 */
-	public static function display_read_mode_btn_at() {
-		return self::get_option( 'display_read_mode_at', 'general', 'after_content' );
+	public static function display_location() {
+		$settings = self::get_settings();
+
+		return ! empty( $settings['display_location'] ) ? $settings['display_location'] : 'after_content';
 	}
 
 	/**
