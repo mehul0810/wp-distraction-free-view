@@ -149,9 +149,6 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			$description = ! empty( $args['description'] ) ? $args['description'] : '';
 			$default     = ! empty( $args['default'] ) ? $args['default'] : '';
 			$settings    = get_option( "{$this->prefix}_settings" );
-			echo '<pre>';
-			print_r( $settings );
-			echo '</pre>';
 
 			$html .= sprintf(
 				'<div class="wpdfv-form-field-group-title">%1$s</div>',
