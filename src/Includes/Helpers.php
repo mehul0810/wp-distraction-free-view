@@ -55,9 +55,10 @@ class Helpers {
 	 * @return string
 	 */
 	public static function get_button_text() {
-		$default_text = __( 'Read Mode', 'wpdfv' );
+		$default_text = self::get_default_button_text();
+		$settings     = self::get_settings();
 
-		return self::get_option( 'read_mode_btn_text', 'general', $default_text );
+		return ! empty( $settings['button_text'] ) ? $settings['button_text'] : $default_text;
 	}
 
 	/**
