@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin version in SemVer format.
 if ( ! defined( 'WPDFV_VERSION' ) ) {
-	define( 'WPDFV_VERSION', '1.5.0' );
+	define( 'WPDFV_VERSION', '1.6.0' );
 }
 
 // Define plugin root File.

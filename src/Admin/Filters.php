@@ -40,7 +40,7 @@ class Filters {
 		$new_actions = [
 			'settings' => sprintf(
 				'<a href="%1$s">%2$s</a>',
-				admin_url( 'options-general.php?page=wp_distraction_free_view' ),
+				admin_url( 'options-general.php?page=wpdfv_settings' ),
 				esc_html__( 'Settings', 'wpdfv' )
 			),
 			'support'  => sprintf(

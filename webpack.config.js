@@ -16,34 +16,28 @@ const config = {
 	mode,
 	entry: {
 		wpdfv: [ './assets/src/css/frontend/wpdfv.scss', './assets/src/js/frontend/wpdfv.js' ],
-		'wpdfv-admin': [ './assets/src/css/admin/wpdfv-admin.scss', './assets/src/js/admin/wpdfv-admin.js' ],
+		'wpdfv-admin': [ './assets/src/css/admin/main.scss', './assets/src/js/admin/wpdfv-admin.js' ],
 	},
 	output: {
 		path: path.join( __dirname, './assets/dist/' ),
 		filename: 'js/[name].js',
 	},
-	externals: {
-		$: 'jQuery',
-		jquery: 'jQuery',
-		lodash: 'lodash',
-	},
 	module: {
 		rules: [
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				loader: 'babel-loader',
+			},
+
 			// Create RTL styles.
 			{
 				test: /\.css$/,
 				use: [
-					MiniCSSExtractPlugin.loader,
-					{
-						loader: 'style-loader',
-						options: {
-							sourceMap: true,
-						},
-					},
+					'style-loader',
+					'css-loader',
 				],
 			},
-
-			// SASS to CSS.
 			{
 				test: /\.scss$/,
 				use: [
@@ -62,22 +56,6 @@ const config = {
 						},
 					} ],
 			},
-
-			// Font files.
-			{
-				test: /\.(ttf|otf|eot|woff(2)?)(\?[a-z0-9]+)?$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: 'fonts/[name].[ext]',
-							publicPath: '../',
-						},
-					},
-				],
-			},
-
-			// Image files.
 			{
 				test: /\.(png|jpe?g|gif|svg)$/,
 				use: [

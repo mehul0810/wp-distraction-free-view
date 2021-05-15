@@ -40,8 +40,16 @@ class Filters {
 	public function filter_content( $content ) {
 		global $post;
 
+		// Get data about where to display.
+		$where_to_display = Helpers::where_to_display();
+
+		// Bailout, if not to show on specific post type.
+		if ( ! in_array( $post->post_type, $where_to_display, true ) ) {
+			return $content;
+		}
+
 		$new_content    = '';
-		$display_btn_at = Helpers::display_read_mode_btn_at();
+		$display_btn_at = Helpers::display_location();
 		$button_html    = Helpers::display_read_mode_button( $post->ID );
 
 		// Bailout, if the display button at setting is disabled.

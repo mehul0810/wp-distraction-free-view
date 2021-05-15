@@ -55,9 +55,10 @@ class Helpers {
 	 * @return string
 	 */
 	public static function get_button_text() {
-		$default_text = __( 'Read Mode', 'wpdfv' );
+		$default_text = self::get_default_button_text();
+		$settings     = self::get_settings();
 
-		return self::get_option( 'read_mode_btn_text', 'general', $default_text );
+		return ! empty( $settings['button_text'] ) ? $settings['button_text'] : $default_text;
 	}
 
 	/**
@@ -87,12 +88,52 @@ class Helpers {
 	/**
 	 * This helper function is used to display read mode button at.
 	 *
-	 * @since  1.4.2
+	 * @since  1.6.0
 	 * @access public
 	 *
 	 * @return string
 	 */
-	public static function display_read_mode_btn_at() {
-		return self::get_option( 'display_read_mode_at', 'general', 'after_content' );
+	public static function display_location() {
+		$settings = self::get_settings();
+
+		return ! empty( $settings['display_location'] ) ? $settings['display_location'] : 'after_content';
+	}
+
+	/**
+	 * Get Settings.
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public static function get_settings() {
+		return get_option( 'wpdfv_settings', [] );
+	}
+
+	/**
+	 * Get default button text.
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return string
+	 */
+	public static function get_default_button_text() {
+		return esc_html__( 'Read Mode', 'wpdfv' );
+	}
+
+	/**
+	 * Where to display?
+	 *
+	 * @since  1.6.0
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public static function where_to_display() {
+		$settings = self::get_settings();
+
+		return ! empty( $settings['where_to_display'] ) ? $settings['where_to_display'] : [ 'post', 'page' ];
 	}
 }
