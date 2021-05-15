@@ -83,6 +83,7 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 = 1.5.0: 10th March 2021 =
 - Improvement: Refactor code to use PHP namespaces
 - Fix: Resolve issues related to assets not loading
+- Feature: Add settings and support links on plugins list
 
 = 1.4.5: 26th November 2019 =
 - Ensure that "Read Mode" button text can be changed from settings
