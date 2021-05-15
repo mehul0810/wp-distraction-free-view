@@ -1,10 +1,11 @@
 === WP Distraction Free View ===
 Contributors: mehul0810
-Tags: wp couch mode, distraction free,  zen view, distraction free reading, fullscreen, fullscreen mode,
-Donate link: https://mehulgohil.com/donate
+Tags: wp couch mode, distraction free, zen view, distraction free reading, fullscreen, fullscreen mode,
+Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 4.8
 Tested up to: 5.7
-Stable tag: 1.5.0
+Requires PHP: 5.6
+Stable tag: 1.6.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -75,7 +76,11 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 
 == Changelog ==
 
-= 1.5.0: 10th March 2020 =
+= 1.6.0: 16th May 2021 =
+- Refactor: Improved UX for the admin settings UI
+- Added: Support for display on post types
+
+= 1.5.0: 10th March 2021 =
 - Improvement: Refactor code to use PHP namespaces
 - Fix: Resolve issues related to assets not loading
 
