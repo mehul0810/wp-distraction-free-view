@@ -51,7 +51,7 @@ class Settings extends SettingsApi {
 				'label'   => esc_html__( 'Display Location', 'wpdfv' ),
 				'name'    => 'display_location',
 				'options' => [
-					'disabled'       => esc_html__( 'Disabled', 'wpdfv' ),
+					'disable'        => esc_html__( 'Disable', 'wpdfv' ),
 					'before_content' => esc_html__( 'Before Content', 'wpdfv' ),
 					'after_content'  => esc_html__( 'After Content', 'wpdfv' ),
 				],
