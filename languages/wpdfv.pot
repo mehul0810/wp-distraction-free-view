@@ -15,7 +15,7 @@ msgstr ""
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/Admin/Filters.php:44
+#: src/Admin/Filters.php:44, src/Admin/Settings.php:133, src/Admin/SettingsApi.php:97
 msgid "Settings"
 msgstr ""
 
@@ -23,48 +23,72 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
+#: src/Admin/Settings.php:41
+msgid "Where to display?"
+msgstr ""
+
 #: src/Admin/Settings.php:51
-msgid "General"
+msgid "Display Location"
 msgstr ""
 
-#: src/Admin/Settings.php:72, src/Admin/Settings.php:73
-msgid "Distraction Free Mode"
-msgstr ""
-
-#: src/Admin/Settings.php:111
-msgid "Display Read Mode"
-msgstr ""
-
-#: src/Admin/Settings.php:112
-msgid "Enabling this will display \"Read Mode\" link at your preferred location."
-msgstr ""
-
-#: src/Admin/Settings.php:114
+#: src/Admin/Settings.php:54
 msgid "Disable"
 msgstr ""
 
-#: src/Admin/Settings.php:115
+#: src/Admin/Settings.php:55
 msgid "Before Content"
 msgstr ""
 
-#: src/Admin/Settings.php:116
+#: src/Admin/Settings.php:56
 msgid "After Content"
 msgstr ""
 
-#: src/Admin/Settings.php:127
-msgid "Read Mode Button Text"
+#: src/Admin/Settings.php:62
+msgid "Button Text"
 msgstr ""
 
-#: src/Admin/Settings.php:128
-msgid "This setting will help you change the default text of the \"Read Mode\" button."
+#: src/Admin/Settings.php:83
+msgid "WP Distraction Free View"
 msgstr ""
 
-#: src/Admin/Settings.php:129, src/Includes/Helpers.php:58
-msgid "Read Mode"
+#: src/Admin/Settings.php:84
+msgid "Distraction Free Mode"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:726
-msgid "Settings - WP Distraction Free View"
+#: src/Admin/Settings.php:138, src/Admin/SettingsApi.php:90
+msgid "Recommended Plugins"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:134, src/Admin/SettingsApi.php:136
+msgid "Save"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:135
+msgid "Saving..."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:137
+msgid "Saved!"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:226
+msgid "Perform"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:227
+msgid "This plugin helps you optimize your WordPress site in addition to caching."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:231
+msgid "Klaive - Integrates Klaviyo + GiveWP"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:232
+msgid "This plugin helps you grow your email list on Klaviyo using GiveWP donations plugin."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:247
+msgid "Know more"
 msgstr ""
 
 #: src/Includes/Actions.php:64
@@ -77,4 +101,8 @@ msgstr ""
 
 #: src/Includes/Actions.php:70
 msgid "Close"
+msgstr ""
+
+#: src/Includes/Helpers.php:123
+msgid "Read Mode"
 msgstr ""
