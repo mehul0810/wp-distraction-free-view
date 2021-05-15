@@ -7,7 +7,6 @@ const MiniCSSExtractPlugin = require( 'mini-css-extract-plugin' );
 const ImageminPlugin = require( 'imagemin-webpack-plugin' ).default;
 const CleanWebpackPlugin = require( 'clean-webpack-plugin' );
 const WebpackRTLPlugin = require( 'webpack-rtl-plugin' );
-const UglifyJsPlugin = require( 'uglifyjs-webpack-plugin' );
 const wpPot = require( 'wp-pot' );
 
 const inProduction = ( 'production' === process.env.NODE_ENV );
@@ -15,7 +14,6 @@ const mode = inProduction ? 'production' : 'development';
 
 const config = {
 	mode,
-
 	entry: {
 		wpdfv: [ './assets/src/css/frontend/wpdfv.scss', './assets/src/js/frontend/wpdfv.js' ],
 		'wpdfv-admin': [ './assets/src/css/admin/main.scss', './assets/src/js/admin/wpdfv-admin.js' ],
@@ -24,40 +22,22 @@ const config = {
 		path: path.join( __dirname, './assets/dist/' ),
 		filename: 'js/[name].js',
 	},
-
-	// Ensure modules like magnific know jQuery is external (loaded via WP).
-	externals: {
-		$: 'jQuery',
-		jquery: 'jQuery',
-		lodash: 'lodash',
-	},
-	devtool: ! inProduction ? 'source-map' : '',
-	optimization: {
-		minimizer: [
-			new UglifyJsPlugin( {
-				test: /\.js(\?.*)?$/i,
-				sourceMap: true,
-			} ),
-		],
-	},
 	module: {
 		rules: [
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				loader: 'babel-loader',
+			},
 
 			// Create RTL styles.
 			{
 				test: /\.css$/,
 				use: [
-					MiniCSSExtractPlugin.loader,
-					{
-						loader: 'style-loader',
-						options: {
-							sourceMap: true,
-						},
-					},
+					'style-loader',
+					'css-loader',
 				],
 			},
-
-			// SASS to CSS.
 			{
 				test: /\.scss$/,
 				use: [
@@ -76,22 +56,6 @@ const config = {
 						},
 					} ],
 			},
-
-			// Font files.
-			{
-				test: /\.(ttf|otf|eot|woff(2)?)(\?[a-z0-9]+)?$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: 'fonts/[name].[ext]',
-							publicPath: '../',
-						},
-					},
-				],
-			},
-
-			// Image files.
 			{
 				test: /\.(png|jpe?g|gif|svg)$/,
 				use: [
