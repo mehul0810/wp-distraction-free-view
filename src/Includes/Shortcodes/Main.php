@@ -81,23 +81,43 @@ class Main {
 	 * @return void
 	 */
 	public function display_post_details_callback() {
-		$post_id      = $_POST['id'];
+		// Verify nonce for security.
+		check_ajax_referer( 'wpdfv_nonce', 'nonce' );
+
+		// Sanitize input.
+		$post_id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+
+		// Validate post ID.
+		if ( ! $post_id ) {
+			wp_send_json_error( 'Invalid post ID' );
+		}
+
+		// Get post and check if it exists.
 		$post_details = get_post( $post_id );
+		if ( ! $post_details ) {
+			wp_send_json_error( 'Post not found' );
+		}
+
+		// Check capabilities - verify post is public or user can read it.
+		if ( 'publish' !== $post_details->post_status && ! current_user_can( 'read_post', $post_id ) ) {
+			wp_send_json_error( 'Access denied' );
+		}
 
 		ob_start();
 		?>
 		<div class="wpdfv-popup-wrap">
 			<div class="wpdfv-container">
 				<h1 class="title">
-					<?php echo $post_details->post_title; ?>
+					<?php echo esc_html( $post_details->post_title ); ?>
 				</h1>
 				<div class="description">
-					<?php echo do_shortcode( $post_details->post_content ); ?>
+					<?php echo wp_kses_post( apply_filters( 'the_content', $post_details->post_content ) ); ?>
 				</div>
 			</div>
 		</div>
 		<?php
-		ob_get_contents();
+		$html = ob_get_clean();
+		echo $html;
 		wp_die();
 	}
 }

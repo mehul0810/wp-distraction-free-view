@@ -41,6 +41,13 @@ class Actions {
 		wp_enqueue_script( 'wp-color-picker' );
 
 		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv-admin.css' );
-		wp_enqueue_script( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js' );
+		wp_enqueue_script( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js', [ 'jquery' ], WPDFV_VERSION, true );
+
+		// Localize script with nonce for AJAX security.
+		$wpdfv_admin_args = [
+			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'wpdfv_admin_nonce' ),
+		];
+		wp_localize_script( 'wpdfv-admin', 'wpdfvAdmin', $wpdfv_admin_args );
 	}
 }
