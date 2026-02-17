@@ -67,7 +67,8 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 * @return string
 		 */
 		public function get_active_tab() {
-			return ! empty( $_GET['tab'] ) ? wp_unslash( $_GET['tab'] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is only used for display logic, not data modification.
+			return ! empty( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
 		}
 
 		/**
@@ -263,8 +264,17 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 * @return void
 		 */
 		public function save_settings() {
-			$key  = "{$this->prefix}_settings";
-			$data = $_POST[ $key ];
+			// Verify nonce for security.
+			check_ajax_referer( 'wpdfv_admin_nonce', 'nonce' );
+
+			// Check user capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( 'Insufficient permissions' );
+			}
+
+			$key = "{$this->prefix}_settings";
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitization is performed by sanitize_settings_data().
+			$data = isset( $_POST[ $key ] ) ? $this->sanitize_settings_data( wp_unslash( $_POST[ $key ] ) ) : [];
 
 			// Save settings to options table.
 			$is_updated = update_option( $key, $data );
@@ -275,6 +285,34 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 			} else {
 				wp_send_json_error();
 			}
+		}
+
+		/**
+		 * Sanitize Settings Data
+		 *
+		 * @param array $data Settings data to sanitize.
+		 *
+		 * @since  1.6.0
+		 * @access private
+		 *
+		 * @return array
+		 */
+		private function sanitize_settings_data( $data ) {
+			$sanitized = [];
+
+			foreach ( $data as $key => $value ) {
+				$key = sanitize_key( $key );
+
+				if ( is_array( $value ) ) {
+					// Sanitize arrays (like checkbox values).
+					$sanitized[ $key ] = array_map( 'sanitize_text_field', $value );
+				} else {
+					// Sanitize text fields.
+					$sanitized[ $key ] = sanitize_text_field( $value );
+				}
+			}
+
+			return $sanitized;
 		}
 	}
 

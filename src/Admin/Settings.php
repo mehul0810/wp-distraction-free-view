@@ -124,8 +124,9 @@ class Settings extends SettingsApi {
 	 * @return void
 	 */
 	public function render_header_navigation() {
-		$screen      = get_current_screen();
-		$current_tab = ! empty( $_GET['tab'] ) ? $_GET['tab'] : '';
+		$screen = get_current_screen();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is only used for display logic, not data modification.
+		$current_tab = ! empty( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
 		$tabs        = apply_filters(
 			'wpdfv_settings_navigation_tabs',
 			[

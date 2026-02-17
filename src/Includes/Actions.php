@@ -41,6 +41,7 @@ class Actions {
 
 		$wpdfv_args = [
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'wpdfv_nonce' ),
 		];
 		wp_localize_script( 'wpdfv-core', 'wpdfv', $wpdfv_args );
 
@@ -61,13 +62,13 @@ class Actions {
 			<div class="wpdfv-fullscreen-overlay-header">
 				<div class="wpdfv-actions">
 					<a class="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
+						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
 					</a>
 					<a class="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
+						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
 					</a>
 					<a class="wpdfv-overlay-close wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url_raw( WPDFV_PLUGIN_URL . 'assets/dist/images/close.svg' ); ?>" alt="<?php esc_html_e( 'Close', 'wpdfv' ); ?>" />
+						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/close.svg' ); ?>" alt="<?php esc_html_e( 'Close', 'wpdfv' ); ?>" />
 					</a>
 				</div>
 			</div>

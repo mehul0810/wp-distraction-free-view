@@ -43,7 +43,6 @@ intermediate
 .idea
 cache
 node_modules
-assets/dist/
 
 # Composer
 vendor
