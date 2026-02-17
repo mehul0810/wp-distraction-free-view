@@ -46,7 +46,7 @@ That's it. You're now ready to start development.
 **Alternative: Using wp-env**
 
 You can also use `@wordpress/env` for a local development environment:
-1. Run `npm -g i @wordpress/env` to install wp-env globally
+1. Run `npm install -g @wordpress/env` to install wp-env globally
 2. Run `wp-env start` in the plugin directory to start a local WordPress instance
 3. The plugin will be automatically activated
 4. Access your site at `http://localhost:8888` (admin: `http://localhost:8888/wp-admin`)

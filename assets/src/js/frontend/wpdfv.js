@@ -51,7 +51,7 @@ const DistractionFreeOverlay = () => {
 			} else if (document.documentElement.mozRequestFullScreen) {
 				document.documentElement.mozRequestFullScreen();
 			} else if (document.documentElement.webkitRequestFullscreen) {
-				document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+				document.documentElement.webkitRequestFullscreen();
 			}
 
 			// Hide close button in fullscreen
@@ -81,14 +81,13 @@ const DistractionFreeOverlay = () => {
 
 	// Handle print
 	const handlePrint = () => {
-		const divElements = document.getElementById('wpdfv-print').innerHTML;
-		const oldPage = document.body.innerHTML;
-
-		document.body.innerHTML = '<html><head><title></title></head><body>' + divElements + '</body>';
-
-		window.print();
-
-		document.body.innerHTML = oldPage;
+		const printWindow = window.open('', '', 'width=800,height=600');
+		if (printWindow) {
+			printWindow.document.write(content);
+			printWindow.document.close();
+			printWindow.print();
+			printWindow.close();
+		}
 	};
 
 	// Set up event listeners after mount

@@ -37,7 +37,13 @@ class Actions {
 	 * @return void
 	 */
 	public function register_assets() {
-		$asset_file = include WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv.asset.php';
+		$asset_file_path = WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv.asset.php';
+		$asset_file      = file_exists( $asset_file_path )
+			? include $asset_file_path
+			: [
+				'dependencies' => [],
+				'version'      => WPDFV_VERSION,
+			];
 
 		wp_enqueue_script(
 			'wpdfv-core',

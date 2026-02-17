@@ -36,7 +36,13 @@ class Actions {
 	 * @return void
 	 */
 	public function register_admin_assets() {
-		$asset_file = include WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv-admin.asset.php';
+		$asset_file_path = WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv-admin.asset.php';
+		$asset_file      = file_exists( $asset_file_path )
+			? include $asset_file_path
+			: [
+				'dependencies' => [],
+				'version'      => WPDFV_VERSION,
+			];
 
 		// Add Color Picker support.
 		wp_enqueue_style( 'wp-color-picker' );
