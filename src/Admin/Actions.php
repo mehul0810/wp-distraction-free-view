@@ -36,12 +36,20 @@ class Actions {
 	 * @return void
 	 */
 	public function register_admin_assets() {
+		$asset_file = include WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv-admin.asset.php';
+
 		// Add Color Picker support.
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
 
-		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv-admin.css' );
-		wp_enqueue_script( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js', [ 'jquery' ], WPDFV_VERSION, true );
+		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/wpdfv-admin.css', '', $asset_file['version'] );
+		wp_enqueue_script(
+			'wpdfv-admin',
+			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv-admin.js',
+			array_merge( [ 'jquery' ], $asset_file['dependencies'] ),
+			$asset_file['version'],
+			true
+		);
 
 		// Localize script with nonce for AJAX security.
 		$wpdfv_admin_args = [

@@ -1,3 +1,8 @@
+/**
+ * WP Distraction Free View - Admin
+ */
+import './../../css/admin/main.scss';
+
 document.addEventListener( 'DOMContentLoaded', () => {
 	const saveBtn = document.getElementById( 'wpdfv-save-settings' );
 	const formElement = document.getElementById( 'wpdfv-admin-settings-form' );

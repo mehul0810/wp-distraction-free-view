@@ -37,15 +37,24 @@ class Actions {
 	 * @return void
 	 */
 	public function register_assets() {
-		wp_enqueue_script( 'wpdfv-core', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv.js', [ 'jquery' ], WPDFV_VERSION, true );
+		$asset_file = include WPDFV_PLUGIN_DIR . 'assets/dist/wpdfv.asset.php';
+
+		wp_enqueue_script(
+			'wpdfv-core',
+			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv.js',
+			$asset_file['dependencies'],
+			$asset_file['version'],
+			true
+		);
 
 		$wpdfv_args = [
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'nonce'   => wp_create_nonce( 'wpdfv_nonce' ),
+			'ajaxurl'   => admin_url( 'admin-ajax.php' ),
+			'nonce'     => wp_create_nonce( 'wpdfv_nonce' ),
+			'pluginUrl' => WPDFV_PLUGIN_URL,
 		];
 		wp_localize_script( 'wpdfv-core', 'wpdfv', $wpdfv_args );
 
-		wp_enqueue_style( 'wpdfv-core', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv.css', '', WPDFV_VERSION );
+		wp_enqueue_style( 'wpdfv-core', WPDFV_PLUGIN_URL . 'assets/dist/wpdfv.css', '', $asset_file['version'] );
 	}
 
 	/**
@@ -57,23 +66,9 @@ class Actions {
 	 * @return mixed
 	 */
 	public function add_overlay_to_footer() {
+		// React component renders its own overlay, we just need the root element
 		?>
-		<div class="wpdfv-fullscreen-overlay-container" style="display:none;">
-			<div class="wpdfv-fullscreen-overlay-header">
-				<div class="wpdfv-actions">
-					<a class="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/print.svg' ); ?>" alt="<?php echo esc_html__( 'Print', 'wpdfv' ); ?>"/>
-					</a>
-					<a class="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/fullscreen.svg' ); ?>" alt="<?php esc_html_e( 'Fullscreen', 'wpdfv' ); ?>" />
-					</a>
-					<a class="wpdfv-overlay-close wpdfv-overlay-btn">
-						<img class="wpdfv-icon" src="<?php echo esc_url( WPDFV_PLUGIN_URL . 'assets/dist/images/close.svg' ); ?>" alt="<?php esc_html_e( 'Close', 'wpdfv' ); ?>" />
-					</a>
-				</div>
-			</div>
-			<div class="wpdfv-overlay-wrap" id="wpdfv-print"></div>
-		</div>
+		<div id="wpdfv-react-root"></div>
 		<?php
 	}
 }

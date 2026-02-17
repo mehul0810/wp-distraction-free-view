@@ -1,41 +1,46 @@
-jQuery( document ).ready( function( $ ) {
+/**
+ * WP Distraction Free View - Frontend
+ * React-based implementation using @wordpress packages
+ */
+import { createRoot, useState, useEffect } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+import domReady from '@wordpress/dom-ready';
+import './../../css/frontend/wpdfv.scss';
 
-	$( '.wpdfv-fullscreen-container .wpdfv-fullscreen-btn' ).on( 'click', function( e ) {
+const DistractionFreeOverlay = () => {
+	const [ isVisible, setIsVisible ] = useState( false );
+	const [ content, setContent ] = useState( '' );
 
-		var post_id = jQuery(this).data('post-id');
-		var data = {
-			'action': 'display_post_details',
-			'id': post_id,
-			'nonce': wpdfv.nonce
-		};
+	// Fetch post content
+	const fetchPostContent = async ( postId ) => {
+		try {
+			const response = await apiFetch( {
+				url: `${ wpdfv.ajaxurl }?action=display_post_details&id=${ postId }&nonce=${ wpdfv.nonce }`,
+				method: 'GET',
+			} );
 
-		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-		$.post( wpdfv.ajaxurl, data, function(response) {
-			$('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-			$('body').css('overflow-y','hidden');
-			$('.wpdfv-fullscreen-overlay-container .wpdfv-overlay-wrap').html(response);
-			$('.wpdfv-fullscreen-overlay-container').fadeIn('slow');
-		});
-		e.preventDefault();
-	});
+			setContent( response );
+			setIsVisible( true );
+			document.body.style.overflowY = 'hidden';
+		} catch ( error ) {
+			console.error( 'Error fetching post:', error );
+		}
+	};
 
-	$( '.wpdfv-overlay-close' ).on( 'click', function( e ) {
-		$('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-		$('body').css('overflow-y','scroll');
-		$('.wpdfv-fullscreen-overlay-container').fadeOut('slow');
-		e.preventDefault();
-	});
+	// Close overlay
+	const closeOverlay = () => {
+		setIsVisible( false );
+		document.body.style.overflowY = 'scroll';
+	};
 
-	// Dual Fullscreen Mode.
-	$( '.wpdfv-fullscreen-overlay-container .wpdfv-dual-fullscreen-btn' ).on( 'click', function( e ) {
-
-		if (
-			! document.fullscreenElement &&
+	// Toggle fullscreen
+	const toggleFullscreen = () => {
+		if ( ! document.fullscreenElement &&
 			! document.mozFullScreenElement &&
 			! document.webkitFullscreenElement &&
 			! document.msFullscreenElement
 		) {
-
+			// Enter fullscreen
 			if ( document.documentElement.requestFullscreen ) {
 				document.documentElement.requestFullscreen();
 			} else if ( document.documentElement.msRequestFullscreen ) {
@@ -45,8 +50,14 @@ jQuery( document ).ready( function( $ ) {
 			} else if ( document.documentElement.webkitRequestFullscreen ) {
 				document.documentElement.webkitRequestFullscreen( Element.ALLOW_KEYBOARD_INPUT );
 			}
-			$( '.wpdfv-overlay-close' ).hide();
+
+			// Hide close button in fullscreen
+			const closeBtn = document.querySelector( '.wpdfv-overlay-close' );
+			if ( closeBtn ) {
+				closeBtn.style.display = 'none';
+			}
 		} else {
+			// Exit fullscreen
 			if ( document.exitFullscreen ) {
 				document.exitFullscreen();
 			} else if ( document.msExitFullscreen ) {
@@ -56,28 +67,121 @@ jQuery( document ).ready( function( $ ) {
 			} else if ( document.webkitExitFullscreen ) {
 				document.webkitExitFullscreen();
 			}
-			$( '.wpdfv-overlay-close' ).show();
+
+			// Show close button when exiting fullscreen
+			const closeBtn = document.querySelector( '.wpdfv-overlay-close' );
+			if ( closeBtn ) {
+				closeBtn.style.display = 'block';
+			}
 		}
-	});
+	};
 
-	// Display action for Print.
-	$( '.wpdfv-fullscreen-overlay-container .wpdfv-overlay-print' ).on( 'click', function( e ) {
+	// Handle print
+	const handlePrint = () => {
+		const divElements = document.getElementById( 'wpdfv-print' ).innerHTML;
+		const oldPage = document.body.innerHTML;
 
-		// Get the HTML of div.
-		var divElements = document.getElementById( 'wpdfv-print' ).innerHTML;
-
-		// Get the HTML of whole page.
-		var oldPage = document.body.innerHTML;
-
-		// Reset the page's HTML with div's HTML only.
 		document.body.innerHTML =
-			"<html><head><title></title></head><body>" +
-			divElements + "</body>";
+			'<html><head><title></title></head><body>' +
+			divElements +
+			'</body>';
 
-		// Print Page.
 		window.print();
 
-		// Restore orignal HTML.
 		document.body.innerHTML = oldPage;
-	});
-});
+	};
+
+	// Set up event listeners after mount
+	useEffect( () => {
+		// Add event listener for fullscreen button clicks
+		const fullscreenBtn = document.querySelector( '.wpdfv-fullscreen-container .wpdfv-fullscreen-btn' );
+		const handleFullscreenClick = ( e ) => {
+			e.preventDefault();
+			const postId = e.currentTarget.dataset.postId;
+			if ( postId ) {
+				fetchPostContent( postId );
+			}
+		};
+
+		if ( fullscreenBtn ) {
+			fullscreenBtn.addEventListener( 'click', handleFullscreenClick );
+		}
+
+		// Cleanup
+		return () => {
+			if ( fullscreenBtn ) {
+				fullscreenBtn.removeEventListener( 'click', handleFullscreenClick );
+			}
+		};
+	}, [] );
+
+	// Render overlay
+	return (
+		<div
+			className="wpdfv-fullscreen-overlay-container"
+			style={ { display: isVisible ? 'block' : 'none' } }
+		>
+			<div className="wpdfv-fullscreen-overlay-header">
+				<div className="wpdfv-actions">
+					<a
+						className="btn btn-primary wpdfv-overlay-print wpdfv-overlay-btn"
+						onClick={ handlePrint }
+						role="button"
+						tabIndex={ 0 }
+					>
+						<img
+							className="wpdfv-icon"
+							src={ `${ wpdfv.pluginUrl }assets/dist/images/print.svg` }
+							alt="Print"
+						/>
+					</a>
+					<a
+						className="wpdfv-dual-fullscreen-btn wpdfv-overlay-btn"
+						onClick={ toggleFullscreen }
+						role="button"
+						tabIndex={ 0 }
+					>
+						<img
+							className="wpdfv-icon"
+							src={ `${ wpdfv.pluginUrl }assets/dist/images/fullscreen.svg` }
+							alt="Fullscreen"
+						/>
+					</a>
+					<a
+						className="wpdfv-overlay-close wpdfv-overlay-btn"
+						onClick={ closeOverlay }
+						role="button"
+						tabIndex={ 0 }
+					>
+						<img
+							className="wpdfv-icon"
+							src={ `${ wpdfv.pluginUrl }assets/dist/images/close.svg` }
+							alt="Close"
+						/>
+					</a>
+				</div>
+			</div>
+			<div
+				className="wpdfv-overlay-wrap"
+				id="wpdfv-print"
+				dangerouslySetInnerHTML={ { __html: content } }
+			/>
+		</div>
+	);
+};
+
+// Initialize on DOM ready
+domReady( () => {
+	// Create a container for the React app if it doesn't exist
+	let container = document.querySelector( '#wpdfv-react-root' );
+
+	if ( ! container ) {
+		container = document.createElement( 'div' );
+		container.id = 'wpdfv-react-root';
+		document.body.appendChild( container );
+	}
+
+	// Render the React component
+	const root = createRoot( container );
+	root.render( <DistractionFreeOverlay /> );
+} );
