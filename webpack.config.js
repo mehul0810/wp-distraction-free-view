@@ -1,9 +1,9 @@
 /**
  * External dependencies
  */
-const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
-const CopyWebpackPlugin = require( 'copy-webpack-plugin' );
-const path = require( 'path' );
+const defaultConfig = require('@wordpress/scripts/config/webpack.config');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const path = require('path');
 
 module.exports = {
 	...defaultConfig,
@@ -12,17 +12,17 @@ module.exports = {
 		'wpdfv-admin': './assets/src/js/admin/wpdfv-admin.js',
 	},
 	output: {
-		path: path.resolve( __dirname, 'assets/dist' ),
+		path: path.resolve(__dirname, 'assets/dist'),
 	},
 	plugins: [
 		...defaultConfig.plugins,
-		new CopyWebpackPlugin( {
+		new CopyWebpackPlugin({
 			patterns: [
 				{
 					from: 'assets/src/images',
 					to: 'images',
 				},
 			],
-		} ),
+		}),
 	],
 };

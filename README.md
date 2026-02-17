@@ -36,19 +36,33 @@ To get started developing on the WP Distraction Free View, you will need to perf
 1. Create a new WordPress site with any URL
 2. `cd` into your local plugins directory: `/path/to/wp-content/plugins/`
 3. Fork this repository from GitHub and then clone that into your plugins directory in a new `wp-distraction-free-view` directory
-4. Run `npm install` to get the necessary npm packages
-5. Activate the plugin in WordPress
-6. Run `npm run watch` to start the watch process which will build the sass and script files  
+4. Run `composer install` to install PHP dependencies
+5. Run `npm install` to get the necessary npm packages
+6. Activate the plugin in WordPress
+7. Run `npm run start` to start the development watch mode which will build the JS and SCSS files with live reload
 
 That's it. You're now ready to start development.
+
+**Alternative: Using wp-env**
+
+You can also use `@wordpress/env` for a local development environment:
+1. Run `npm -g i @wordpress/env` to install wp-env globally
+2. Run `wp-env start` in the plugin directory to start a local WordPress instance
+3. The plugin will be automatically activated
+4. Access your site at `http://localhost:8888` (admin: `http://localhost:8888/wp-admin`)
+5. Login with username `admin` and password `password`
 
 **Available commands**
 
 | Command             | Description  |
 | :------------- | :------------ |
-| `npm run watch`      | Live reloads JS and SASS files. Typically you'll run this command before you start development. It's necessary to build the JS/CSS however if you're working strictly within PHP it may not be necessary to run.  |
-| `npm run dev`      |    Runs a one time build for development. No production files are created. |
-| `npm run production` |  Builds the minified production files for release. |
+| `npm run start`      | Start development watch mode with live reload for JS and SASS files. Includes source maps for debugging. |
+| `npm run build`      | Build optimized production files with minification. This is what gets deployed. |
+| `npm run format`     | Format code using Prettier according to WordPress standards. |
+| `npm run lint:js`    | Check JavaScript files for code quality issues using ESLint. |
+| `npm run lint:php`   | Check PHP files against WordPress Coding Standards using PHPCS. |
+| `npm run lint:php:fix` | Automatically fix PHP coding standard violations using PHPCBF. |
+| `npm run plugin-zip` | Create a distributable plugin ZIP file for WordPress.org. |
 
 **Development Notes**
 
