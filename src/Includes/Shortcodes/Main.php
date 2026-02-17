@@ -116,9 +116,8 @@ class Main {
 			</div>
 		</div>
 		<?php
-		$html = ob_get_clean();
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is safely constructed above with escaped content.
-		echo $html;
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is safely constructed above with escaped content.
+		echo ob_get_clean();
 		wp_die();
 	}
 }
