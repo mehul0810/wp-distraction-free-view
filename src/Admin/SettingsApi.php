@@ -67,6 +67,7 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 		 * @return string
 		 */
 		public function get_active_tab() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is only used for display logic, not data modification.
 			return ! empty( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
 		}
 
@@ -271,8 +272,9 @@ if ( ! class_exists( 'SettingsApi' ) ) :
 				wp_send_json_error( 'Insufficient permissions' );
 			}
 
-			$key  = "{$this->prefix}_settings";
-			$data = isset( $_POST[ $key ] ) ? $this->sanitize_settings_data( $_POST[ $key ] ) : [];
+			$key = "{$this->prefix}_settings";
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitization is performed by sanitize_settings_data().
+			$data = isset( $_POST[ $key ] ) ? $this->sanitize_settings_data( wp_unslash( $_POST[ $key ] ) ) : [];
 
 			// Save settings to options table.
 			$is_updated = update_option( $key, $data );
