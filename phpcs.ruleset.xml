@@ -15,21 +15,26 @@
 	<exclude-pattern>languages/*</exclude-pattern>
 	<exclude-pattern>assets/*</exclude-pattern>
 
-	<!-- Bring in WP rules. -->
-	<rule ref="WordPress-Core">
-		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
-		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
-		<exclude name="WordPress.WP.I18n.MissingTranslatorsComment" />
-		<exclude name="Generic.Arrays.DisallowShortArraySyntax" />
-	</rule>
+		<!-- Bring in WP rules. -->
+		<rule ref="WordPress-Core">
+			<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+			<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
+			<exclude name="WordPress.WP.I18n.MissingTranslatorsComment" />
+			<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+			<exclude name="Universal.Arrays.DisallowShortArraySyntax.Found" />
+		</rule>
 
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax.Found">
 	  <type>warning</type>
 	</rule>
 
-	<rule ref="WordPress.WP.I18n">
-		<properties>
-			<property name="text_domain" type="array" value="perform"/>
-		</properties>
-	</rule>
-</ruleset>
+		<rule ref="WordPress.WP.I18n">
+			<properties>
+				<property name="text_domain" type="array">
+					<element value="wp-distraction-free-view"/>
+				</property>
+			</properties>
+		</rule>
+
+		<config name="testVersion" value="8.2-"/>
+	</ruleset>

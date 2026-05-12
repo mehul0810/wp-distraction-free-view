@@ -8,7 +8,7 @@
 
 namespace WPDFV\Admin;
 
-use WPDFV\Includes\Helpers as Helpers;
+use WPDFV\Includes\Helpers;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,6 +77,6 @@ class Upgrades {
 		$settings['button_text']      = $read_mode_btn_text;
 
 		// Update admin settings.
-		update_option( 'wpdfv_settings', $settings );
+		update_option( 'wpdfv_settings', $settings, false );
 	}
 }

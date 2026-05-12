@@ -6,12 +6,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin version in SemVer format.
 if ( ! defined( 'WPDFV_VERSION' ) ) {
-	define( 'WPDFV_VERSION', '1.6.0' );
+	define( 'WPDFV_VERSION', '2.0.0' );
+}
+
+// Define plugin text domain.
+if ( ! defined( 'WPDFV_TEXT_DOMAIN' ) ) {
+	define( 'WPDFV_TEXT_DOMAIN', 'wp-distraction-free-view' );
+}
+
+// Define plugin REST namespace.
+if ( ! defined( 'WPDFV_REST_NAMESPACE' ) ) {
+	define( 'WPDFV_REST_NAMESPACE', 'wp-distraction-free-view/v1' );
 }
 
 // Define plugin root File.
 if ( ! defined( 'WPDFV_PLUGIN_FILE' ) ) {
-	define( 'WPDFV_PLUGIN_FILE', dirname( dirname( __FILE__ ) ) . '/wp-distraction-free-view.php' );
+	define( 'WPDFV_PLUGIN_FILE', dirname( __DIR__, 1 ) . '/wp-distraction-free-view.php' );
 }
 
 // Define plugin basename.

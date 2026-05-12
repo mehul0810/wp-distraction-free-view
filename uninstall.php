@@ -25,3 +25,5 @@ delete_option( 'wpdfv_settings_btn_hover_text_color' );
 delete_option( 'wpdfv_settings_btn_text_fontsize' );
 delete_option( 'wpdfv_settings_btn_icon_fontsize' );
 delete_option( 'wpdfv_settings_btn_padding' );
+delete_option( 'wpdfv_settings' );
+delete_option( 'wpdfv_version' );

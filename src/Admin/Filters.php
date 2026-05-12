@@ -41,12 +41,12 @@ class Filters {
 			'settings' => sprintf(
 				'<a href="%1$s">%2$s</a>',
 				admin_url( 'options-general.php?page=wpdfv_settings' ),
-				esc_html__( 'Settings', 'wpdfv' )
+				esc_html__( 'Settings', 'wp-distraction-free-view' )
 			),
 			'support'  => sprintf(
 				'<a target="_blank" href="%1$s">%2$s</a>',
-				esc_url_raw( 'https://wordpress.org/support/plugin/wp-distraction-free-view/' ),
-				esc_html__( 'Support', 'wpdfv' )
+				esc_url( 'https://wordpress.org/support/plugin/wp-distraction-free-view/' ),
+				esc_html__( 'Support', 'wp-distraction-free-view' )
 			),
 		];
 

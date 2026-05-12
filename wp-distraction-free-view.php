@@ -1,14 +1,17 @@
 <?php
 /**
  * Plugin Name: WP Distraction Free View
- * Plugin URI: https://wordpress.org/plugins/wp-distraction-free-view/
+ * Plugin URI: https://github.com/mehul0810/wp-distraction-free-view
  * Description: "WP Distraction Free View" plugin provides distraction free viewing mode to the users of the website/blog.
- * Version: 1.6.0
+ * Version: 2.0.0
+ * Requires at least: 6.0
+ * Requires PHP: 8.2
  * Author: Mehul Gohil
  * Author URI: https://mehulgohil.com/
- * License: GPLv3
- * License URI: http://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain: wpdfv
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: wp-distraction-free-view
+ * Domain Path: /languages
  *
  * WP Distraction Free View is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the Free
@@ -37,8 +40,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Constants.
 require_once __DIR__ . '/config/constants.php';
 
-// Automatically loads files used throughout the plugin.
-require_once WPDFV_PLUGIN_DIR . 'vendor/autoload.php';
+// Automatically load plugin classes without requiring Composer at runtime.
+spl_autoload_register(
+	static function ( $class_name ) {
+		$prefix = __NAMESPACE__ . '\\';
+
+		if ( 0 !== strpos( $class_name, $prefix ) ) {
+			return;
+		}
+
+		$relative_class = substr( $class_name, strlen( $prefix ) );
+		$file           = WPDFV_PLUGIN_DIR . 'src/' . str_replace( '\\', '/', $relative_class ) . '.php';
+
+		if ( is_readable( $file ) ) {
+			require_once $file;
+		}
+	}
+);
 
 // Initialize the plugin.
 $plugin = new Plugin();

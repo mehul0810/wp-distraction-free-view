@@ -1,8 +1,8 @@
 <?php
 namespace WPDFV;
 
-use WPDFV\Admin as Admin;
-use WPDFV\Includes as Includes;
+use WPDFV\Admin;
+use WPDFV\Includes;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -49,6 +49,7 @@ final class Plugin {
 		new Admin\Actions();
 		new Admin\Filters();
 		new Admin\Settings();
+		new Admin\Upgrades();
 
 		// Load Frontend Files.
 		new Includes\Actions();
@@ -66,7 +67,7 @@ final class Plugin {
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain(
-			'wpdfv',
+			'wp-distraction-free-view',
 			false,
 			dirname( plugin_basename( WPDFV_PLUGIN_FILE ) ) . '/languages/'
 		);
