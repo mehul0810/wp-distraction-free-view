@@ -105,9 +105,15 @@ class Helpers {
 	 * @return string
 	 */
 	public static function display_location() {
-		$settings = self::get_settings();
+		$settings         = self::get_settings();
+		$display_location = ! empty( $settings['display_location'] ) ? sanitize_key( $settings['display_location'] ) : 'after_content';
+		$allowed_values   = [
+			'disable',
+			'before_content',
+			'after_content',
+		];
 
-		return ! empty( $settings['display_location'] ) ? $settings['display_location'] : 'after_content';
+		return in_array( $display_location, $allowed_values, true ) ? $display_location : 'after_content';
 	}
 
 	/**
@@ -147,7 +153,15 @@ class Helpers {
 	public static function where_to_display() {
 		$settings = self::get_settings();
 
-		return ! empty( $settings['where_to_display'] ) && is_array( $settings['where_to_display'] ) ? array_map( 'sanitize_key', $settings['where_to_display'] ) : [ 'post', 'page' ];
+		if ( ! array_key_exists( 'where_to_display', $settings ) ) {
+			return [ 'post', 'page' ];
+		}
+
+		if ( ! is_array( $settings['where_to_display'] ) ) {
+			return [];
+		}
+
+		return array_values( array_unique( array_map( 'sanitize_key', $settings['where_to_display'] ) ) );
 	}
 
 	/**

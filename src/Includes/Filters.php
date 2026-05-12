@@ -65,6 +65,8 @@ class Filters {
 		} elseif ( 'after_content' === $display_btn_at ) {
 			$new_content .= $content;
 			$new_content .= $button_html;
+		} else {
+			return $content;
 		}
 
 		return $new_content;

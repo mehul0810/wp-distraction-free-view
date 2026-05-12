@@ -180,7 +180,7 @@ class SettingsApi {
 			$settings = [];
 		}
 
-		return array_merge( $this->get_default_settings(), $settings );
+		return $this->sanitize_settings_data( array_merge( $this->get_default_settings(), $settings ) );
 	}
 
 	/**
