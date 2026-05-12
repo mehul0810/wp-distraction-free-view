@@ -25,7 +25,7 @@ class Upgrades {
 	 * @return void
 	 */
 	public function __construct() {
-		add_action( 'admin_init', [ $this, 'process_automatic_upgrades' ], 0 );
+		add_action( 'init', [ $this, 'process_automatic_upgrades' ], 0 );
 	}
 
 	/**
@@ -40,14 +40,22 @@ class Upgrades {
 		$did_upgrade = false;
 		$version     = preg_replace( '/[^0-9.].*/', '', get_option( 'wpdfv_version' ) );
 
+		if ( ! $version && false === get_option( 'wpdfv_settings', false ) && false === get_option( 'wpdfv_general', false ) ) {
+			update_option( 'wpdfv_version', WPDFV_VERSION, false );
+			return;
+		}
+
 		if ( ! $version ) {
-			// 1.0.0 is the first version to use this option so we must add it.
 			$version = '1.0.0';
 		}
 
 		switch ( true ) {
 			case version_compare( $version, '1.6.0', '<' ):
 				$this->v160_upgrades();
+				$did_upgrade = true;
+				// Fall through so older installs also receive current settings.
+			case version_compare( $version, '2.1.0', '<' ):
+				$this->v210_upgrades();
 				$did_upgrade = true;
 		}
 
@@ -77,6 +85,28 @@ class Upgrades {
 		$settings['button_text']      = $read_mode_btn_text;
 
 		// Update admin settings.
+		update_option( 'wpdfv_settings', $settings, false );
+	}
+
+	/**
+	 * Upgrade settings for version 2.1.0.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	public function v210_upgrades() {
+		$settings         = Helpers::get_settings();
+		$display_location = isset( $settings['display_location'] ) ? sanitize_key( $settings['display_location'] ) : 'after_content';
+
+		if ( ! array_key_exists( 'automatic_button_enabled', $settings ) ) {
+			$settings['automatic_button_enabled'] = 'disable' !== $display_location;
+		}
+
+		if ( 'disable' === $display_location ) {
+			$settings['display_location'] = 'after_content';
+		}
+
 		update_option( 'wpdfv_settings', $settings, false );
 	}
 }

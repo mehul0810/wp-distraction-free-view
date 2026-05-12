@@ -75,7 +75,7 @@ class Actions {
 			$display_location = Helpers::display_location();
 			$has_shortcode    = has_shortcode( $post->post_content, 'wpdfv' );
 
-			$should_enqueue = $has_shortcode || ( 'disable' !== $display_location && in_array( $post->post_type, $where_to_display, true ) );
+			$should_enqueue = $has_shortcode || ( Helpers::is_automatic_button_enabled() && 'disable' !== $display_location && in_array( $post->post_type, $where_to_display, true ) );
 		}
 
 		/**

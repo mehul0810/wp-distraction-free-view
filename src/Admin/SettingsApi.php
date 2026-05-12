@@ -160,9 +160,10 @@ class SettingsApi {
 	 */
 	protected function get_default_settings() {
 		return [
-			'where_to_display' => [ 'post', 'page' ],
-			'display_location' => 'after_content',
-			'button_text'      => Helpers::get_default_button_text(),
+			'automatic_button_enabled' => false,
+			'where_to_display'         => [ 'post', 'page' ],
+			'display_location'         => 'after_content',
+			'button_text'              => Helpers::get_default_button_text(),
 		];
 	}
 
@@ -214,10 +215,6 @@ class SettingsApi {
 	protected function get_display_locations() {
 		return [
 			[
-				'label' => esc_html__( 'Disable automatic buttons', 'wp-distraction-free-view' ),
-				'value' => 'disable',
-			],
-			[
 				'label' => esc_html__( 'Before content', 'wp-distraction-free-view' ),
 				'value' => 'before_content',
 			],
@@ -263,17 +260,20 @@ class SettingsApi {
 		$defaults          = $this->get_default_settings();
 		$public_post_types = array_keys( $this->get_public_post_types() );
 		$display_locations = wp_list_pluck( $this->get_display_locations(), 'value' );
+		$automatic_enabled = isset( $data['automatic_button_enabled'] ) ? (bool) $data['automatic_button_enabled'] : $defaults['automatic_button_enabled'];
 		$where_to_display  = isset( $data['where_to_display'] ) && is_array( $data['where_to_display'] ) ? $data['where_to_display'] : $defaults['where_to_display'];
 		$display_location  = isset( $data['display_location'] ) ? sanitize_key( $data['display_location'] ) : $defaults['display_location'];
 		$button_text       = isset( $data['button_text'] ) ? sanitize_text_field( $data['button_text'] ) : $defaults['button_text'];
+		$automatic_enabled = 'disable' === $display_location ? false : $automatic_enabled;
 		$where_to_display  = array_values( array_intersect( array_map( 'sanitize_key', $where_to_display ), $public_post_types ) );
 		$display_location  = in_array( $display_location, $display_locations, true ) ? $display_location : $defaults['display_location'];
 		$button_text       = '' !== $button_text ? $button_text : $defaults['button_text'];
 
 		return [
-			'where_to_display' => $where_to_display,
-			'display_location' => $display_location,
-			'button_text'      => $button_text,
+			'automatic_button_enabled' => $automatic_enabled,
+			'where_to_display'         => $where_to_display,
+			'display_location'         => $display_location,
+			'button_text'              => $button_text,
 		];
 	}
 }

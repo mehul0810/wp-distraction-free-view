@@ -123,6 +123,19 @@ class Helpers {
 	}
 
 	/**
+	 * Check whether automatic frontend button injection is enabled.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return bool
+	 */
+	public static function is_automatic_button_enabled() {
+		$settings = self::get_settings();
+
+		return ! empty( $settings['automatic_button_enabled'] );
+	}
+
+	/**
 	 * Get Settings.
 	 *
 	 * @since  1.6.0

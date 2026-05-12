@@ -47,6 +47,10 @@ class Filters {
 		// Get data about where to display.
 		$where_to_display = Helpers::where_to_display();
 
+		if ( ! Helpers::is_automatic_button_enabled() ) {
+			return $content;
+		}
+
 		// Bailout, if not to show on specific post type.
 		if ( ! is_array( $where_to_display ) || ! in_array( $post->post_type, $where_to_display, true ) ) {
 			return $content;

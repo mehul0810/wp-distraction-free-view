@@ -16,6 +16,7 @@ import {
 	Spinner,
 	TabPanel,
 	TextControl,
+	ToggleControl,
 } from '@wordpress/components';
 import {
 	createElement,
@@ -203,6 +204,23 @@ const SettingsPanel = ( {
 		<CardBody>
 			<div className="wpdfv-settings-grid">
 				<section className="wpdfv-settings-section">
+					<ToggleControl
+						label={ __(
+							'Automatically insert reader button',
+							'wp-distraction-free-view'
+						) }
+						checked={ settings.automatic_button_enabled }
+						onChange={ ( value ) =>
+							onUpdateSetting( 'automatic_button_enabled', value )
+						}
+						help={ __(
+							'Leave this off when you only want to place the button with the block or shortcode.',
+							'wp-distraction-free-view'
+						) }
+					/>
+				</section>
+
+				<section className="wpdfv-settings-section">
 					<h3>{ __( 'Post types', 'wp-distraction-free-view' ) }</h3>
 					<p>
 						{ __(
@@ -215,6 +233,7 @@ const SettingsPanel = ( {
 							<CheckboxControl
 								key={ postType.slug }
 								label={ postType.label }
+								disabled={ ! settings.automatic_button_enabled }
 								checked={ selectedPostTypes.includes(
 									postType.slug
 								) }
@@ -234,6 +253,7 @@ const SettingsPanel = ( {
 						) }
 						selected={ settings.display_location }
 						options={ displayLocations }
+						disabled={ ! settings.automatic_button_enabled }
 						onChange={ ( value ) =>
 							onUpdateSetting( 'display_location', value )
 						}
