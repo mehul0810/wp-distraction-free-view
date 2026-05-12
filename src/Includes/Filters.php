@@ -40,11 +40,15 @@ class Filters {
 	public function filter_content( $content ) {
 		global $post;
 
+		if ( Helpers::is_button_injection_suspended() || ! $post instanceof \WP_Post ) {
+			return $content;
+		}
+
 		// Get data about where to display.
 		$where_to_display = Helpers::where_to_display();
 
 		// Bailout, if not to show on specific post type.
-		if ( ! in_array( $post->post_type, $where_to_display, true ) ) {
+		if ( ! is_array( $where_to_display ) || ! in_array( $post->post_type, $where_to_display, true ) ) {
 			return $content;
 		}
 

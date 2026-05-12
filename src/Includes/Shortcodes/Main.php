@@ -2,14 +2,16 @@
 /**
  * WP Distraction Free View - [wpdfv] shortcode.
  *
- * @since 1.4.2
- *
- * @package    WordPress
- * @subpackage WP Distraction Free View
- * @author     Mehul Gohil <hello@mehulgohil.com>
+ * @package WPDistractionFreeView
  */
 
 namespace WPDFV\Includes\Shortcodes;
+
+use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
+use WP_REST_Server;
+use WPDFV\Includes\Helpers;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,26 +23,19 @@ class Main {
 	/**
 	 * Constructor.
 	 *
-	 * @since  1.0.0
-	 * @access public
-	 *
-	 * @return void
+	 * @since 1.0.0
 	 */
 	public function __construct() {
 		add_shortcode( 'wpdfv', [ $this, 'render_shortcode' ] );
-
-		// Actions.
-		add_action( 'wp_ajax_display_post_details', [ $this, 'display_post_details_callback' ] );
-		add_action( 'wp_ajax_nopriv_display_post_details', [ $this, 'display_post_details_callback' ] );
+		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 	}
 
 	/**
-	 * Display Shortcode Content.
+	 * Display shortcode content.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array $atts List of shortcode attributes.
-	 *
-	 * @since  1.0.0
-	 * @access public
 	 *
 	 * @return string
 	 */
@@ -53,71 +48,115 @@ class Main {
 			'wpdfv'
 		);
 
-		if ( ! $atts['post_id'] ) {
+		$post_id = absint( $atts['post_id'] );
+
+		if ( ! $post_id ) {
 			global $post;
-			$atts['post_id'] = $post->ID;
+			$post_id = $post instanceof \WP_Post ? $post->ID : 0;
 		}
 
-		$button_text = wpdfv_get_button_text();
-
-		$html  = '';
-		$html .= '<div class="wpdfv-fullscreen-container">';
-		$html .= sprintf(
-			'<a class="wpdfv-fullscreen-btn" data-post-id="%1$s">%2$s</a>',
-			$atts['post_id'],
-			$button_text
-		);
-		$html .= '</div>';
-
-		return $html;
+		return Helpers::display_read_mode_button( $post_id );
 	}
 
 	/**
-	 * AJAX call to display popup with contents.
+	 * Register REST routes for reader content.
 	 *
-	 * @since  1.0.0
-	 * @access public
+	 * @since 2.0.0
 	 *
 	 * @return void
 	 */
-	public function display_post_details_callback() {
-		// Verify nonce for security.
-		check_ajax_referer( 'wpdfv_nonce', 'nonce' );
+	public function register_rest_routes() {
+		register_rest_route(
+			WPDFV_REST_NAMESPACE,
+			'/content/(?P<id>\d+)',
+			[
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_content_response' ],
+				'permission_callback' => '__return_true',
+				'args'                => [
+					'id' => [
+						'description'       => __( 'Post ID to render in distraction free view.', 'wp-distraction-free-view' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					],
+				],
+			]
+		);
+	}
 
-		// Sanitize input.
-		$post_id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+	/**
+	 * Get reader content for a post.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_content_response( WP_REST_Request $request ) {
+		$post_id = absint( $request['id'] );
+		$post    = get_post( $post_id );
 
-		// Validate post ID.
-		if ( ! $post_id ) {
-			wp_send_json_error( 'Invalid post ID' );
+		if ( ! $post instanceof \WP_Post ) {
+			return new WP_Error(
+				'wpdfv_post_not_found',
+				__( 'Post not found.', 'wp-distraction-free-view' ),
+				[ 'status' => 404 ]
+			);
 		}
 
-		// Get post and check if it exists.
-		$post_details = get_post( $post_id );
-		if ( ! $post_details ) {
-			wp_send_json_error( 'Post not found' );
+		if ( ! $this->can_read_post( $post ) ) {
+			return new WP_Error(
+				'wpdfv_post_forbidden',
+				__( 'This content is not available in distraction free view.', 'wp-distraction-free-view' ),
+				[ 'status' => 403 ]
+			);
 		}
 
-		// Check capabilities - verify post is public or user can read it.
-		if ( 'publish' !== $post_details->post_status && ! current_user_can( 'read_post', $post_id ) ) {
-			wp_send_json_error( 'Access denied' );
+		$previous_post   = $GLOBALS['post'] ?? null;
+		$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for content filters that depend on the current post.
+		setup_postdata( $post );
+
+		$content = Helpers::without_button_injection(
+			static function () use ( $post ) {
+				return apply_filters( 'the_content', $post->post_content );
+			}
+		);
+
+		wp_reset_postdata();
+
+		if ( $previous_post instanceof \WP_Post ) {
+			$GLOBALS['post'] = $previous_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restoring previous global post.
 		}
 
-		ob_start();
-		?>
-		<div class="wpdfv-popup-wrap">
-			<div class="wpdfv-container">
-				<h1 class="title">
-					<?php echo esc_html( $post_details->post_title ); ?>
-				</h1>
-				<div class="description">
-					<?php echo wp_kses_post( apply_filters( 'the_content', $post_details->post_content ) ); ?>
-				</div>
-			</div>
-		</div>
-		<?php
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is safely constructed above with escaped content.
-		echo ob_get_clean();
-		wp_die();
+		return rest_ensure_response(
+			[
+				'id'      => $post->ID,
+				'title'   => get_the_title( $post ),
+				'content' => wp_kses_post( $content ),
+			]
+		);
+	}
+
+	/**
+	 * Determine whether a post can be read through the public reader endpoint.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param \WP_Post $post Post object.
+	 *
+	 * @return bool
+	 */
+	protected function can_read_post( \WP_Post $post ) {
+		if ( post_password_required( $post ) ) {
+			return false;
+		}
+
+		if ( current_user_can( 'read_post', $post->ID ) ) {
+			return true;
+		}
+
+		return 'publish' === get_post_status( $post ) && is_post_publicly_viewable( $post );
 	}
 }

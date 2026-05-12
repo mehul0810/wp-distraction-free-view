@@ -1,23 +1,29 @@
-.pull-left {
-	float: left;
-}
-
-.pull-right {
-	float: right;
-}
-
-.text-right {
-	text-align: right;
-}
-
-.text-center {
-	text-align: center;
-}
-
-.text-left {
-	text-align: left;
+.wpdfv-fullscreen-container {
+	margin-block: 1rem;
 }
 
 .wpdfv-fullscreen-btn {
+	align-items: center;
+	background: var(--wp--preset--color--contrast, #1e1e1e);
+	border: 1px solid transparent;
+	border-radius: 2px;
+	color: var(--wp--preset--color--base, #fff);
 	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	font-weight: 500;
+	line-height: 1.4;
+	padding: 0.65rem 1rem;
+	text-decoration: none;
+
+	&:hover,
+	&:focus {
+		background: var(--wp-admin-theme-color, #3858e9);
+		color: #fff;
+	}
+
+	&:focus-visible {
+		box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wp-admin-theme-color, #3858e9);
+		outline: 2px solid transparent;
+	}
 }

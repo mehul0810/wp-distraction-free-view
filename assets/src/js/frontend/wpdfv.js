@@ -1,83 +1,153 @@
-jQuery( document ).ready( function( $ ) {
+import '../../css/frontend/wpdfv.scss';
 
-	$( '.wpdfv-fullscreen-container .wpdfv-fullscreen-btn' ).on( 'click', function( e ) {
+import apiFetch from '@wordpress/api-fetch';
+import {
+	Button,
+	Flex,
+	FlexItem,
+	Modal,
+	Notice,
+	Spinner,
+} from '@wordpress/components';
+import { RawHTML, render, useEffect, useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+import { file, fullscreen } from '@wordpress/icons';
 
-		var post_id = jQuery(this).data('post-id');
-		var data = {
-			'action': 'display_post_details',
-			'id': post_id,
-			'nonce': wpdfv.nonce
+const CONTENT_PATH = '/wp-distraction-free-view/v1/content/';
+
+const ReaderApp = () => {
+	const [ isOpen, setIsOpen ] = useState( false );
+	const [ isLoading, setIsLoading ] = useState( false );
+	const [ error, setError ] = useState( '' );
+	const [ title, setTitle ] = useState( '' );
+	const [ content, setContent ] = useState( '' );
+
+	useEffect( () => {
+		const handleClick = ( event ) => {
+			const trigger = event.target.closest( '.wpdfv-fullscreen-btn' );
+
+			if ( ! trigger ) {
+				return;
+			}
+
+			event.preventDefault();
+			openReader( trigger.dataset.postId );
 		};
 
-		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-		$.post( wpdfv.ajaxurl, data, function(response) {
-			$('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-			$('body').css('overflow-y','hidden');
-			$('.wpdfv-fullscreen-overlay-container .wpdfv-overlay-wrap').html(response);
-			$('.wpdfv-fullscreen-overlay-container').fadeIn('slow');
-		});
-		e.preventDefault();
-	});
+		document.addEventListener( 'click', handleClick );
 
-	$( '.wpdfv-overlay-close' ).on( 'click', function( e ) {
-		$('.wpdfv-overlay-wrap').css('overflow-y','scroll');
-		$('body').css('overflow-y','scroll');
-		$('.wpdfv-fullscreen-overlay-container').fadeOut('slow');
-		e.preventDefault();
-	});
+		return () => document.removeEventListener( 'click', handleClick );
+	}, [] );
 
-	// Dual Fullscreen Mode.
-	$( '.wpdfv-fullscreen-overlay-container .wpdfv-dual-fullscreen-btn' ).on( 'click', function( e ) {
-
-		if (
-			! document.fullscreenElement &&
-			! document.mozFullScreenElement &&
-			! document.webkitFullscreenElement &&
-			! document.msFullscreenElement
-		) {
-
-			if ( document.documentElement.requestFullscreen ) {
-				document.documentElement.requestFullscreen();
-			} else if ( document.documentElement.msRequestFullscreen ) {
-				document.documentElement.msRequestFullscreen();
-			} else if ( document.documentElement.mozRequestFullScreen ) {
-				document.documentElement.mozRequestFullScreen();
-			} else if ( document.documentElement.webkitRequestFullscreen ) {
-				document.documentElement.webkitRequestFullscreen( Element.ALLOW_KEYBOARD_INPUT );
-			}
-			$( '.wpdfv-overlay-close' ).hide();
-		} else {
-			if ( document.exitFullscreen ) {
-				document.exitFullscreen();
-			} else if ( document.msExitFullscreen ) {
-				document.msExitFullscreen();
-			} else if ( document.mozCancelFullScreen ) {
-				document.mozCancelFullScreen();
-			} else if ( document.webkitExitFullscreen ) {
-				document.webkitExitFullscreen();
-			}
-			$( '.wpdfv-overlay-close' ).show();
+	const openReader = ( postId ) => {
+		if ( ! postId ) {
+			return;
 		}
-	});
 
-	// Display action for Print.
-	$( '.wpdfv-fullscreen-overlay-container .wpdfv-overlay-print' ).on( 'click', function( e ) {
+		setIsOpen( true );
+		setIsLoading( true );
+		setError( '' );
+		setTitle( '' );
+		setContent( '' );
 
-		// Get the HTML of div.
-		var divElements = document.getElementById( 'wpdfv-print' ).innerHTML;
+		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
+			.then( ( response ) => {
+				setTitle( response.title );
+				setContent( response.content );
+			} )
+			.catch( () => {
+				setError(
+					__(
+						'This content could not be loaded in distraction free view.',
+						'wp-distraction-free-view'
+					)
+				);
+			} )
+			.finally( () => setIsLoading( false ) );
+	};
 
-		// Get the HTML of whole page.
-		var oldPage = document.body.innerHTML;
+	const closeReader = () => {
+		setIsOpen( false );
+		setError( '' );
+	};
 
-		// Reset the page's HTML with div's HTML only.
-		document.body.innerHTML =
-			"<html><head><title></title></head><body>" +
-			divElements + "</body>";
+	const toggleFullscreen = () => {
+		const modal = document.querySelector( '.wpdfv-reader-modal' );
 
-		// Print Page.
+		if ( ! document.fullscreenElement && modal?.requestFullscreen ) {
+			modal.requestFullscreen();
+			return;
+		}
+
+		if ( document.fullscreenElement && document.exitFullscreen ) {
+			document.exitFullscreen();
+		}
+	};
+
+	const printReader = () => {
 		window.print();
+	};
 
-		// Restore orignal HTML.
-		document.body.innerHTML = oldPage;
-	});
-});
+	return (
+		isOpen && (
+			<Modal
+				className="wpdfv-reader-modal"
+				title={
+					title ||
+					__( 'Distraction Free View', 'wp-distraction-free-view' )
+				}
+				onRequestClose={ closeReader }
+				shouldCloseOnClickOutside={ false }
+			>
+				<div className="wpdfv-reader-toolbar">
+					<Flex justify="flex-end">
+						<FlexItem>
+							<Button
+								variant="secondary"
+								icon={ file }
+								onClick={ printReader }
+								disabled={ isLoading || ! content }
+							>
+								{ __( 'Print', 'wp-distraction-free-view' ) }
+							</Button>
+						</FlexItem>
+						<FlexItem>
+							<Button
+								variant="secondary"
+								icon={ fullscreen }
+								onClick={ toggleFullscreen }
+							>
+								{ __(
+									'Fullscreen',
+									'wp-distraction-free-view'
+								) }
+							</Button>
+						</FlexItem>
+					</Flex>
+				</div>
+
+				<div className="wpdfv-reader-content" id="wpdfv-print">
+					{ isLoading && (
+						<div className="wpdfv-reader-loading">
+							<Spinner />
+						</div>
+					) }
+
+					{ error && (
+						<Notice status="error" isDismissible={ false }>
+							{ error }
+						</Notice>
+					) }
+
+					{ ! isLoading && content && <RawHTML>{ content }</RawHTML> }
+				</div>
+			</Modal>
+		)
+	);
+};
+
+const root = document.createElement( 'div' );
+root.id = 'wpdfv-reader-root';
+document.body.appendChild( root );
+
+render( <ReaderApp />, root );
