@@ -11,6 +11,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -108,6 +109,7 @@ class SettingsApi {
 				'defaults'           => $this->get_default_settings(),
 				'postTypes'          => array_values( $this->get_public_post_types() ),
 				'displayLocations'   => $this->get_display_locations(),
+				'modalTemplates'     => Templates::get_template_options(),
 				'recommendedPlugins' => $this->get_recommended_plugins(),
 				'restNamespace'      => WPDFV_REST_NAMESPACE,
 				'minimumWordPress'   => '6.0',
@@ -164,6 +166,7 @@ class SettingsApi {
 			'where_to_display'         => [ 'post', 'page' ],
 			'display_location'         => 'after_content',
 			'button_text'              => Helpers::get_default_button_text(),
+			'modal_template'           => Templates::DEFAULT_TEMPLATE,
 		];
 	}
 
@@ -264,6 +267,7 @@ class SettingsApi {
 		$where_to_display  = isset( $data['where_to_display'] ) && is_array( $data['where_to_display'] ) ? $data['where_to_display'] : $defaults['where_to_display'];
 		$display_location  = isset( $data['display_location'] ) ? sanitize_key( $data['display_location'] ) : $defaults['display_location'];
 		$button_text       = isset( $data['button_text'] ) ? sanitize_text_field( $data['button_text'] ) : $defaults['button_text'];
+		$modal_template    = isset( $data['modal_template'] ) ? Templates::sanitize_template_slug( $data['modal_template'] ) : $defaults['modal_template'];
 		$automatic_enabled = 'disable' === $display_location ? false : $automatic_enabled;
 		$where_to_display  = array_values( array_intersect( array_map( 'sanitize_key', $where_to_display ), $public_post_types ) );
 		$display_location  = in_array( $display_location, $display_locations, true ) ? $display_location : $defaults['display_location'];
@@ -274,6 +278,7 @@ class SettingsApi {
 			'where_to_display'         => $where_to_display,
 			'display_location'         => $display_location,
 			'button_text'              => $button_text,
+			'modal_template'           => $modal_template,
 		];
 	}
 }

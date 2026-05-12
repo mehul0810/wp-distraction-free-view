@@ -13,6 +13,7 @@ import {
 	FlexItem,
 	Notice,
 	RadioControl,
+	SelectControl,
 	Spinner,
 	TabPanel,
 	TextControl,
@@ -44,6 +45,7 @@ const SettingsApp = () => {
 	const [ settings, setSettings ] = useState( null );
 	const [ postTypes, setPostTypes ] = useState( [] );
 	const [ displayLocations, setDisplayLocations ] = useState( [] );
+	const [ modalTemplates, setModalTemplates ] = useState( [] );
 	const [ recommendedPlugins, setRecommendedPlugins ] = useState( [] );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
@@ -55,6 +57,7 @@ const SettingsApp = () => {
 				setSettings( response.settings );
 				setPostTypes( response.postTypes );
 				setDisplayLocations( response.displayLocations );
+				setModalTemplates( response.modalTemplates );
 				setRecommendedPlugins( response.recommendedPlugins );
 			} )
 			.catch( () => {
@@ -164,6 +167,7 @@ const SettingsApp = () => {
 							settings={ settings }
 							postTypes={ postTypes }
 							displayLocations={ displayLocations }
+							modalTemplates={ modalTemplates }
 							selectedPostTypes={ selectedPostTypes }
 							isSaving={ isSaving }
 							onTogglePostType={ togglePostType }
@@ -183,6 +187,7 @@ const SettingsPanel = ( {
 	settings,
 	postTypes,
 	displayLocations,
+	modalTemplates,
 	selectedPostTypes,
 	isSaving,
 	onTogglePostType,
@@ -273,6 +278,26 @@ const SettingsPanel = ( {
 						}
 						help={ __(
 							'This text is shown on the frontend reader trigger and shortcode output.',
+							'wp-distraction-free-view'
+						) }
+					/>
+				</section>
+
+				<section className="wpdfv-settings-section">
+					<SelectControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={ __(
+							'Modal template',
+							'wp-distraction-free-view'
+						) }
+						value={ settings.modal_template }
+						options={ modalTemplates }
+						onChange={ ( value ) =>
+							onUpdateSetting( 'modal_template', value )
+						}
+						help={ __(
+							'Choose the block-based template used inside the reader modal.',
 							'wp-distraction-free-view'
 						) }
 					/>

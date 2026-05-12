@@ -26,11 +26,23 @@
 }
 
 .wpdfv-reader-content {
+	box-sizing: border-box;
 	font-size: 18px;
 	line-height: 1.7;
-	margin-inline: auto;
-	max-width: 760px;
+	margin-inline: 0;
+	max-width: none;
 	padding: 32px 24px 48px;
+	width: 100%;
+}
+
+.wpdfv-modal-template {
+	margin-inline: auto;
+	width: 100%;
+}
+
+.wpdfv-modal-template--default,
+.wpdfv-reader-content > .wp-block-post-content {
+	max-width: 760px;
 }
 
 .wpdfv-reader-loading {

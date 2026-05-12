@@ -9,6 +9,7 @@
 namespace WPDFV\Admin;
 
 use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -101,6 +102,12 @@ class Upgrades {
 
 		if ( ! array_key_exists( 'automatic_button_enabled', $settings ) ) {
 			$settings['automatic_button_enabled'] = 'disable' !== $display_location;
+		}
+
+		if ( empty( $settings['modal_template'] ) ) {
+			$settings['modal_template'] = Templates::DEFAULT_TEMPLATE;
+		} else {
+			$settings['modal_template'] = Templates::sanitize_template_slug( $settings['modal_template'] );
 		}
 
 		if ( 'disable' === $display_location ) {

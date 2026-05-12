@@ -12,6 +12,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -114,21 +115,7 @@ class Main {
 			);
 		}
 
-		$previous_post   = $GLOBALS['post'] ?? null;
-		$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for content filters that depend on the current post.
-		setup_postdata( $post );
-
-		$content = Helpers::without_button_injection(
-			static function () use ( $post ) {
-				return apply_filters( 'the_content', $post->post_content );
-			}
-		);
-
-		wp_reset_postdata();
-
-		if ( $previous_post instanceof \WP_Post ) {
-			$GLOBALS['post'] = $previous_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restoring previous global post.
-		}
+		$content = Templates::render_modal_content( $post );
 
 		return rest_ensure_response(
 			[

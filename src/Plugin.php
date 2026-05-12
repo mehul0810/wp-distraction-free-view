@@ -55,6 +55,7 @@ final class Plugin {
 		new Includes\Actions();
 		new Includes\Blocks();
 		new Includes\Filters();
+		new Includes\Templates();
 		new Includes\Shortcodes\Main();
 	}
 
@@ -94,6 +95,7 @@ final class Plugin {
 					'where_to_display'         => [ 'post', 'page' ],
 					'display_location'         => 'after_content',
 					'button_text'              => __( 'Read Mode', 'wp-distraction-free-view' ),
+					'modal_template'           => Includes\Templates::DEFAULT_TEMPLATE,
 				],
 				false
 			);
