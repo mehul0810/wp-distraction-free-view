@@ -1,14 +1,7 @@
 import '../../css/frontend/wpdfv.scss';
 
 import apiFetch from '@wordpress/api-fetch';
-import {
-	Button,
-	Flex,
-	FlexItem,
-	Modal,
-	Notice,
-	Spinner,
-} from '@wordpress/components';
+import { Button, Modal, Notice, Spinner } from '@wordpress/components';
 import {
 	createElement,
 	RawHTML,
@@ -42,7 +35,6 @@ const fullscreenIcon = createElement(
 		d: 'M6 4a2 2 0 0 0-2 2v3h1.5V6a.5.5 0 0 1 .5-.5h3V4H6Zm3 14.5H6a.5.5 0 0 1-.5-.5v-3H4v3a2 2 0 0 0 2 2h3v-1.5Zm6 1.5v-1.5h3a.5.5 0 0 0 .5-.5v-3H20v3a2 2 0 0 1-2 2h-3Zm3-16a2 2 0 0 1 2 2v3h-1.5V6a.5.5 0 0 0-.5-.5h-3V4h3Z',
 	} )
 );
-
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -66,6 +58,20 @@ const ReaderApp = () => {
 
 		return () => document.removeEventListener( 'click', handleClick );
 	}, [] );
+
+	useEffect( () => {
+		if ( ! isOpen ) {
+			return undefined;
+		}
+
+		document.documentElement.classList.add( 'wpdfv-reader-modal-open' );
+
+		return () => {
+			document.documentElement.classList.remove(
+				'wpdfv-reader-modal-open'
+			);
+		};
+	}, [ isOpen ] );
 
 	const openReader = ( postId ) => {
 		if ( ! postId ) {
@@ -119,7 +125,32 @@ const ReaderApp = () => {
 	return (
 		isOpen && (
 			<Modal
+				bodyOpenClassName="wpdfv-reader-modal-open"
 				className="wpdfv-reader-modal"
+				headerActions={
+					<div className="wpdfv-reader-header-actions">
+						<Button
+							variant="link"
+							size="compact"
+							icon={ printIcon }
+							label={ __( 'Print', 'wp-distraction-free-view' ) }
+							showTooltip={ false }
+							onClick={ printReader }
+							disabled={ isLoading || ! content }
+						/>
+						<Button
+							variant="link"
+							size="compact"
+							icon={ fullscreenIcon }
+							label={ __(
+								'Fullscreen',
+								'wp-distraction-free-view'
+							) }
+							showTooltip={ false }
+							onClick={ toggleFullscreen }
+						/>
+					</div>
+				}
 				title={
 					title ||
 					__( 'Distraction Free View', 'wp-distraction-free-view' )
@@ -127,33 +158,6 @@ const ReaderApp = () => {
 				onRequestClose={ closeReader }
 				shouldCloseOnClickOutside={ false }
 			>
-				<div className="wpdfv-reader-toolbar">
-					<Flex justify="flex-end">
-						<FlexItem>
-							<Button
-								variant="secondary"
-								icon={ printIcon }
-								onClick={ printReader }
-								disabled={ isLoading || ! content }
-							>
-								{ __( 'Print', 'wp-distraction-free-view' ) }
-							</Button>
-						</FlexItem>
-						<FlexItem>
-							<Button
-								variant="secondary"
-								icon={ fullscreenIcon }
-								onClick={ toggleFullscreen }
-							>
-								{ __(
-									'Fullscreen',
-									'wp-distraction-free-view'
-								) }
-							</Button>
-						</FlexItem>
-					</Flex>
-				</div>
-
 				<div className="wpdfv-reader-content" id="wpdfv-print">
 					{ isLoading && (
 						<div className="wpdfv-reader-loading">
