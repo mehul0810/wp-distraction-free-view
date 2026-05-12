@@ -35,19 +35,33 @@ class Actions {
 	 *
 	 * @return void
 	 */
-	public function register_admin_assets() {
-		// Add Color Picker support.
-		wp_enqueue_style( 'wp-color-picker' );
-		wp_enqueue_script( 'wp-color-picker' );
+	public function register_admin_assets( $hook_suffix ) {
+		if ( 'settings_page_wpdfv_settings' !== $hook_suffix ) {
+			return;
+		}
 
-		wp_enqueue_style( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/css/wpdfv-admin.css' );
-		wp_enqueue_script( 'wpdfv-admin', WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js', [ 'jquery' ], WPDFV_VERSION, true );
-
-		// Localize script with nonce for AJAX security.
-		$wpdfv_admin_args = [
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'nonce'   => wp_create_nonce( 'wpdfv_admin_nonce' ),
+		$asset_path = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv-admin.asset.php';
+		$asset      = is_readable( $asset_path ) ? require $asset_path : [
+			'dependencies' => [ 'wp-api-fetch', 'wp-components', 'wp-element', 'wp-i18n' ],
+			'version'      => WPDFV_VERSION,
 		];
-		wp_localize_script( 'wpdfv-admin', 'wpdfvAdmin', $wpdfv_admin_args );
+
+		wp_enqueue_style( 'wp-components' );
+		wp_enqueue_style(
+			'wpdfv-admin',
+			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv-admin.css',
+			[ 'wp-components' ],
+			$asset['version']
+		);
+
+		wp_enqueue_script(
+			'wpdfv-admin',
+			WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv-admin.js',
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+
+		wp_set_script_translations( 'wpdfv-admin', 'wp-distraction-free-view', WPDFV_PLUGIN_DIR . 'languages' );
 	}
 }
