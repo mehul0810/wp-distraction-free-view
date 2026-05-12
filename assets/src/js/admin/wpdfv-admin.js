@@ -17,11 +17,27 @@ import {
 	TabPanel,
 	TextControl,
 } from '@wordpress/components';
-import { render, useEffect, useMemo, useState } from '@wordpress/element';
+import {
+	createElement,
+	render,
+	useEffect,
+	useMemo,
+	useState,
+} from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { check } from '@wordpress/icons';
+import { Path, SVG } from '@wordpress/primitives';
 
 const SETTINGS_PATH = '/wp-distraction-free-view/v1/settings';
+const checkIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+	},
+	createElement( Path, {
+		d: 'M16.5 7.5 10 13.9l-2.5-2.4-1 1 3.5 3.6 7.5-7.6z',
+	} )
+);
 
 const SettingsApp = () => {
 	const [ settings, setSettings ] = useState( null );
@@ -247,7 +263,7 @@ const SettingsPanel = ( {
 				<FlexItem>
 					<Button
 						variant="primary"
-						icon={ check }
+						icon={ checkIcon }
 						isBusy={ isSaving }
 						disabled={ isSaving }
 						onClick={ onSave }

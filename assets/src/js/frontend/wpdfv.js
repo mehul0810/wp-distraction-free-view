@@ -9,11 +9,39 @@ import {
 	Notice,
 	Spinner,
 } from '@wordpress/components';
-import { RawHTML, render, useEffect, useState } from '@wordpress/element';
+import {
+	createElement,
+	RawHTML,
+	render,
+	useEffect,
+	useState,
+} from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { file, fullscreen } from '@wordpress/icons';
+import { Path, SVG } from '@wordpress/primitives';
 
 const CONTENT_PATH = '/wp-distraction-free-view/v1/content/';
+const printIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+	},
+	createElement( Path, {
+		clipRule: 'evenodd',
+		d: 'M12.848 8a1 1 0 0 1-.914-.594l-.723-1.63a.5.5 0 0 0-.447-.276H5a.5.5 0 0 0-.5.5v11.5a.5.5 0 0 0 .5.5h14a.5.5 0 0 0 .5-.5v-9A.5.5 0 0 0 19 8h-6.152Zm.612-1.5a.5.5 0 0 1-.462-.31l-.445-1.084A2 2 0 0 0 10.763 4H5a2 2 0 0 0-2 2v11.5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-5.54Z',
+		fillRule: 'evenodd',
+	} )
+);
+const fullscreenIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+	},
+	createElement( Path, {
+		d: 'M6 4a2 2 0 0 0-2 2v3h1.5V6a.5.5 0 0 1 .5-.5h3V4H6Zm3 14.5H6a.5.5 0 0 1-.5-.5v-3H4v3a2 2 0 0 0 2 2h3v-1.5Zm6 1.5v-1.5h3a.5.5 0 0 0 .5-.5v-3H20v3a2 2 0 0 1-2 2h-3Zm3-16a2 2 0 0 1 2 2v3h-1.5V6a.5.5 0 0 0-.5-.5h-3V4h3Z',
+	} )
+);
 
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
@@ -104,7 +132,7 @@ const ReaderApp = () => {
 						<FlexItem>
 							<Button
 								variant="secondary"
-								icon={ file }
+								icon={ printIcon }
 								onClick={ printReader }
 								disabled={ isLoading || ! content }
 							>
@@ -114,7 +142,7 @@ const ReaderApp = () => {
 						<FlexItem>
 							<Button
 								variant="secondary"
-								icon={ fullscreen }
+								icon={ fullscreenIcon }
 								onClick={ toggleFullscreen }
 							>
 								{ __(
