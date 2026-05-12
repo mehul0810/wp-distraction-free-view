@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "wpdfv/reader-button",
+	"title": "Distraction Free View Button",
+	"category": "wpdfv",
+	"icon": "fullscreen-alt",
+	"description": "Adds a button that opens the current post in distraction free view.",
+	"textdomain": "wp-distraction-free-view",
+	"usesContext": [ "postId", "postType" ],
+	"attributes": {
+		"buttonText": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"align": true,
+		"color": {
+			"background": true,
+			"text": true
+		},
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "file:../../assets/dist/js/wpdfv-block.js",
+	"style": "file:../../assets/dist/wpdfv.css",
+	"viewScript": "file:../../assets/dist/js/wpdfv.js"
+}

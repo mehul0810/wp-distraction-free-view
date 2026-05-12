@@ -9,6 +9,10 @@ module.exports = {
 			__dirname,
 			'assets/src/js/admin/wpdfv-admin.js'
 		),
+		'wpdfv-block': path.resolve(
+			__dirname,
+			'assets/src/js/block/reader-button.js'
+		),
 	},
 	output: {
 		...defaultConfig.output,
