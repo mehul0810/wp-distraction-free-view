@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.2
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,9 @@ The settings screen uses WordPress-native components and stores settings in the 
 2. Print Support
 3. WordPress Design System based settings UI
 4. Public post type controls
-5. Shortcode `[wpdfv]` support
+5. Reader Button block for single content and Query Loop templates
+6. Block-based modal templates for full site editing themes
+7. Shortcode `[wpdfv]` support
 
 = Benefits =
 1. Engage your site visitors
@@ -65,12 +67,27 @@ Yes. The reader modal includes a print action.
 
 With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's viewport) and then again clicking on fullscreen button will hide browser and display whole article occupying your system screen.
 
+= Can I place the reader button manually? =
+
+Yes. New installs keep automatic insertion disabled by default. Add the Reader Button block in single templates, posts, pages, custom post types, or Query Loop templates. Existing installs keep their previous automatic insertion behavior after upgrade.
+
+= Can block themes customize the modal layout? =
+
+Yes. The plugin registers a default block-based modal template and a WP Distraction Free View pattern category. Themes and site-specific code can add more templates with the `wpdfv_modal_templates` filter.
+
 == Screenshots ==
 1. Refreshed Admin Settings
 2. Read Mode button on posts listing
 3. Refreshed Fullscreen mode
 
 == Changelog ==
+
+= 2.1.0 =
+- Added: Reader Button block for posts, pages, public custom post types, and Query Loop templates
+- Added: Block-based modal templates with a default template and pattern category for FSE themes
+- Added: Setting to disable automatic reader button insertion, disabled by default for new installs
+- Changed: Existing installs keep automatic reader button insertion enabled during upgrade unless they had disabled it
+- Changed: Reader modal now opens as a full-width viewport modal
 
 = 2.0.0 =
 - Changed: Minimum requirements are now WordPress 6.0 and PHP 8.2

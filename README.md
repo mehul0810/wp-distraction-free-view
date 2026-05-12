@@ -60,6 +60,18 @@ npm run lint:js
 npm run lint:css
 ```
 
+## Reader Placement
+
+- Use the `WP Distraction Free View / Reader Button` block in posts, pages, public custom post types, and Query Loop templates.
+- Use the `[wpdfv]` shortcode when block placement is not available.
+- Automatic button insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior after upgrade.
+
+## Modal Templates
+
+The modal content is rendered through block-based templates. The plugin registers a default reader modal template and a `WP Distraction Free View` pattern category for block themes.
+
+Block themes and site-specific code can register additional modal templates with the `wpdfv_modal_templates` filter.
+
 ## Available npm Scripts
 
 | Command | Description |
