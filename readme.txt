@@ -1,37 +1,33 @@
 === WP Distraction Free View ===
 Contributors: mehul0810
-Tags: wp couch mode, distraction free, zen view, distraction free reading, fullscreen, fullscreen mode,
+Tags: distraction free, reading mode, fullscreen, accessibility, reader
 Donate link: https://buymeacoffee.com/mehulgohil
-Requires at least: 4.8
-Tested up to: 5.7
-Requires PHP: 5.6
-Stable tag: 1.6.0
-License: GPLv3
-License URI: http://www.gnu.org/licenses/gpl-3.0.html
+Requires at least: 6.0
+Tested up to: 6.9
+Requires PHP: 8.2
+Stable tag: 2.0.0
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-This WordPress plugin will provide you a distraction free view for posts, pages and any custom post type which will help your visitors to effectively read your content without any distraction.
+This WordPress plugin provides a distraction free reader view for posts, pages, and public custom post types.
 
 == Description ==
-**WP Distraction Free View** is a WordPress plugin which provides distraction free viewing mode to the website users. This plugin will provide a platform to your site users to view the articles or posts in a dual full page view. There will not be any advertisements which can distract your site users from reading your well written article or post.
+**WP Distraction Free View** adds a focused reader mode for WordPress content. Visitors can open content in a clean modal, switch to fullscreen, and print the readable view.
 
-Now-a-days, we can see lots of website and blog are developed providing content on various different topics. But, the main distraction with those websites or blogs is that they contain lots of advertisements on their articles due to which users finds it too much distracting and cumbersome to read your article. This indirectly affects your website popularity and visitors will never come back to your website and you will lose traffic on your website.
-
-This plugin will be of great benefit, if you have articles or post for your site users. This plugin will definitely boost your website traffic.
+The settings screen uses WordPress-native components and stores settings in the existing plugin option so upgrades preserve current configuration.
 
 = Features =
 
-1. Fullscreen Mode (kind of ZenView)
+1. Fullscreen reader mode
 2. Print Support
-3. Clean Code
-4. Clean UI
-5. Light Weight
-6. Shortcode `[wpdfv]` Supprot
-7. Gutenberg Block support (coming soon)
+3. WordPress Design System based settings UI
+4. Public post type controls
+5. Shortcode `[wpdfv]` support
 
 = Benefits =
 1. Engage your site visitors
-2. Boost your website traffic
-3. No Advertisements while viewing content of pages, posts and any custom post type.
+2. Give readers a focused view of long-form content
+3. Reduce surrounding theme and widget distractions while viewing selected content.
 
 = Connect with WP Distraction Free View - WordPress Plugin =
 
@@ -63,7 +59,7 @@ Please follow below instructions to install this plugin manually:
 
 = Do the plugin support Print feature? =
 
-Yes. Plugin has the capability to enable and disable print feature from admin panel.
+Yes. The reader modal includes a print action.
 
 = What is dual fullscreen mode? =
 
@@ -75,6 +71,14 @@ With Dual Fullscreen mode, user can view the posts in popup mode (i.e. browser's
 3. Refreshed Fullscreen mode
 
 == Changelog ==
+
+= 2.0.0 =
+- Changed: Minimum requirements are now WordPress 6.0 and PHP 8.2
+- Changed: Rebuilt admin settings with WordPress components and REST API
+- Changed: Rebuilt distraction free view modal with WordPress components
+- Changed: Modernized the asset build around @wordpress/scripts
+- Fixed: Shortcode rendering no longer calls a removed helper function
+- Fixed: Runtime autoloading no longer depends on Composer vendor files
 
 = 1.6.0: 16th May 2021 =
 - Refactor: Improved UX for the admin settings UI
