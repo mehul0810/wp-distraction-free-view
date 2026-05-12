@@ -1,67 +1,79 @@
-<h1><p align="center">WP Distraction Free View 💚</p></h1>
+# WP Distraction Free View
 
-<p align="center">This WordPress plugin will help you achieve a distraction free view for your pages, posts and custom post types.</p>
+WP Distraction Free View adds a focused reader mode for WordPress posts, pages, and public custom post types.
 
----
+[Download WP Distraction Free View on WordPress.org](https://wordpress.org/plugins/wp-distraction-free-view/)
 
-👉🏻 Not a developer? Running WordPress? [Download WP Distraction Free View](https://wordpress.org/plugins/wp-distraction-free-view/) on WordPress.org.
+![WordPress version](https://img.shields.io/wordpress/plugin/v/wp-distraction-free-view.svg)
+![WordPress Rating](https://img.shields.io/wordpress/plugin/r/wp-distraction-free-view.svg)
+![WordPress Downloads](https://img.shields.io/wordpress/plugin/dt/wp-distraction-free-view.svg)
+[![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](https://github.com/mehul0810/wp-distraction-free-view/blob/master/license.txt)
 
-![WordPress version](https://img.shields.io/wordpress/plugin/v/wp-distraction-free-view.svg) ![WordPress Rating](https://img.shields.io/wordpress/plugin/r/wp-distraction-free-view.svg) ![WordPress Downloads](https://img.shields.io/wordpress/plugin/dt/wp-distraction-free-view.svg) [![License](https://img.shields.io/badge/license-GPL--3.0%2B-green.svg)](https://github.com/mehul0810/wp-distraction-free-view/blob/master/license.txt) 
+## Support
 
-Welcome to the GitHub repository for "WP Distraction Free View" WordPress Plugin. This is the core repository and heart of an ecosystem of active development. Here you can browse the source, look at open issues, and contribute to the project. 
+This repository is for development. For user support, use the [WordPress.org support forum](https://wordpress.org/support/plugin/wp-distraction-free-view).
 
-Happy Coding!
- 
- ## 🙋 Support
- 
- This repository is not suitable for support. Please don't use GitHub issues for non-development related support requests. Don't get us wrong, we're more than happy to help you! However, to get the support you need please use the following channels:
+## Requirements
 
-* [WP.org Support Forums](https://wordpress.org/support/plugin/wp-distraction-free-view) - for all **free** users.
-* [Documentation](https://mehulgohil.com/contact) - for all **admins** (coming soon). 
- 
-## 🌱 Getting Started 
+- WordPress 6.0 or later
+- PHP 8.2 or later
+- Node.js 24.15.0
+- npm 11 or later
+- Composer for PHP development tooling
 
-If you're looking to contribute or actively develop on the plugin, Welcome! We're glad you're here. Please ⭐️ this repository and fork it to begin local development. 
+The Node version is pinned in `.nvmrc` and `.node-version`.
 
-Most of us are using [Local by Flywheel](https://localbyflywheel.com/) to develop on WordPress, which makes set up quick and easy. If you prefer [Docker](https://www.docker.com/), [VVV](https://github.com/Varying-Vagrant-Vagrants/VVV), or another flavor of local development that's cool too!
+## Local Development
 
-## ✅ Prerequisites
-* [Node.js](https://nodejs.org/en/) as JavaScript engine
-* [NPM](https://docs.npmjs.com/) npm command globally available in CLI
+Clone the repository into your local WordPress plugins directory:
 
-## 💻 Local Development 
+```bash
+cd /path/to/wp-content/plugins
+git clone https://github.com/mehul0810/wp-distraction-free-view.git
+cd wp-distraction-free-view
+```
 
-To get started developing on the WP Distraction Free View, you will need to perform the following steps:
+Install dependencies:
 
-1. Create a new WordPress site with any URL
-2. `cd` into your local plugins directory: `/path/to/wp-content/plugins/`
-3. Fork this repository from GitHub and then clone that into your plugins directory in a new `wp-distraction-free-view` directory
-4. Run `npm install` to get the necessary npm packages
-5. Activate the plugin in WordPress
-6. Run `npm run watch` to start the watch process which will build the sass and script files  
+```bash
+composer install
+npm install
+```
 
-That's it. You're now ready to start development.
+Build assets:
 
-**Available commands**
+```bash
+npm run build
+```
 
-| Command             | Description  |
-| :------------- | :------------ |
-| `npm run watch`      | Live reloads JS and SASS files. Typically you'll run this command before you start development. It's necessary to build the JS/CSS however if you're working strictly within PHP it may not be necessary to run.  |
-| `npm run dev`      |    Runs a one time build for development. No production files are created. |
-| `npm run production` |  Builds the minified production files for release. |
+Start the watch build:
 
-**Development Notes**
+```bash
+npm run start
+```
 
-* Ensure that you have `SCRIPT_DEBUG` enabled within your wp-config.php file. Here's a good example of wp-config.php for debugging:
-    ```
-     // Enable WP_DEBUG mode
-    define( 'WP_DEBUG', true );
-    
-    // Enable Debug logging to the /wp-content/debug.log file
-    define( 'WP_DEBUG_LOG', true );
-   
-    // Loads unminified core files
-    define( 'SCRIPT_DEBUG', true );
-    ```
-* Commit the `package.lock` file. Read more about why [here](https://docs.npmjs.com/files/package-lock.json). 
-* Your editor should recognize the `.eslintrc` and `.editorconfig` files within the Repo's root directory. Please only submit PRs following those coding style rulesets. 
+Run checks:
+
+```bash
+composer lint
+npm run lint:js
+npm run lint:css
+```
+
+## Available npm Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run start` | Starts the WordPress scripts watch build. |
+| `npm run build` | Builds production JS and CSS assets. |
+| `npm run lint:js` | Lints JavaScript source files. |
+| `npm run lint:css` | Lints CSS and SCSS source files. |
+| `npm run format` | Formats source files handled by WordPress scripts. |
+| `npm run packages-update` | Runs the WordPress packages update helper. |
+
+## Development Notes
+
+- Commit `package-lock.json` whenever npm dependency metadata changes.
+- Built assets are generated into `assets/dist`.
+- Runtime plugin code does not require Composer autoload files.
+- The plugin is licensed under GPL-2.0-or-later.
