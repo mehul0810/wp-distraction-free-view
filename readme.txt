@@ -3,7 +3,7 @@ Contributors: mehul0810
 Tags: distraction free, reading mode, fullscreen, accessibility, reader
 Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.2
 Stable tag: 2.1.0
 License: GPL-2.0-or-later
