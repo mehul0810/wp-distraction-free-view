@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 2.2.0
+Stable tag: 1.7.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,34 +115,24 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Changelog ==
 
-= 2.2.0 =
-- Added: Frontend Reader Mode positioning and product copy while keeping the WP Distraction Free View name and slug
-- Added: Visitor reader preferences for font size, light/dark/sepia theme, and content width, stored in localStorage
-- Added: Optional reading progress indicator and estimated reading time
-- Added: URL activation with `?reader-mode=1`
-- Added: Toggle placement setting for manual only, before content, after content, or floating button
-- Added: Custom exit label setting
-- Changed: Kept the shortcode surface aligned with master by using `[wpdfv]` as the only shortcode
-- Added: Shared Reader Mode defaults, sanitization, and idempotent upgrade handling
-- Added: PHPUnit test coverage and CI workflow for PHP, PHPCS, JS/CSS linting, and asset builds
-- Changed: Default toggle label for new installs is now "Read in Reader Mode"
-- Changed: Settings menu copy now frames the feature as Reader Mode
-- Changed: Release workflows now use the pinned Node version from `.nvmrc`
-
-= 2.1.0 =
-- Added: Reader Button block for posts, pages, public custom post types, and Query Loop templates
-- Added: Block-based modal templates with a default template and pattern category for FSE themes
-- Added: Setting to disable automatic reader button insertion, disabled by default for new installs
-- Changed: Existing installs keep automatic reader button insertion enabled during upgrade unless they had disabled it
-- Changed: Reader modal now opens as a full-width viewport modal
-
-= 2.0.0 =
-- Changed: Minimum requirements are now WordPress 6.0 and PHP 8.2
-- Changed: Rebuilt admin settings with WordPress components and REST API
-- Changed: Rebuilt distraction free view modal with WordPress components
-- Changed: Modernized the asset build around @wordpress/scripts
-- Fixed: Shortcode rendering no longer calls a removed helper function
-- Fixed: Runtime autoloading no longer depends on Composer vendor files
+= 1.7.0 =
+- Added: Frontend Reader Mode positioning and product copy while keeping the WP Distraction Free View name and slug.
+- Added: Reader Mode Toggle block for posts, pages, public custom post types, and Query Loop templates.
+- Added: Visitor reader preferences for font size, light/dark/sepia theme, and content width, stored in localStorage.
+- Added: Optional reading progress indicator, estimated reading time, and URL activation with `?reader-mode=1`.
+- Added: Block-based modal templates with a default template and pattern category for FSE themes.
+- Added: More Plugins settings tab with free WordPress.org plugin install/activate actions and paid plugin links.
+- Added: Shared Reader Mode defaults, sanitization, and idempotent 1.7.0 upgrade handling from existing 1.6.0 installs.
+- Changed: Minimum requirements are now WordPress 6.0 and PHP 8.2.
+- Changed: Rebuilt admin settings and Reader Mode modal with WordPress components and REST API.
+- Changed: Modernized the asset build around `@wordpress/scripts`.
+- Changed: Automatic toggle insertion is disabled for new installs while existing installs keep their previous automatic insertion behavior unless it was already disabled.
+- Changed: Kept the shortcode surface aligned with master by using `[wpdfv]` as the only shortcode.
+- Changed: Default toggle label for new installs is now "Read in Reader Mode".
+- Changed: Settings menu copy now frames the feature as Reader Mode.
+- Added: PHPUnit test coverage and CI workflow for PHP, PHPCS, JS/CSS linting, and asset builds.
+- Fixed: Shortcode rendering no longer calls a removed helper function.
+- Fixed: Runtime autoloading no longer depends on Composer vendor files.
 
 = 1.6.0: 16th May 2021 =
 - Refactor: Improved UX for the admin settings UI
@@ -199,8 +189,5 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Upgrade Notice ==
 
-= 2.2.0 =
-Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration. Existing saved options and legacy shortcodes continue to work.
-
-= 2.1.0 =
-Automatic button insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior unless they had disabled it.
+= 1.7.0 =
+Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options and legacy shortcodes continue to work.

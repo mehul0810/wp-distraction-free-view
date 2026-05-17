@@ -15,13 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shared Reader Mode defaults, sanitization, and calculations.
  *
- * @since 2.2.0
+ * @since 1.7.0
  */
 class Reader {
 	/**
 	 * Reader Mode query parameter.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @var string
 	 */
@@ -30,7 +30,7 @@ class Reader {
 	/**
 	 * Visitor preference localStorage key.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @var string
 	 */
@@ -39,7 +39,7 @@ class Reader {
 	/**
 	 * Get normalized default settings.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -63,7 +63,7 @@ class Reader {
 	/**
 	 * Get stored settings merged with current defaults.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -80,7 +80,7 @@ class Reader {
 	/**
 	 * Sanitize reader settings.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $data              Raw settings.
 	 * @param array $public_post_types Optional allowed post type slugs.
@@ -144,7 +144,7 @@ class Reader {
 	/**
 	 * Get default reader toggle text.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -155,7 +155,7 @@ class Reader {
 	/**
 	 * Get default reader exit text.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -166,7 +166,7 @@ class Reader {
 	/**
 	 * Get allowed automatic toggle placements.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -177,7 +177,7 @@ class Reader {
 	/**
 	 * Get allowed reader themes.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -188,7 +188,7 @@ class Reader {
 	/**
 	 * Get allowed reader content widths.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -199,7 +199,7 @@ class Reader {
 	/**
 	 * Get allowed reader font sizes.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -210,7 +210,7 @@ class Reader {
 	/**
 	 * Get display location options for settings UI.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -238,7 +238,7 @@ class Reader {
 	/**
 	 * Get reader theme options for settings UI.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -262,7 +262,7 @@ class Reader {
 	/**
 	 * Get content width options for settings UI.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -286,7 +286,7 @@ class Reader {
 	/**
 	 * Get font size options for settings UI.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -310,7 +310,7 @@ class Reader {
 	/**
 	 * Determine whether automatic toggle insertion is enabled.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -323,7 +323,7 @@ class Reader {
 	/**
 	 * Get enabled post type slugs.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -336,7 +336,7 @@ class Reader {
 	/**
 	 * Get automatic display location.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -349,7 +349,7 @@ class Reader {
 	/**
 	 * Determine whether a post type is enabled for Reader Mode.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param string $post_type Post type slug.
 	 *
@@ -362,7 +362,7 @@ class Reader {
 	/**
 	 * Determine whether the current request asks to open Reader Mode.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -379,7 +379,7 @@ class Reader {
 	/**
 	 * Calculate estimated reading time in minutes.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param string $content Post content.
 	 *
@@ -393,7 +393,7 @@ class Reader {
 		/**
 		 * Filter the words-per-minute value used for Reader Mode estimates.
 		 *
-		 * @since 2.2.0
+		 * @since 1.7.0
 		 *
 		 * @param int $words_per_minute Words per minute.
 		 */
@@ -406,7 +406,7 @@ class Reader {
 	/**
 	 * Get the localized reading time label for a post.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param \WP_Post $post Post object.
 	 *
@@ -425,7 +425,7 @@ class Reader {
 	/**
 	 * Get public post type slugs.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */

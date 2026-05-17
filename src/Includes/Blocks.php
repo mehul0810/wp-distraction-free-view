@@ -16,7 +16,7 @@ class Blocks {
 	/**
 	 * Constructor.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 */
 	public function __construct() {
 		add_action( 'init', [ $this, 'register_blocks' ] );
@@ -26,7 +26,7 @@ class Blocks {
 	/**
 	 * Register plugin blocks.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -42,7 +42,7 @@ class Blocks {
 	/**
 	 * Register a block category for WP Distraction Free View blocks.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param array $categories Block categories.
 	 *
@@ -69,7 +69,7 @@ class Blocks {
 	/**
 	 * Render the reader button block.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param array     $attributes Block attributes.
 	 * @param string    $content    Block content.

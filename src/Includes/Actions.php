@@ -64,7 +64,7 @@ class Actions {
 	/**
 	 * Determine whether frontend assets are needed on the current page.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -83,7 +83,7 @@ class Actions {
 		/**
 		 * Filter whether WP Distraction Free View frontend assets should load.
 		 *
-		 * @since 2.0.0
+		 * @since 1.7.0
 		 *
 		 * @param bool $should_enqueue Whether assets should load.
 		 */
@@ -93,7 +93,7 @@ class Actions {
 	/**
 	 * Render a floating automatic Reader Mode toggle when enabled.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -115,7 +115,7 @@ class Actions {
 	/**
 	 * Determine whether Reader Mode is enabled for the current singular post.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param \WP_Post $post Post object.
 	 *
@@ -132,7 +132,7 @@ class Actions {
 	/**
 	 * Get settings exposed to the frontend reader app.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */

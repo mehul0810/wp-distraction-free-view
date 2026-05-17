@@ -18,7 +18,7 @@ class Helpers {
 	/**
 	 * Whether automatic button injection is temporarily suspended.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @var bool
 	 */
@@ -117,7 +117,7 @@ class Helpers {
 	/**
 	 * Check whether automatic frontend button injection is enabled.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -164,7 +164,7 @@ class Helpers {
 	/**
 	 * Check whether automatic button injection is suspended.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -175,7 +175,7 @@ class Helpers {
 	/**
 	 * Run a callback while automatic button injection is suspended.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param callable $callback Callback to run.
 	 *

@@ -63,7 +63,7 @@ class Main {
 	/**
 	 * Register REST routes for reader content.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -90,7 +90,7 @@ class Main {
 	/**
 	 * Get reader content for a post.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 *
@@ -134,7 +134,7 @@ class Main {
 	/**
 	 * Determine whether a post can be read through the public reader endpoint.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param \WP_Post $post Post object.
 	 *

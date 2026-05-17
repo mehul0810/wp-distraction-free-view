@@ -77,7 +77,7 @@ class Filters {
 	/**
 	 * Add body classes when Reader Mode is requested through the URL.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $classes Body classes.
 	 *

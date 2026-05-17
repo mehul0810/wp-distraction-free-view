@@ -16,7 +16,7 @@ class Templates {
 	/**
 	 * Default modal template slug.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @var string
 	 */
@@ -25,7 +25,7 @@ class Templates {
 	/**
 	 * Block pattern category for modal templates.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @var string
 	 */
@@ -34,7 +34,7 @@ class Templates {
 	/**
 	 * Constructor.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 */
 	public function __construct() {
 		add_action( 'init', [ $this, 'register_patterns' ] );
@@ -43,7 +43,7 @@ class Templates {
 	/**
 	 * Register block pattern category and built-in modal templates.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -83,7 +83,7 @@ class Templates {
 	/**
 	 * Get modal template options for settings UI and rendering.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -104,7 +104,7 @@ class Templates {
 	/**
 	 * Render the selected block-based modal template for a post.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @param \WP_Post $post Post to render.
 	 *
@@ -138,7 +138,7 @@ class Templates {
 		/**
 		 * Filter the rendered modal template content.
 		 *
-		 * @since 2.1.0
+		 * @since 1.7.0
 		 *
 		 * @param string   $content       Rendered modal template content.
 		 * @param \WP_Post $post          Current post.
@@ -151,7 +151,7 @@ class Templates {
 	/**
 	 * Get the selected modal template slug from settings.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -165,7 +165,7 @@ class Templates {
 	/**
 	 * Sanitize and validate a modal template slug.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @param string $slug Template slug.
 	 *
@@ -181,7 +181,7 @@ class Templates {
 	/**
 	 * Get registered modal templates.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -201,7 +201,7 @@ class Templates {
 		 * Block themes can use this to register additional modal layouts with
 		 * block markup and expose them in the plugin settings.
 		 *
-		 * @since 2.1.0
+		 * @since 1.7.0
 		 *
 		 * @param array $templates Modal template definitions keyed by slug.
 		 */
@@ -213,7 +213,7 @@ class Templates {
 	/**
 	 * Get default block markup for the modal template.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -226,7 +226,7 @@ class Templates {
 	/**
 	 * Normalize templates registered by the plugin and third-party code.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @param array $templates Raw templates.
 	 *
@@ -269,7 +269,7 @@ class Templates {
 	/**
 	 * Check if the modal pattern category is already registered.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -284,7 +284,7 @@ class Templates {
 	/**
 	 * Check if a pattern is already registered.
 	 *
-	 * @since 2.1.0
+	 * @since 1.7.0
 	 *
 	 * @param string $pattern_name Pattern name.
 	 *

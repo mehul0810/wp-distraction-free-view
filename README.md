@@ -115,13 +115,14 @@ Block themes and site-specific code can register additional Reader Mode template
 
 ## Upgrade Notes
 
-Version `2.2.0` adds normalized Reader Mode settings while keeping the existing `wpdfv_settings` option. The upgrade routine is incremental and idempotent:
+Version `1.7.0` adds normalized Reader Mode settings while keeping the existing `wpdfv_settings` option. The upgrade routine is incremental and idempotent:
 
 - `wpdfv_version` stores the installed plugin version.
 - Legacy `wpdfv_general` values are migrated into `wpdfv_settings`.
 - Legacy `display_location = disable` becomes `manual_only`.
 - Existing custom button labels and enabled post types are preserved.
 - New Reader Mode defaults are added without destructive migrations.
+- Development-only `2.0.0` to `2.2.0` version markers are normalized to the 1.7.0 upgrade path.
 - If an upgrade fails, existing settings remain unchanged and an admin notice is shown.
 
 ## Public Compatibility

@@ -190,6 +190,34 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Development-only 2.x markers are normalized to the 1.7.0 release path.
+	 *
+	 * @return void
+	 */
+	public function test_upgrade_normalizes_unreleased_two_x_version_marker() {
+		\update_option( 'wpdfv_version', '2.2.0', false );
+		\update_option(
+			'wpdfv_settings',
+			[
+				'display_location' => 'disable',
+				'button_text'      => 'Read Mode',
+			],
+			false
+		);
+
+		$upgrades = new Upgrades();
+		$upgrades->process_automatic_upgrades();
+
+		$settings = \get_option( 'wpdfv_settings' );
+
+		$this->assertSame( '1.7.0', \get_option( 'wpdfv_version' ) );
+		$this->assertSame( 'manual_only', $settings['display_location'] );
+		$this->assertFalse( $settings['automatic_button_enabled'] );
+		$this->assertSame( 'Read Mode', $settings['button_text'] );
+		$this->assertSame( 'Exit Reader Mode', $settings['exit_button_text'] );
+	}
+
+	/**
 	 * More Plugins groups free and paid cards with install status.
 	 *
 	 * @return void

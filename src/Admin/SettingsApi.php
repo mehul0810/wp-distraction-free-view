@@ -62,7 +62,7 @@ class SettingsApi {
 	/**
 	 * Register REST routes used by the settings app.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -110,7 +110,7 @@ class SettingsApi {
 	/**
 	 * Check whether the current user can manage settings.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -121,7 +121,7 @@ class SettingsApi {
 	/**
 	 * Check whether the current user can install or activate plugins.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return bool
 	 */
@@ -132,7 +132,7 @@ class SettingsApi {
 	/**
 	 * Return settings data for the admin app.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return WP_REST_Response
 	 */
@@ -162,7 +162,7 @@ class SettingsApi {
 	/**
 	 * Handle companion plugin install or activate actions.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 *
@@ -219,7 +219,7 @@ class SettingsApi {
 	/**
 	 * Update plugin settings.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 *
@@ -242,7 +242,7 @@ class SettingsApi {
 	/**
 	 * Get the settings option key.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return string
 	 */
@@ -253,7 +253,7 @@ class SettingsApi {
 	/**
 	 * Get default settings.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -264,7 +264,7 @@ class SettingsApi {
 	/**
 	 * Get settings merged with defaults.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -281,7 +281,7 @@ class SettingsApi {
 	/**
 	 * Get public post types available for read mode.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -302,7 +302,7 @@ class SettingsApi {
 	/**
 	 * Get allowed display locations.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -313,7 +313,7 @@ class SettingsApi {
 	/**
 	 * Get additional plugin cards.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -338,7 +338,7 @@ class SettingsApi {
 	/**
 	 * Get free companion plugins.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -381,7 +381,7 @@ class SettingsApi {
 	/**
 	 * Get paid companion plugins.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -409,7 +409,7 @@ class SettingsApi {
 	/**
 	 * Prepare a free plugin card for the admin app.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $plugin Plugin catalog item.
 	 *
@@ -435,7 +435,7 @@ class SettingsApi {
 	/**
 	 * Get a free plugin install status.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $plugin Plugin catalog item.
 	 *
@@ -458,7 +458,7 @@ class SettingsApi {
 	/**
 	 * Install a free plugin from WordPress.org.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $plugin Plugin catalog item.
 	 *
@@ -523,7 +523,7 @@ class SettingsApi {
 	/**
 	 * Activate a free companion plugin.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $plugin Plugin catalog item.
 	 *
@@ -562,7 +562,7 @@ class SettingsApi {
 	/**
 	 * Get the installed plugin file for a catalog item.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param array $plugin Plugin catalog item.
 	 *
@@ -587,7 +587,7 @@ class SettingsApi {
 	/**
 	 * Check whether a plugin slug is active.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param string $slug Plugin slug.
 	 *
@@ -606,7 +606,7 @@ class SettingsApi {
 	/**
 	 * Get installed plugins.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return array
 	 */
@@ -623,7 +623,7 @@ class SettingsApi {
 	/**
 	 * Check whether a plugin file is active.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @param string $plugin_file Plugin file.
 	 *
@@ -638,7 +638,7 @@ class SettingsApi {
 	/**
 	 * Load admin plugin functions when they are not available yet.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -651,7 +651,7 @@ class SettingsApi {
 	/**
 	 * Load plugin installation dependencies.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -672,7 +672,7 @@ class SettingsApi {
 	/**
 	 * Sanitize settings data.
 	 *
-	 * @since 2.0.0
+	 * @since 1.7.0
 	 *
 	 * @param array $data Settings data to sanitize.
 	 *

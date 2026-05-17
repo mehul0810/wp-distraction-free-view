@@ -52,18 +52,21 @@ class Upgrades {
 			$version = '1.0.0';
 		}
 
+		// 2.0.0-2.2.0 were development-only version markers before the next
+		// public release was corrected to 1.7.0. Normalize those installs so
+		// future version comparisons are not blocked by an unreleased number.
+		if ( preg_match( '/^2\.[0-2]\./', $version ) ) {
+			$version = '1.6.0';
+		}
+
 		try {
 			switch ( true ) {
 				case version_compare( $version, '1.6.0', '<' ):
 					$this->v160_upgrades();
 					$did_upgrade = true;
 					// Fall through so older installs also receive current settings.
-				case version_compare( $version, '2.1.0', '<' ):
-					$this->v210_upgrades();
-					$did_upgrade = true;
-					// Fall through so installs receive current Reader Mode defaults.
-				case version_compare( $version, '2.2.0', '<' ):
-					$this->v220_upgrades();
+				case version_compare( $version, '1.7.0', '<' ):
+					$this->v170_upgrades();
 					$did_upgrade = true;
 			}
 		} catch ( \Throwable $error ) {
@@ -80,7 +83,7 @@ class Upgrades {
 	/**
 	 * Render an admin notice if a safe automatic upgrade could not complete.
 	 *
-	 * @since 2.2.0
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
@@ -131,13 +134,17 @@ class Upgrades {
 	}
 
 	/**
-	 * Upgrade settings for version 2.1.0.
+	 * Upgrade settings for version 1.7.0.
 	 *
-	 * @since 2.1.0
+	 * This is intentionally a lightweight option migration. It fills new Reader
+	 * Mode defaults, normalizes legacy placement values, and leaves existing
+	 * labels/post type choices untouched so rollback remains safe.
+	 *
+	 * @since 1.7.0
 	 *
 	 * @return void
 	 */
-	public function v210_upgrades() {
+	public function v170_upgrades() {
 		$settings = get_option( 'wpdfv_settings', [] );
 
 		if ( ! is_array( $settings ) ) {
@@ -157,31 +164,6 @@ class Upgrades {
 		}
 
 		if ( 'disable' === $display_location ) {
-			$settings['display_location'] = 'after_content';
-		}
-
-		update_option( 'wpdfv_settings', $settings, false );
-	}
-
-	/**
-	 * Upgrade settings for version 2.2.0.
-	 *
-	 * This is intentionally a lightweight option migration. It fills new Reader
-	 * Mode defaults, normalizes legacy placement values, and leaves existing
-	 * labels/post type choices untouched so rollback remains safe.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @return void
-	 */
-	public function v220_upgrades() {
-		$settings = get_option( 'wpdfv_settings', [] );
-
-		if ( ! is_array( $settings ) ) {
-			$settings = [];
-		}
-
-		if ( isset( $settings['display_location'] ) && 'disable' === $settings['display_location'] ) {
 			$settings['display_location']         = 'manual_only';
 			$settings['automatic_button_enabled'] = false;
 		}
