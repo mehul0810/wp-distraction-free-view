@@ -27,3 +27,4 @@ delete_option( 'wpdfv_settings_btn_icon_fontsize' );
 delete_option( 'wpdfv_settings_btn_padding' );
 delete_option( 'wpdfv_settings' );
 delete_option( 'wpdfv_version' );
+delete_option( 'wpdfv_upgrade_error' );

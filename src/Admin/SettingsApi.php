@@ -10,7 +10,7 @@ namespace WPDFV\Admin;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
-use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Reader;
 use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
@@ -109,6 +109,9 @@ class SettingsApi {
 				'defaults'           => $this->get_default_settings(),
 				'postTypes'          => array_values( $this->get_public_post_types() ),
 				'displayLocations'   => $this->get_display_locations(),
+				'readerThemes'       => Reader::get_reader_theme_options(),
+				'contentWidths'      => Reader::get_content_width_options(),
+				'fontSizes'          => Reader::get_font_size_options(),
 				'modalTemplates'     => Templates::get_template_options(),
 				'recommendedPlugins' => $this->get_recommended_plugins(),
 				'restNamespace'      => WPDFV_REST_NAMESPACE,
@@ -161,13 +164,7 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_default_settings() {
-		return [
-			'automatic_button_enabled' => false,
-			'where_to_display'         => [ 'post', 'page' ],
-			'display_location'         => 'after_content',
-			'button_text'              => Helpers::get_default_button_text(),
-			'modal_template'           => Templates::DEFAULT_TEMPLATE,
-		];
+		return Reader::get_default_settings();
 	}
 
 	/**
@@ -184,7 +181,7 @@ class SettingsApi {
 			$settings = [];
 		}
 
-		return $this->sanitize_settings_data( array_merge( $this->get_default_settings(), $settings ) );
+		return Reader::sanitize_settings_data( array_merge( $this->get_default_settings(), $settings ), array_keys( $this->get_public_post_types() ) );
 	}
 
 	/**
@@ -216,16 +213,7 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_display_locations() {
-		return [
-			[
-				'label' => esc_html__( 'Before content', 'wp-distraction-free-view' ),
-				'value' => 'before_content',
-			],
-			[
-				'label' => esc_html__( 'After content', 'wp-distraction-free-view' ),
-				'value' => 'after_content',
-			],
-		];
+		return Reader::get_display_location_options();
 	}
 
 	/**
@@ -260,25 +248,6 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function sanitize_settings_data( $data ) {
-		$defaults          = $this->get_default_settings();
-		$public_post_types = array_keys( $this->get_public_post_types() );
-		$display_locations = wp_list_pluck( $this->get_display_locations(), 'value' );
-		$automatic_enabled = isset( $data['automatic_button_enabled'] ) ? (bool) $data['automatic_button_enabled'] : $defaults['automatic_button_enabled'];
-		$where_to_display  = isset( $data['where_to_display'] ) && is_array( $data['where_to_display'] ) ? $data['where_to_display'] : $defaults['where_to_display'];
-		$display_location  = isset( $data['display_location'] ) ? sanitize_key( $data['display_location'] ) : $defaults['display_location'];
-		$button_text       = isset( $data['button_text'] ) ? sanitize_text_field( $data['button_text'] ) : $defaults['button_text'];
-		$modal_template    = isset( $data['modal_template'] ) ? Templates::sanitize_template_slug( $data['modal_template'] ) : $defaults['modal_template'];
-		$automatic_enabled = 'disable' === $display_location ? false : $automatic_enabled;
-		$where_to_display  = array_values( array_intersect( array_map( 'sanitize_key', $where_to_display ), $public_post_types ) );
-		$display_location  = in_array( $display_location, $display_locations, true ) ? $display_location : $defaults['display_location'];
-		$button_text       = '' !== $button_text ? $button_text : $defaults['button_text'];
-
-		return [
-			'automatic_button_enabled' => $automatic_enabled,
-			'where_to_display'         => $where_to_display,
-			'display_location'         => $display_location,
-			'button_text'              => $button_text,
-			'modal_template'           => $modal_template,
-		];
+		return Reader::sanitize_settings_data( $data, array_keys( $this->get_public_post_types() ) );
 	}
 }

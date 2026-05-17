@@ -1,0 +1,179 @@
+<?php
+/**
+ * Reader Mode unit tests.
+ *
+ * @package WPDistractionFreeView
+ */
+
+namespace WPDFV\Tests;
+
+use PHPUnit\Framework\TestCase;
+use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Reader;
+use WPDFV\Includes\Templates;
+
+/**
+ * Tests for Reader Mode settings, upgrades, and rendering helpers.
+ */
+class ReaderTest extends TestCase {
+	/**
+	 * Reset test state.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		\wpdfv_tests_reset_state();
+	}
+
+	/**
+	 * Defaults describe the new frontend Reader Mode experience.
+	 *
+	 * @return void
+	 */
+	public function test_default_settings() {
+		$defaults = Reader::get_default_settings();
+
+		$this->assertFalse( $defaults['automatic_button_enabled'] );
+		$this->assertSame( 'manual_only', $defaults['display_location'] );
+		$this->assertSame( [ 'post', 'page' ], $defaults['where_to_display'] );
+		$this->assertSame( 'Read in Reader Mode', $defaults['button_text'] );
+		$this->assertSame( 'Exit Reader Mode', $defaults['exit_button_text'] );
+		$this->assertTrue( $defaults['reading_progress_enabled'] );
+		$this->assertTrue( $defaults['reading_time_enabled'] );
+		$this->assertTrue( $defaults['preference_controls_enabled'] );
+	}
+
+	/**
+	 * Sanitization rejects unknown values and keeps rollback-safe defaults.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_settings_data() {
+		$settings = Reader::sanitize_settings_data(
+			[
+				'automatic_button_enabled'    => true,
+				'where_to_display'            => [ 'post', 'bad type', 'book', 'book' ],
+				'display_location'            => 'floating',
+				'button_text'                 => '<strong>Read</strong>',
+				'exit_button_text'            => '',
+				'modal_template'              => 'missing',
+				'reading_progress_enabled'    => 0,
+				'reading_time_enabled'        => 1,
+				'preference_controls_enabled' => true,
+				'default_reader_theme'        => 'neon',
+				'default_content_width'       => 'wide',
+				'default_font_size'           => 'large',
+			],
+			[ 'post', 'page', 'book' ]
+		);
+
+		$this->assertTrue( $settings['automatic_button_enabled'] );
+		$this->assertSame( [ 'post', 'book' ], $settings['where_to_display'] );
+		$this->assertSame( 'floating', $settings['display_location'] );
+		$this->assertSame( 'Read', $settings['button_text'] );
+		$this->assertSame( 'Exit Reader Mode', $settings['exit_button_text'] );
+		$this->assertSame( Templates::DEFAULT_TEMPLATE, $settings['modal_template'] );
+		$this->assertFalse( $settings['reading_progress_enabled'] );
+		$this->assertTrue( $settings['reading_time_enabled'] );
+		$this->assertSame( 'light', $settings['default_reader_theme'] );
+		$this->assertSame( 'wide', $settings['default_content_width'] );
+		$this->assertSame( 'large', $settings['default_font_size'] );
+	}
+
+	/**
+	 * Manual-only placement always disables automatic insertion.
+	 *
+	 * @return void
+	 */
+	public function test_manual_only_disables_automatic_insertion() {
+		$settings = Reader::sanitize_settings_data(
+			[
+				'automatic_button_enabled' => true,
+				'display_location'         => 'manual_only',
+			],
+			[ 'post', 'page' ]
+		);
+
+		$this->assertFalse( $settings['automatic_button_enabled'] );
+	}
+
+	/**
+	 * URL activation recognizes public Reader Mode values only.
+	 *
+	 * @return void
+	 */
+	public function test_reader_mode_query_activation() {
+		$_GET['reader-mode'] = 'yes';
+		$this->assertTrue( Reader::is_reader_mode_request() );
+
+		$_GET['reader-mode'] = '0';
+		$this->assertFalse( Reader::is_reader_mode_request() );
+	}
+
+	/**
+	 * Reading time uses the documented word-count estimate.
+	 *
+	 * @return void
+	 */
+	public function test_calculate_reading_time() {
+		$this->assertSame( 1, Reader::calculate_reading_time( '' ) );
+		$this->assertSame( 3, Reader::calculate_reading_time( str_repeat( 'word ', 401 ) ) );
+	}
+
+	/**
+	 * Reader toggle rendering keeps the legacy class and adds new semantics.
+	 *
+	 * @return void
+	 */
+	public function test_reader_toggle_markup() {
+		$markup = Helpers::display_read_mode_button( 123 );
+
+		$this->assertStringContainsString( 'wpdfv-fullscreen-btn', $markup );
+		$this->assertStringContainsString( 'wpdfv-reader-toggle', $markup );
+		$this->assertStringContainsString( 'data-post-id="123"', $markup );
+		$this->assertStringContainsString( 'Read in Reader Mode', $markup );
+		$this->assertStringContainsString( 'aria-haspopup="dialog"', $markup );
+	}
+
+	/**
+	 * Legacy installs migrate incrementally and idempotently.
+	 *
+	 * @return void
+	 */
+	public function test_upgrade_migrates_legacy_options_idempotently() {
+		\update_option( 'wpdfv_version', '1.5.0', false );
+		\update_option(
+			'wpdfv_general',
+			[
+				'display_read_mode_at' => 'before_content',
+				'read_mode_btn_text'   => 'Focus view',
+			],
+			false
+		);
+		\update_option(
+			'wpdfv_settings',
+			[
+				'where_to_display' => [ 'post', 'book' ],
+			],
+			false
+		);
+
+		$upgrades = new Upgrades();
+		$upgrades->process_automatic_upgrades();
+
+		$settings = \get_option( 'wpdfv_settings' );
+
+		$this->assertSame( WPDFV_VERSION, \get_option( 'wpdfv_version' ) );
+		$this->assertSame( 'before_content', $settings['display_location'] );
+		$this->assertSame( 'Focus view', $settings['button_text'] );
+		$this->assertTrue( $settings['automatic_button_enabled'] );
+		$this->assertSame( [ 'post', 'book' ], $settings['where_to_display'] );
+		$this->assertSame( 'Exit Reader Mode', $settings['exit_button_text'] );
+		$this->assertTrue( $settings['reading_progress_enabled'] );
+
+		$upgrades->process_automatic_upgrades();
+
+		$this->assertSame( $settings, \get_option( 'wpdfv_settings' ) );
+	}
+}

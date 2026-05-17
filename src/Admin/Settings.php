@@ -45,7 +45,7 @@ class Settings extends SettingsApi {
 	public function add_admin_menu() {
 		add_options_page(
 			esc_html__( 'WP Distraction Free View', 'wp-distraction-free-view' ),
-			esc_html__( 'Distraction Free Mode', 'wp-distraction-free-view' ),
+			esc_html__( 'Reader Mode', 'wp-distraction-free-view' ),
 			'manage_options',
 			'wpdfv_settings',
 			[ $this, 'settings_page' ]

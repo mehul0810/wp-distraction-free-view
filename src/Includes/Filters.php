@@ -25,6 +25,7 @@ class Filters {
 	 */
 	public function __construct() {
 		add_filter( 'the_content', [ $this, 'filter_content' ] );
+		add_filter( 'body_class', [ $this, 'add_body_classes' ] );
 	}
 
 	/**
@@ -44,15 +45,12 @@ class Filters {
 			return $content;
 		}
 
-		// Get data about where to display.
-		$where_to_display = Helpers::where_to_display();
-
 		if ( ! Helpers::is_automatic_button_enabled() ) {
 			return $content;
 		}
 
 		// Bailout, if not to show on specific post type.
-		if ( ! is_array( $where_to_display ) || ! in_array( $post->post_type, $where_to_display, true ) ) {
+		if ( ! Reader::is_post_type_enabled( $post->post_type ) ) {
 			return $content;
 		}
 
@@ -61,7 +59,7 @@ class Filters {
 		$button_html    = Helpers::display_read_mode_button( $post->ID );
 
 		// Bailout, if the display button at setting is disabled.
-		if ( 'disable' === $display_btn_at ) {
+		if ( 'manual_only' === $display_btn_at || 'floating' === $display_btn_at ) {
 			return $content;
 		} elseif ( 'before_content' === $display_btn_at ) {
 			$new_content .= $button_html;
@@ -74,5 +72,22 @@ class Filters {
 		}
 
 		return $new_content;
+	}
+
+	/**
+	 * Add body classes when Reader Mode is requested through the URL.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $classes Body classes.
+	 *
+	 * @return array
+	 */
+	public function add_body_classes( $classes ) {
+		if ( Reader::is_reader_mode_request() ) {
+			$classes[] = 'wpdfv-reader-mode-requested';
+		}
+
+		return $classes;
 	}
 }

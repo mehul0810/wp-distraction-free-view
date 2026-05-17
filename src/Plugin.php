@@ -88,17 +88,7 @@ final class Plugin {
 	 */
 	public function activate( $network_wide = false ) {
 		if ( false === get_option( 'wpdfv_settings', false ) ) {
-			update_option(
-				'wpdfv_settings',
-				[
-					'automatic_button_enabled' => false,
-					'where_to_display'         => [ 'post', 'page' ],
-					'display_location'         => 'after_content',
-					'button_text'              => __( 'Read Mode', 'wp-distraction-free-view' ),
-					'modal_template'           => Includes\Templates::DEFAULT_TEMPLATE,
-				],
-				false
-			);
+			update_option( 'wpdfv_settings', Includes\Reader::get_default_settings(), false );
 		}
 
 		update_option( 'wpdfv_version', WPDFV_VERSION, false );

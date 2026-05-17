@@ -188,8 +188,8 @@ class Templates {
 	public static function get_registered_templates() {
 		$templates = [
 			self::DEFAULT_TEMPLATE => [
-				'label'       => __( 'Default reader modal', 'wp-distraction-free-view' ),
-				'description' => __( 'Displays the current post content inside the distraction free modal.', 'wp-distraction-free-view' ),
+				'label'       => __( 'Default Reader Mode layout', 'wp-distraction-free-view' ),
+				'description' => __( 'Displays the current post content inside the frontend Reader Mode view.', 'wp-distraction-free-view' ),
 				'category'    => self::PATTERN_CATEGORY,
 				'content'     => self::get_default_template_content(),
 			],
@@ -256,8 +256,8 @@ class Templates {
 
 		if ( empty( $normalized[ self::DEFAULT_TEMPLATE ] ) ) {
 			$normalized[ self::DEFAULT_TEMPLATE ] = [
-				'label'       => __( 'Default reader modal', 'wp-distraction-free-view' ),
-				'description' => __( 'Displays the current post content inside the distraction free modal.', 'wp-distraction-free-view' ),
+				'label'       => __( 'Default Reader Mode layout', 'wp-distraction-free-view' ),
+				'description' => __( 'Displays the current post content inside the frontend Reader Mode view.', 'wp-distraction-free-view' ),
 				'category'    => self::PATTERN_CATEGORY,
 				'content'     => self::get_default_template_content(),
 			];

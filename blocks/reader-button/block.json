@@ -2,10 +2,10 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 2,
 	"name": "wpdfv/reader-button",
-	"title": "Distraction Free View Button",
+	"title": "Reader Mode Toggle",
 	"category": "wpdfv",
 	"icon": "fullscreen-alt",
-	"description": "Adds a button that opens the current post in distraction free view.",
+	"description": "Adds a button that opens the current post in frontend Reader Mode.",
 	"textdomain": "wp-distraction-free-view",
 	"usesContext": [ "postId", "postType" ],
 	"attributes": {

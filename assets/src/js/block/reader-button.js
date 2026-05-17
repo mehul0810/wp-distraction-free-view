@@ -10,14 +10,15 @@ const Edit = ( { attributes, setAttributes } ) => {
 	const blockProps = useBlockProps( {
 		className: 'wpdfv-fullscreen-container',
 	} );
-	const label = buttonText || __( 'Read Mode', 'wp-distraction-free-view' );
+	const label =
+		buttonText || __( 'Read in Reader Mode', 'wp-distraction-free-view' );
 
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody
 					title={ __(
-						'Button settings',
+						'Reader Mode toggle',
 						'wp-distraction-free-view'
 					) }
 				>
@@ -32,7 +33,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 							setAttributes( { buttonText: value } )
 						}
 						placeholder={ __(
-							'Read Mode',
+							'Read in Reader Mode',
 							'wp-distraction-free-view'
 						) }
 					/>
@@ -40,7 +41,10 @@ const Edit = ( { attributes, setAttributes } ) => {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<button type="button" className="wpdfv-fullscreen-btn">
+				<button
+					type="button"
+					className="wpdfv-fullscreen-btn wpdfv-reader-toggle"
+				>
 					{ label }
 				</button>
 			</div>

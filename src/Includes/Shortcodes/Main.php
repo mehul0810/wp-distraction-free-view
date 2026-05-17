@@ -12,6 +12,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WPDFV\Includes\Helpers;
+use WPDFV\Includes\Reader;
 use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
@@ -28,6 +29,8 @@ class Main {
 	 */
 	public function __construct() {
 		add_shortcode( 'wpdfv', [ $this, 'render_shortcode' ] );
+		add_shortcode( 'wpdfv_reader_toggle', [ $this, 'render_shortcode' ] );
+		add_shortcode( 'dfview', [ $this, 'render_shortcode' ] );
 		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 	}
 
@@ -76,7 +79,7 @@ class Main {
 				'permission_callback' => '__return_true',
 				'args'                => [
 					'id' => [
-						'description'       => __( 'Post ID to render in distraction free view.', 'wp-distraction-free-view' ),
+						'description'       => __( 'Post ID to render in Reader Mode.', 'wp-distraction-free-view' ),
 						'type'              => 'integer',
 						'required'          => true,
 						'sanitize_callback' => 'absint',
@@ -110,7 +113,7 @@ class Main {
 		if ( ! $this->can_read_post( $post ) ) {
 			return new WP_Error(
 				'wpdfv_post_forbidden',
-				__( 'This content is not available in distraction free view.', 'wp-distraction-free-view' ),
+				__( 'This content is not available in Reader Mode.', 'wp-distraction-free-view' ),
 				[ 'status' => 403 ]
 			);
 		}
@@ -119,9 +122,13 @@ class Main {
 
 		return rest_ensure_response(
 			[
-				'id'      => $post->ID,
-				'title'   => get_the_title( $post ),
-				'content' => wp_kses_post( $content ),
+				'id'          => $post->ID,
+				'title'       => get_the_title( $post ),
+				'content'     => wp_kses_post( $content ),
+				'readingTime' => [
+					'minutes' => Reader::calculate_reading_time( $post->post_content ),
+					'label'   => Reader::get_reading_time_label( $post ),
+				],
 			]
 		);
 	}
