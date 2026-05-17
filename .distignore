@@ -4,6 +4,7 @@
 
 /.idea
 /.github
+/.wordpress-org
 /.storybook
 
 /tests
@@ -11,7 +12,6 @@
 /assets/src
 /vendor/bin
 /vendor/composer/installers
-/wp-org-assets
 
 .scrutinizer.yml
 .travis.yml
