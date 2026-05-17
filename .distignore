@@ -12,6 +12,7 @@
 /assets/src
 /vendor/bin
 /vendor/composer/installers
+/wp-org-asset-variations
 
 .scrutinizer.yml
 .travis.yml
