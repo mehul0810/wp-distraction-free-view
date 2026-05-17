@@ -50,6 +50,11 @@ const SettingsApp = () => {
 	const [ fontSizes, setFontSizes ] = useState( [] );
 	const [ modalTemplates, setModalTemplates ] = useState( [] );
 	const [ recommendedPlugins, setRecommendedPlugins ] = useState( [] );
+	const [ aboutInfo, setAboutInfo ] = useState( {
+		minimumPhp: '',
+		minimumWordPress: '',
+		pluginVersion: '',
+	} );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ notice, setNotice ] = useState( null );
@@ -65,6 +70,11 @@ const SettingsApp = () => {
 				setFontSizes( response.fontSizes );
 				setModalTemplates( response.modalTemplates );
 				setRecommendedPlugins( response.recommendedPlugins );
+				setAboutInfo( {
+					minimumPhp: response.minimumPhp,
+					minimumWordPress: response.minimumWordPress,
+					pluginVersion: response.pluginVersion,
+				} );
 			} )
 			.catch( () => {
 				setNotice( {
@@ -159,6 +169,10 @@ const SettingsApp = () => {
 						title: __( 'Settings', 'wp-distraction-free-view' ),
 					},
 					{
+						name: 'about',
+						title: __( 'About', 'wp-distraction-free-view' ),
+					},
+					{
 						name: 'recommended',
 						title: __(
 							'Recommended Plugins',
@@ -167,26 +181,34 @@ const SettingsApp = () => {
 					},
 				] }
 			>
-				{ ( tab ) =>
-					'settings' === tab.name ? (
-						<SettingsPanel
-							settings={ settings }
-							postTypes={ postTypes }
-							displayLocations={ displayLocations }
-							readerThemes={ readerThemes }
-							contentWidths={ contentWidths }
-							fontSizes={ fontSizes }
-							modalTemplates={ modalTemplates }
-							selectedPostTypes={ selectedPostTypes }
-							isSaving={ isSaving }
-							onTogglePostType={ togglePostType }
-							onUpdateSetting={ updateSetting }
-							onSave={ saveSettings }
-						/>
-					) : (
+				{ ( tab ) => {
+					if ( 'settings' === tab.name ) {
+						return (
+							<SettingsPanel
+								settings={ settings }
+								postTypes={ postTypes }
+								displayLocations={ displayLocations }
+								readerThemes={ readerThemes }
+								contentWidths={ contentWidths }
+								fontSizes={ fontSizes }
+								modalTemplates={ modalTemplates }
+								selectedPostTypes={ selectedPostTypes }
+								isSaving={ isSaving }
+								onTogglePostType={ togglePostType }
+								onUpdateSetting={ updateSetting }
+								onSave={ saveSettings }
+							/>
+						);
+					}
+
+					if ( 'about' === tab.name ) {
+						return <AboutPanel aboutInfo={ aboutInfo } />;
+					}
+
+					return (
 						<RecommendedPlugins plugins={ recommendedPlugins } />
-					)
-				}
+					);
+				} }
 			</TabPanel>
 		</div>
 	);
@@ -461,6 +483,146 @@ const SettingsPanel = ( {
 					</Button>
 				</FlexItem>
 			</Flex>
+		</CardBody>
+	</Card>
+);
+
+const AboutPanel = ( { aboutInfo } ) => (
+	<Card className="wpdfv-settings-card wpdfv-about-card">
+		<CardHeader>
+			<div>
+				<h2>
+					{ __(
+						'About WP Distraction Free View',
+						'wp-distraction-free-view'
+					) }
+				</h2>
+				<p>
+					{ __(
+						'A lightweight frontend Reader Mode for focused reading on WordPress sites.',
+						'wp-distraction-free-view'
+					) }
+				</p>
+			</div>
+		</CardHeader>
+		<CardBody>
+			<div className="wpdfv-about-grid">
+				<section className="wpdfv-about-section">
+					<h3>
+						{ __( 'What it does', 'wp-distraction-free-view' ) }
+					</h3>
+					<p>
+						{ __(
+							'WP Distraction Free View helps visitors read posts, pages, and selected public post types in a clean Reader Mode without changing the original theme layout.',
+							'wp-distraction-free-view'
+						) }
+					</p>
+				</section>
+
+				<section className="wpdfv-about-section">
+					<h3>
+						{ __( 'How to use it', 'wp-distraction-free-view' ) }
+					</h3>
+					<ul>
+						<li>
+							{ __(
+								'Enable the post types that should support Reader Mode.',
+								'wp-distraction-free-view'
+							) }
+						</li>
+						<li>
+							{ __(
+								'Place the Reader Mode Toggle block where you want manual control.',
+								'wp-distraction-free-view'
+							) }
+						</li>
+						<li>
+							{ __(
+								'Use the existing [wpdfv] shortcode when block placement is not available.',
+								'wp-distraction-free-view'
+							) }
+						</li>
+					</ul>
+				</section>
+
+				<section className="wpdfv-about-section">
+					<h3>
+						{ __( 'Compatibility', 'wp-distraction-free-view' ) }
+					</h3>
+					<dl className="wpdfv-about-details">
+						<div>
+							<dt>
+								{ __(
+									'Plugin version',
+									'wp-distraction-free-view'
+								) }
+							</dt>
+							<dd>{ aboutInfo.pluginVersion }</dd>
+						</div>
+						<div>
+							<dt>
+								{ __(
+									'Minimum WordPress',
+									'wp-distraction-free-view'
+								) }
+							</dt>
+							<dd>{ aboutInfo.minimumWordPress }</dd>
+						</div>
+						<div>
+							<dt>
+								{ __(
+									'Minimum PHP',
+									'wp-distraction-free-view'
+								) }
+							</dt>
+							<dd>{ aboutInfo.minimumPhp }</dd>
+						</div>
+						<div>
+							<dt>
+								{ __(
+									'Shortcode',
+									'wp-distraction-free-view'
+								) }
+							</dt>
+							<dd>
+								<code>[wpdfv]</code>
+							</dd>
+						</div>
+					</dl>
+				</section>
+
+				<section className="wpdfv-about-section">
+					<h3>
+						{ __( 'Useful links', 'wp-distraction-free-view' ) }
+					</h3>
+					<ul className="wpdfv-about-links">
+						<li>
+							<ExternalLink href="https://wordpress.org/plugins/wp-distraction-free-view/">
+								{ __(
+									'Plugin page',
+									'wp-distraction-free-view'
+								) }
+							</ExternalLink>
+						</li>
+						<li>
+							<ExternalLink href="https://wordpress.org/support/plugin/wp-distraction-free-view/">
+								{ __(
+									'Support forum',
+									'wp-distraction-free-view'
+								) }
+							</ExternalLink>
+						</li>
+						<li>
+							<ExternalLink href="https://github.com/mehul0810/wp-distraction-free-view">
+								{ __(
+									'GitHub repository',
+									'wp-distraction-free-view'
+								) }
+							</ExternalLink>
+						</li>
+					</ul>
+				</section>
+			</div>
 		</CardBody>
 	</Card>
 );

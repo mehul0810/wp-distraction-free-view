@@ -108,3 +108,53 @@
 		margin-top: 0;
 	}
 }
+
+.wpdfv-about-grid {
+	display: grid;
+	gap: 24px;
+}
+
+.wpdfv-about-section {
+	max-width: 720px;
+
+	ul {
+		list-style: disc;
+		margin: 0 0 0 20px;
+	}
+
+	li {
+		margin-bottom: 8px;
+	}
+}
+
+.wpdfv-about-details {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	margin: 0;
+
+	div {
+		background: #f6f7f7;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		padding: 12px;
+	}
+
+	dt {
+		color: #646970;
+		font-size: 12px;
+		font-weight: 500;
+		margin-bottom: 4px;
+	}
+
+	dd {
+		font-size: 14px;
+		font-weight: 600;
+		margin: 0;
+	}
+}
+
+.wpdfv-about-links {
+	display: grid;
+	gap: 8px;
+}
