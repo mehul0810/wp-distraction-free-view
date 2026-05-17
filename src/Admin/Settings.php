@@ -31,7 +31,6 @@ class Settings extends SettingsApi {
 
 		// Admin Menu.
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ], 9 );
-		add_action( 'in_admin_header', [ $this, 'render_settings_page_header' ] );
 	}
 
 	/**

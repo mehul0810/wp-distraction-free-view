@@ -1,33 +1,19 @@
-.wpdfv-dashboard-header {
-	align-items: center;
-	background: #fff;
-	border-bottom: 1px solid #dcdcde;
-	display: flex;
-	justify-content: space-between;
-	margin: 0 0 0 -20px;
-	padding: 16px 24px;
-
-	.wpdfv-dashboard-header-title h1 {
-		font-size: 20px;
-		font-weight: 500;
-		line-height: 1.4;
-		margin: 0;
-	}
-}
-
 .wpdfv-settings-page {
-	margin-top: 24px;
+	margin: 0 0 0 -20px;
 }
 
 .wpdfv-settings-app {
 	--wpdfv-admin-border: #dcdcde;
 	--wpdfv-admin-muted: #646970;
+	--wpdfv-admin-primary: #3858e9;
+	--wpdfv-admin-primary-dark: #2237a8;
+	--wpdfv-admin-primary-soft: #eef2ff;
 	--wpdfv-admin-soft: #f6f7f7;
 	--wpdfv-admin-surface: #fff;
 	--wpdfv-admin-text: #1d2327;
+	--wpdfv-admin-warm: #fbf7ee;
 
 	color: var(--wpdfv-admin-text);
-	max-width: 1120px;
 
 	.components-notice {
 		margin: 0 0 16px;
@@ -38,31 +24,151 @@
 	align-items: center;
 	display: flex;
 	min-height: 160px;
+	padding-left: 20px;
+}
+
+.wpdfv-settings-header {
+	background: var(--wpdfv-admin-surface);
+	border-bottom: 1px solid var(--wpdfv-admin-border);
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.wpdfv-settings-header__inner {
+	box-sizing: border-box;
+	margin: 0 auto;
+	max-width: 1280px;
+	padding: 12px 24px 0;
+}
+
+.wpdfv-settings-header__brand-row,
+.wpdfv-settings-header__nav-row {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+
+.wpdfv-settings-header__brand-row {
+	min-height: 58px;
+}
+
+.wpdfv-settings-brand {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	min-width: 0;
+}
+
+.wpdfv-settings-brand__mark {
+	align-items: center;
+	background: var(--wpdfv-admin-warm);
+	border-radius: 6px;
+	color: var(--wpdfv-admin-primary);
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: 48px;
+	justify-content: center;
+	width: 48px;
+
+	svg {
+		display: block;
+		height: 31px;
+		width: 31px;
+	}
+}
+
+.wpdfv-settings-brand__name {
+	color: #111;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.15;
+	margin: 0;
+	white-space: nowrap;
+
+	span + span {
+		font-weight: 400;
+	}
+}
+
+.wpdfv-settings-version {
+	background: var(--wpdfv-admin-primary-soft);
+	border-radius: 6px;
+	color: var(--wpdfv-admin-primary-dark);
+	display: inline-flex;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.4;
+	padding: 7px 12px;
+	white-space: nowrap;
+}
+
+.wpdfv-settings-header__nav-row {
+	gap: 24px;
+	min-height: 54px;
 }
 
 .wpdfv-settings-tabs {
+	align-items: stretch;
+	display: flex;
+	gap: 34px;
+	min-width: 0;
+	overflow-x: auto;
+}
 
-	.components-tab-panel__tabs {
-		background: var(--wpdfv-admin-surface);
-		border: 1px solid var(--wpdfv-admin-border);
-		border-radius: 6px;
-		display: inline-flex;
-		margin-bottom: 24px;
-		padding: 3px;
+.wpdfv-settings-tabs__item {
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-bottom: 3px solid transparent;
+	border-radius: 0;
+	color: #1d2327;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.4;
+	margin: 0;
+	padding: 16px 0 13px;
+	white-space: nowrap;
+
+	&:hover {
+		color: var(--wpdfv-admin-primary-dark);
 	}
 
-	.components-tab-panel__tabs-item {
-		border-radius: 4px;
-		font-weight: 500;
-		height: 36px;
-		padding-inline: 16px;
+	&:focus-visible {
+		border-radius: 3px;
+		box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wpdfv-admin-primary);
+		outline: 2px solid transparent;
+	}
 
-		&.is-active {
-			background: #1d2327;
-			box-shadow: none;
-			color: #fff;
+	&.is-active {
+		border-bottom-color: var(--wpdfv-admin-primary);
+		color: var(--wpdfv-admin-primary-dark);
+	}
+}
+
+.wpdfv-settings-header__links {
+	align-items: center;
+	display: flex;
+	flex: 0 0 auto;
+	gap: 28px;
+
+	a {
+		color: #5f6470;
+		font-size: 14px;
+		font-weight: 600;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+
+		&:hover {
+			color: var(--wpdfv-admin-primary-dark);
 		}
 	}
+}
+
+.wpdfv-settings-content {
+	box-sizing: border-box;
+	margin: 24px auto 0;
+	max-width: 1120px;
+	padding: 0 24px 32px;
 }
 
 .wpdfv-screen-intro {
@@ -85,7 +191,7 @@
 }
 
 .wpdfv-eyebrow {
-	color: var(--wp-admin-theme-color, #3858e9);
+	color: var(--wpdfv-admin-primary);
 	font-size: 11px;
 	font-weight: 600;
 	letter-spacing: 0;
@@ -416,18 +522,62 @@
 
 @media (max-width: 600px) {
 
+	.wpdfv-settings-page {
+		margin-left: -10px;
+	}
+
+	.wpdfv-settings-header__inner {
+		padding-inline: 16px;
+	}
+
+	.wpdfv-settings-header__brand-row,
+	.wpdfv-settings-header__nav-row {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.wpdfv-settings-header__brand-row {
+		gap: 14px;
+		padding-block: 12px 10px;
+	}
+
+	.wpdfv-settings-brand__mark {
+		height: 42px;
+		width: 42px;
+
+		svg {
+			height: 27px;
+			width: 27px;
+		}
+	}
+
+	.wpdfv-settings-brand__name {
+		font-size: 22px;
+		white-space: normal;
+	}
+
+	.wpdfv-settings-header__nav-row {
+		gap: 12px;
+		padding-top: 2px;
+	}
+
 	.wpdfv-settings-tabs {
+		gap: 22px;
+		max-width: 100%;
+	}
 
-		.components-tab-panel__tabs {
-			display: flex;
-			width: 100%;
-		}
+	.wpdfv-settings-tabs__item {
+		padding-block: 12px 10px;
+	}
 
-		.components-tab-panel__tabs-item {
-			flex: 1;
-			justify-content: center;
-			padding-inline: 8px;
-		}
+	.wpdfv-settings-header__links {
+		gap: 18px;
+		padding-bottom: 14px;
+	}
+
+	.wpdfv-settings-content {
+		margin-top: 20px;
+		padding-inline: 16px;
 	}
 
 	.wpdfv-hero-panel {

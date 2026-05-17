@@ -11,7 +11,6 @@ import {
 	RadioControl,
 	SelectControl,
 	Spinner,
-	TabPanel,
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
@@ -27,6 +26,10 @@ import { Path, SVG } from '@wordpress/primitives';
 
 const SETTINGS_PATH = '/wp-distraction-free-view/v1/settings';
 const PLUGIN_ACTION_PATH = '/wp-distraction-free-view/v1/plugins';
+const DOCUMENTATION_URL =
+	'https://github.com/mehul0810/wp-distraction-free-view#readme';
+const SUPPORT_URL =
+	'https://wordpress.org/support/plugin/wp-distraction-free-view/';
 const checkIcon = createElement(
 	SVG,
 	{
@@ -35,6 +38,24 @@ const checkIcon = createElement(
 	},
 	createElement( Path, {
 		d: 'M16.5 7.5 10 13.9l-2.5-2.4-1 1 3.5 3.6 7.5-7.6z',
+	} )
+);
+const readerMarkIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+		focusable: 'false',
+	},
+	createElement( Path, {
+		d: 'M5.8 4.5c2.3 0 4.1.5 5.5 1.5 1.4-1 3.2-1.5 5.5-1.5.6 0 1.1.5 1.1 1.1v12.6c0 .6-.5 1.1-1.1 1.1-2.1 0-3.7.4-4.9 1.3-.4.3-.8.3-1.2 0-1.2-.9-2.8-1.3-4.9-1.3-.6 0-1.1-.5-1.1-1.1V5.6c0-.6.5-1.1 1.1-1.1Z',
+	} ),
+	createElement( Path, {
+		d: 'M11.3 6v13.3M7.1 7.3c1.4.1 2.6.4 3.5 1M15.5 7.3c-1.4.1-2.6.4-3.5 1',
+		fill: 'none',
+		stroke: '#fff',
+		strokeLinecap: 'round',
+		strokeWidth: '1.4',
 	} )
 );
 
@@ -57,8 +78,23 @@ const SettingsApp = () => {
 	} );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
+	const [ activeTab, setActiveTab ] = useState( 'about' );
 	const [ activePluginAction, setActivePluginAction ] = useState( '' );
 	const [ notice, setNotice ] = useState( null );
+	const tabs = [
+		{
+			name: 'about',
+			title: __( 'About', 'wp-distraction-free-view' ),
+		},
+		{
+			name: 'configure',
+			title: __( 'Configure', 'wp-distraction-free-view' ),
+		},
+		{
+			name: 'more-plugins',
+			title: __( 'More Plugins', 'wp-distraction-free-view' ),
+		},
+	];
 
 	const applySettingsResponse = ( response ) => {
 		setSettings( response.settings );
@@ -196,80 +232,161 @@ const SettingsApp = () => {
 		);
 	}
 
+	const renderActivePanel = () => {
+		if ( 'configure' === activeTab ) {
+			return (
+				<ConfigurePanel
+					settings={ settings }
+					postTypes={ postTypes }
+					displayLocations={ displayLocations }
+					readerThemes={ readerThemes }
+					contentWidths={ contentWidths }
+					fontSizes={ fontSizes }
+					modalTemplates={ modalTemplates }
+					selectedPostTypes={ selectedPostTypes }
+					isSaving={ isSaving }
+					onTogglePostType={ togglePostType }
+					onUpdateSetting={ updateSetting }
+					onSave={ saveSettings }
+				/>
+			);
+		}
+
+		if ( 'more-plugins' === activeTab ) {
+			return (
+				<MorePluginsPanel
+					plugins={ morePlugins }
+					activePluginAction={ activePluginAction }
+					onPluginAction={ runPluginAction }
+				/>
+			);
+		}
+
+		return (
+			<AboutPanel
+				aboutInfo={ aboutInfo }
+				settings={ settings }
+				readerThemes={ readerThemes }
+				contentWidths={ contentWidths }
+				fontSizes={ fontSizes }
+				selectedPostTypes={ selectedPostTypes }
+			/>
+		);
+	};
+
 	return (
 		<div className="wpdfv-settings-app">
-			{ notice && (
-				<Notice
-					status={ notice.status }
-					onRemove={ () => setNotice( null ) }
+			<SettingsHeader
+				tabs={ tabs }
+				activeTab={ activeTab }
+				pluginVersion={ aboutInfo.pluginVersion }
+				onChangeTab={ setActiveTab }
+			/>
+
+			<main className="wpdfv-settings-content">
+				{ notice && (
+					<Notice
+						status={ notice.status }
+						onRemove={ () => setNotice( null ) }
+					>
+						{ notice.message }
+					</Notice>
+				) }
+
+				<section
+					className="wpdfv-settings-tab-panel"
+					id={ `wpdfv-panel-${ activeTab }` }
+					role="tabpanel"
+					aria-labelledby={ `wpdfv-tab-${ activeTab }` }
 				>
-					{ notice.message }
-				</Notice>
-			) }
-
-			<TabPanel
-				className="wpdfv-settings-tabs"
-				activeClass="is-active"
-				tabs={ [
-					{
-						name: 'about',
-						title: __( 'About', 'wp-distraction-free-view' ),
-					},
-					{
-						name: 'configure',
-						title: __( 'Configure', 'wp-distraction-free-view' ),
-					},
-					{
-						name: 'more-plugins',
-						title: __( 'More Plugins', 'wp-distraction-free-view' ),
-					},
-				] }
-			>
-				{ ( tab ) => {
-					if ( 'configure' === tab.name ) {
-						return (
-							<ConfigurePanel
-								settings={ settings }
-								postTypes={ postTypes }
-								displayLocations={ displayLocations }
-								readerThemes={ readerThemes }
-								contentWidths={ contentWidths }
-								fontSizes={ fontSizes }
-								modalTemplates={ modalTemplates }
-								selectedPostTypes={ selectedPostTypes }
-								isSaving={ isSaving }
-								onTogglePostType={ togglePostType }
-								onUpdateSetting={ updateSetting }
-								onSave={ saveSettings }
-							/>
-						);
-					}
-
-					if ( 'more-plugins' === tab.name ) {
-						return (
-							<MorePluginsPanel
-								plugins={ morePlugins }
-								activePluginAction={ activePluginAction }
-								onPluginAction={ runPluginAction }
-							/>
-						);
-					}
-
-					return (
-						<AboutPanel
-							aboutInfo={ aboutInfo }
-							settings={ settings }
-							readerThemes={ readerThemes }
-							contentWidths={ contentWidths }
-							fontSizes={ fontSizes }
-							selectedPostTypes={ selectedPostTypes }
-						/>
-					);
-				} }
-			</TabPanel>
+					{ renderActivePanel() }
+				</section>
+			</main>
 		</div>
 	);
 };
+
+const SettingsHeader = ( { tabs, activeTab, pluginVersion, onChangeTab } ) => (
+	<header className="wpdfv-settings-header">
+		<div className="wpdfv-settings-header__inner">
+			<div className="wpdfv-settings-header__brand-row">
+				<div className="wpdfv-settings-brand">
+					<span
+						className="wpdfv-settings-brand__mark"
+						aria-hidden="true"
+					>
+						{ readerMarkIcon }
+					</span>
+					<h1 className="wpdfv-settings-brand__name">
+						<span>
+							{ __(
+								'WP Distraction',
+								'wp-distraction-free-view'
+							) }
+						</span>{ ' ' }
+						<span>
+							{ __( 'Free View', 'wp-distraction-free-view' ) }
+						</span>
+					</h1>
+				</div>
+
+				<span className="wpdfv-settings-version">
+					{ sprintf(
+						/* translators: %s: Plugin version. */
+						__( 'v%s', 'wp-distraction-free-view' ),
+						pluginVersion
+					) }
+				</span>
+			</div>
+
+			<div className="wpdfv-settings-header__nav-row">
+				<div
+					className="wpdfv-settings-tabs"
+					aria-label={ __(
+						'WP Distraction Free View settings',
+						'wp-distraction-free-view'
+					) }
+					role="tablist"
+				>
+					{ tabs.map( ( tab ) => {
+						const isActive = tab.name === activeTab;
+
+						return (
+							<button
+								key={ tab.name }
+								id={ `wpdfv-tab-${ tab.name }` }
+								className={
+									isActive
+										? 'wpdfv-settings-tabs__item is-active'
+										: 'wpdfv-settings-tabs__item'
+								}
+								type="button"
+								role="tab"
+								aria-controls={ `wpdfv-panel-${ tab.name }` }
+								aria-selected={ isActive }
+								onClick={ () => onChangeTab( tab.name ) }
+							>
+								{ tab.title }
+							</button>
+						);
+					} ) }
+				</div>
+
+				<div className="wpdfv-settings-header__links">
+					<ExternalLink href={ DOCUMENTATION_URL }>
+						{ __(
+							'View Documentation',
+							'wp-distraction-free-view'
+						) }
+					</ExternalLink>
+					<ExternalLink href={ SUPPORT_URL }>
+						{ __( 'Support', 'wp-distraction-free-view' ) }
+					</ExternalLink>
+				</div>
+			</div>
+		</div>
+	</header>
+);
 
 const ConfigurePanel = ( {
 	settings,
