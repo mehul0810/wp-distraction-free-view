@@ -73,7 +73,7 @@ class Actions {
 		$post           = get_post();
 
 		if ( $post instanceof \WP_Post ) {
-			$has_shortcode    = $this->has_reader_shortcode( $post->post_content );
+			$has_shortcode    = has_shortcode( $post->post_content, 'wpdfv' );
 			$is_reader_post   = $this->is_supported_reader_context( $post );
 			$display_location = Reader::display_location();
 
@@ -110,19 +110,6 @@ class Actions {
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Helper returns escaped static markup.
 		echo Helpers::display_read_mode_button( $post->ID, '', 'class="wpdfv-fullscreen-container wpdfv-fullscreen-container--floating"' );
-	}
-
-	/**
-	 * Determine whether content has a supported reader shortcode.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @param string $content Post content.
-	 *
-	 * @return bool
-	 */
-	protected function has_reader_shortcode( $content ) {
-		return has_shortcode( $content, 'wpdfv' ) || has_shortcode( $content, 'wpdfv_reader_toggle' ) || has_shortcode( $content, 'dfview' );
 	}
 
 	/**

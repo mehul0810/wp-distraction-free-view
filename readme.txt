@@ -24,7 +24,7 @@ Use it to offer focused reading for posts, pages, and selected public custom pos
 1. Frontend Reader Mode for posts, pages, and selected public custom post types.
 2. Clean reading column with comfortable typography, spacing, and width.
 3. Reader Mode Toggle block for posts, pages, custom post types, and Query Loop templates.
-4. Shortcode support with `[wpdfv_reader_toggle]`, `[wpdfv]`, and legacy `[dfview]`.
+4. Shortcode support with the existing `[wpdfv]` shortcode from the master branch.
 5. Optional automatic toggle placement before content, after content, or as a floating button.
 6. URL activation with `?reader-mode=1`.
 7. Visitor preferences for font size, theme, and content width saved in localStorage only.
@@ -56,15 +56,9 @@ Automatic toggle insertion is disabled for new installs. Existing installs keep 
 
 Use the Reader Mode Toggle block in posts, pages, public custom post types, single templates, and Query Loop templates.
 
-Use the preferred shortcode:
-
-`[wpdfv_reader_toggle]`
-
-Legacy shortcodes still work:
+Use the existing shortcode from the master branch:
 
 `[wpdfv]`
-
-`[dfview]`
 
 Reader Mode can also open from the URL on enabled single content:
 
@@ -91,7 +85,7 @@ No. WordPress core distraction-free mode is for writing in the admin editor. WP 
 
 = Can I place the Reader Mode toggle manually? =
 
-Yes. Use the Reader Mode Toggle block, `[wpdfv_reader_toggle]`, `[wpdfv]`, or legacy `[dfview]`.
+Yes. Use the Reader Mode Toggle block or the existing `[wpdfv]` shortcode.
 
 = Can Reader Mode open from a URL? =
 
@@ -109,9 +103,9 @@ Yes. Reader Mode includes icon-only print and fullscreen controls in the modal h
 
 Yes. The plugin registers a default block-based Reader Mode template and a WP Distraction Free View pattern category. Themes and site-specific code can add more templates with the `wpdfv_modal_templates` filter.
 
-= Will old settings and shortcodes keep working? =
+= Will old settings keep working? =
 
-Yes. Existing saved settings remain in the `wpdfv_settings` option, old `wpdfv_general` values are migrated during upgrade, and legacy `[wpdfv]` and `[dfview]` shortcodes continue to render the Reader Mode toggle.
+Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdfv_general` values are migrated during upgrade. The shortcode surface stays aligned with master: `[wpdfv]`.
 
 == Screenshots ==
 
@@ -128,7 +122,7 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option, old `wpdfv_g
 - Added: URL activation with `?reader-mode=1`
 - Added: Toggle placement setting for manual only, before content, after content, or floating button
 - Added: Custom exit label setting
-- Added: Preferred `[wpdfv_reader_toggle]` shortcode and restored legacy `[dfview]` compatibility
+- Changed: Kept the shortcode surface aligned with master by using `[wpdfv]` as the only shortcode
 - Added: Shared Reader Mode defaults, sanitization, and idempotent upgrade handling
 - Added: PHPUnit test coverage and CI workflow for PHP, PHPCS, JS/CSS linting, and asset builds
 - Changed: Default toggle label for new installs is now "Read in Reader Mode"

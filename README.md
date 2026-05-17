@@ -16,7 +16,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Features
 
 - Frontend Reader Mode for posts, pages, and enabled public custom post types.
-- Manual placement with the Reader Mode Toggle block, `[wpdfv_reader_toggle]`, `[wpdfv]`, or legacy `[dfview]` shortcode.
+- Manual placement with the Reader Mode Toggle block or the existing `[wpdfv]` shortcode.
 - Optional automatic toggle insertion before content, after content, or as a floating button.
 - URL activation with `?reader-mode=1` on enabled single content.
 - Visitor preferences for font size, theme, and content width stored in localStorage.
@@ -97,17 +97,10 @@ Automatic insertion is disabled for new installs. Existing installs keep their p
 
 ## Shortcodes
 
-Use the preferred shortcode:
-
-```text
-[wpdfv_reader_toggle]
-```
-
-Legacy shortcodes still work:
+Use the existing shortcode from the master branch:
 
 ```text
 [wpdfv]
-[dfview]
 ```
 
 ## Blocks
@@ -136,7 +129,7 @@ Version `2.2.0` adds normalized Reader Mode settings while keeping the existing 
 Preserved public surfaces:
 
 - Option names: `wpdfv_settings`, `wpdfv_version`, and legacy `wpdfv_general` reads during upgrade.
-- Shortcodes: `[wpdfv_reader_toggle]`, `[wpdfv]`, and `[dfview]`.
+- Shortcode: `[wpdfv]`.
 - Filters: `wpdfv_should_enqueue_frontend_assets`, `wpdfv_modal_templates`, `wpdfv_modal_template_content`, and `wpdfv_reading_time_words_per_minute`.
 - Constants: existing `WPDFV_*` constants.
 
@@ -149,9 +142,7 @@ Preserved public surfaces:
 - Visit a single post.
 - Enter and exit Reader Mode.
 - Test query param activation with `?reader-mode=1`.
-- Test existing legacy shortcode `[wpdfv]`.
-- Test legacy shortcode `[dfview]`.
-- Test `[wpdfv_reader_toggle]`.
+- Test existing shortcode `[wpdfv]`.
 - Test mobile viewport.
 - Test dark, sepia, and light themes.
 - Test font size and width preferences.

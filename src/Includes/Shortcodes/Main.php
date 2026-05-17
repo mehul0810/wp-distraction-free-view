@@ -29,8 +29,6 @@ class Main {
 	 */
 	public function __construct() {
 		add_shortcode( 'wpdfv', [ $this, 'render_shortcode' ] );
-		add_shortcode( 'wpdfv_reader_toggle', [ $this, 'render_shortcode' ] );
-		add_shortcode( 'dfview', [ $this, 'render_shortcode' ] );
 		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 	}
 

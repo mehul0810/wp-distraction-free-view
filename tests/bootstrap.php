@@ -10,7 +10,8 @@
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
-$GLOBALS['wpdfv_test_options'] = [];
+$GLOBALS['wpdfv_test_options']    = [];
+$GLOBALS['wpdfv_test_shortcodes'] = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
@@ -38,8 +39,9 @@ if ( ! class_exists( 'WP_Post' ) ) {
 }
 
 function wpdfv_tests_reset_state() {
-	$GLOBALS['wpdfv_test_options'] = [];
-	$_GET                          = [];
+	$GLOBALS['wpdfv_test_options']    = [];
+	$GLOBALS['wpdfv_test_shortcodes'] = [];
+	$_GET                             = [];
 }
 
 function plugin_basename( $file ) {
@@ -75,6 +77,12 @@ function delete_option( $option ) {
 }
 
 function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+	return true;
+}
+
+function add_shortcode( $tag, $callback ) {
+	$GLOBALS['wpdfv_test_shortcodes'][ $tag ] = $callback;
+
 	return true;
 }
 
@@ -167,3 +175,4 @@ require_once dirname( __DIR__ ) . '/src/Includes/Templates.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Reader.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Helpers.php';
 require_once dirname( __DIR__ ) . '/src/Admin/Upgrades.php';
+require_once dirname( __DIR__ ) . '/src/Includes/Shortcodes/Main.php';

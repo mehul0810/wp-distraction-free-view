@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use WPDFV\Admin\Upgrades;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
+use WPDFV\Includes\Shortcodes\Main;
 use WPDFV\Includes\Templates;
 
 /**
@@ -134,6 +135,17 @@ class ReaderTest extends TestCase {
 		$this->assertStringContainsString( 'data-post-id="123"', $markup );
 		$this->assertStringContainsString( 'Read in Reader Mode', $markup );
 		$this->assertStringContainsString( 'aria-haspopup="dialog"', $markup );
+	}
+
+	/**
+	 * The plugin keeps the master branch shortcode surface: [wpdfv] only.
+	 *
+	 * @return void
+	 */
+	public function test_only_master_shortcode_is_registered() {
+		new Main();
+
+		$this->assertSame( [ 'wpdfv' ], array_keys( $GLOBALS['wpdfv_test_shortcodes'] ) );
 	}
 
 	/**
