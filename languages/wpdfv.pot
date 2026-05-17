@@ -1,21 +1,50 @@
-# Copyright (C) 2021 WP Distraction Free View
-# This file is distributed under the same license as the WP Distraction Free View package.
+# Copyright (C) 2026 Mehul Gohil
+# This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Distraction Free View\n"
+"Project-Id-Version: WP Distraction Free View 2.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-distraction-free-view\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language-Team: Mehul Gohil <hello@mehulgohil.com>\n"
-"Report-Msgid-Bugs-To: https://github.com/mehul0810/wp-distraction-free-view/issues/new\n"
-"X-Poedit-Basepath: ..\n"
-"X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
-"X-Poedit-SearchPath-0: .\n"
-"X-Poedit-SearchPathExcluded-0: *.js\n"
-"X-Poedit-SourceCharset: UTF-8\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"POT-Creation-Date: 2026-05-17T09:08:39+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wp-distraction-free-view\n"
 
-#: src/Admin/Filters.php:44, src/Admin/Settings.php:133, src/Admin/SettingsApi.php:97
+#. Plugin Name of the plugin
+#: wp-distraction-free-view.php
+#: src/Admin/Settings.php:47
+#: src/Includes/Blocks.php:62
+#: src/Includes/Templates.php:55
+msgid "WP Distraction Free View"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: wp-distraction-free-view.php
+msgid "https://github.com/mehul0810/wp-distraction-free-view"
+msgstr ""
+
+#. Description of the plugin
+#: wp-distraction-free-view.php
+msgid "Adds a clean frontend Reader Mode to WordPress so visitors can focus on posts, pages, and selected public post types."
+msgstr ""
+
+#. Author of the plugin
+#: wp-distraction-free-view.php
+msgid "Mehul Gohil"
+msgstr ""
+
+#. Author URI of the plugin
+#: wp-distraction-free-view.php
+msgid "https://mehulgohil.com/"
+msgstr ""
+
+#: src/Admin/Filters.php:44
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:159
 msgid "Settings"
 msgstr ""
 
@@ -23,86 +52,309 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-#: src/Admin/Settings.php:41
-msgid "Where to display?"
+#: src/Admin/Settings.php:48
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/admin/wpdfv-admin.js:212
+#: assets/src/js/frontend/wpdfv.js:378
+msgid "Reader Mode"
 msgstr ""
 
-#: src/Admin/Settings.php:51
-msgid "Display Location"
-msgstr ""
-
-#: src/Admin/Settings.php:54
-msgid "Disable"
-msgstr ""
-
-#: src/Admin/Settings.php:55
-msgid "Before Content"
-msgstr ""
-
-#: src/Admin/Settings.php:56
-msgid "After Content"
-msgstr ""
-
-#: src/Admin/Settings.php:62
-msgid "Button Text"
-msgstr ""
-
-#: src/Admin/Settings.php:83
-msgid "WP Distraction Free View"
-msgstr ""
-
-#: src/Admin/Settings.php:84
-msgid "Distraction Free Mode"
-msgstr ""
-
-#: src/Admin/Settings.php:138, src/Admin/SettingsApi.php:90
-msgid "Recommended Plugins"
-msgstr ""
-
-#: src/Admin/SettingsApi.php:134, src/Admin/SettingsApi.php:136
-msgid "Save"
-msgstr ""
-
-#: src/Admin/SettingsApi.php:135
-msgid "Saving..."
-msgstr ""
-
-#: src/Admin/SettingsApi.php:137
-msgid "Saved!"
-msgstr ""
-
-#: src/Admin/SettingsApi.php:226
+#: src/Admin/SettingsApi.php:229
 msgid "Perform"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:227
-msgid "This plugin helps you optimize your WordPress site in addition to caching."
+#: src/Admin/SettingsApi.php:230
+msgid "Optimize WordPress performance with focused caching and runtime improvements."
 msgstr ""
 
-#: src/Admin/SettingsApi.php:231
+#: src/Admin/SettingsApi.php:234
 msgid "Klaive - Integrates Klaviyo + GiveWP"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:232
-msgid "This plugin helps you grow your email list on Klaviyo using GiveWP donations plugin."
+#: src/Admin/SettingsApi.php:235
+msgid "Connect GiveWP donation activity with Klaviyo email audiences."
 msgstr ""
 
-#: src/Admin/SettingsApi.php:247
-msgid "Know more"
+#: src/Admin/Upgrades.php:100
+msgid "WP Distraction Free View could not complete its Reader Mode settings upgrade. Existing settings were left unchanged."
 msgstr ""
 
-#: src/Includes/Actions.php:64
+#: src/Includes/Reader.php:152
+#: assets/dist/js/wpdfv-block.js:1
+#: assets/src/js/block/reader-button.js:14
+#: assets/src/js/block/reader-button.js:35
+msgid "Read in Reader Mode"
+msgstr ""
+
+#: src/Includes/Reader.php:163
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:351
+msgid "Exit Reader Mode"
+msgstr ""
+
+#: src/Includes/Reader.php:220
+msgid "Manual only"
+msgstr ""
+
+#: src/Includes/Reader.php:224
+msgid "Before content"
+msgstr ""
+
+#: src/Includes/Reader.php:228
+msgid "After content"
+msgstr ""
+
+#: src/Includes/Reader.php:232
+msgid "Floating button"
+msgstr ""
+
+#: src/Includes/Reader.php:248
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:35
+msgid "Light"
+msgstr ""
+
+#: src/Includes/Reader.php:252
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:36
+msgid "Dark"
+msgstr ""
+
+#: src/Includes/Reader.php:256
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:37
+msgid "Sepia"
+msgstr ""
+
+#: src/Includes/Reader.php:272
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:40
+msgid "Narrow"
+msgstr ""
+
+#: src/Includes/Reader.php:276
+#: src/Includes/Reader.php:300
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:29
+#: assets/src/js/frontend/wpdfv.js:42
+msgid "Default"
+msgstr ""
+
+#: src/Includes/Reader.php:280
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:45
+msgid "Wide"
+msgstr ""
+
+#: src/Includes/Reader.php:296
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:27
+msgid "Small"
+msgstr ""
+
+#: src/Includes/Reader.php:304
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:32
+msgid "Large"
+msgstr ""
+
+#. translators: %s: Reading time in minutes.
+#: src/Includes/Reader.php:420
+#, php-format
+msgid "%s min read"
+msgid_plural "%s min read"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Includes/Shortcodes/Main.php:82
+msgid "Post ID to render in Reader Mode."
+msgstr ""
+
+#: src/Includes/Shortcodes/Main.php:108
+msgid "Post not found."
+msgstr ""
+
+#: src/Includes/Shortcodes/Main.php:116
+msgid "This content is not available in Reader Mode."
+msgstr ""
+
+#: src/Includes/Templates.php:191
+#: src/Includes/Templates.php:259
+msgid "Default Reader Mode layout"
+msgstr ""
+
+#: src/Includes/Templates.php:192
+#: src/Includes/Templates.php:260
+msgid "Displays the current post content inside the frontend Reader Mode view."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:214
+msgid "Configure the frontend reading experience shown to visitors."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:225
+msgid "Automatically insert reader toggle"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:249
+msgid "Leave this off when you only want to place the toggle with the block or shortcode."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:257
+msgid "Post types"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:259
+msgid "Choose the public content types where the automatic reader button should appear."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:282
+msgid "Toggle placement"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:301
+msgid "Toggle label"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:309
+msgid "Default text for the frontend Reader Mode toggle and shortcode output."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:319
+msgid "Exit label"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:324
+msgid "Accessible label for the Reader Mode close control."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:333
+msgid "Show reading progress"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:346
+msgid "Show estimated reading time"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:359
+msgid "Show reader preference controls"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:370
+msgid "Visitors can choose font size, theme, and content width. Preferences are saved only in their browser."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:381
+msgid "Default reader theme"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:397
+msgid "Default content width"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:413
+msgid "Default font size"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:429
+msgid "Reader template"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:438
+msgid "Choose the block-based template used inside Reader Mode."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:456
+msgid "Saving"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:457
+msgid "Save settings"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:482
+msgid "View plugin"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:72
+msgid "Settings could not be loaded."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:116
+msgid "Settings saved."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:125
+msgid "Settings could not be saved."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:1
+#: assets/src/js/admin/wpdfv-admin.js:163
+msgid "Recommended Plugins"
+msgstr ""
+
+#: assets/dist/js/wpdfv-block.js:1
+#: assets/src/js/block/reader-button.js:20
+msgid "Reader Mode toggle"
+msgstr ""
+
+#: assets/dist/js/wpdfv-block.js:1
+#: assets/src/js/block/reader-button.js:27
+msgid "Button text"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:149
+msgid "Font size"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:155
+msgid "Theme"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:161
+msgid "Content width"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:313
+msgid "This content could not be loaded in Reader Mode."
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:359
 msgid "Print"
 msgstr ""
 
-#: src/Includes/Actions.php:67
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:368
 msgid "Fullscreen"
-msgstr ""
-
-#: src/Includes/Actions.php:70
-msgid "Close"
-msgstr ""
-
-#: src/Includes/Helpers.php:123
-msgid "Read Mode"
 msgstr ""
