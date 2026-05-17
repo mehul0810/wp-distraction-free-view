@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-17T09:54:52+00:00\n"
+"POT-Creation-Date: 2026-05-17T10:20:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-distraction-free-view\n"
@@ -56,20 +56,80 @@ msgstr ""
 msgid "Reader Mode"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:229
+#: src/Admin/SettingsApi.php:179
+msgid "Plugin is not available from this screen."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:188
+msgid "Sorry, you are not allowed to install plugins."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:198
+msgid "Sorry, you are not allowed to activate plugins."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:207
+msgid "Plugin action is not supported."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:350
 msgid "Perform"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:230
-msgid "Optimize WordPress performance with focused caching and runtime improvements."
+#: src/Admin/SettingsApi.php:351
+msgid "Improve WordPress performance with focused caching and runtime optimizations."
 msgstr ""
 
-#: src/Admin/SettingsApi.php:234
-msgid "Klaive - Integrates Klaviyo + GiveWP"
+#: src/Admin/SettingsApi.php:358
+msgid "Klaive"
 msgstr ""
 
-#: src/Admin/SettingsApi.php:235
+#: src/Admin/SettingsApi.php:359
 msgid "Connect GiveWP donation activity with Klaviyo email audiences."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:366
+msgid "CleanLinks"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:367
+msgid "Create cleaner, branded links from inside WordPress."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:373
+msgid "MG - Instamojo for GiveWP"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:374
+msgid "Accept Instamojo payments in GiveWP donation forms."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:393
+msgid "OneCaptcha"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:394
+msgid "Premium CAPTCHA protection built for focused WordPress forms and conversion flows."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:401
+msgid "ThemeRouter"
+msgstr ""
+
+#: src/Admin/SettingsApi.php:402
+msgid "Route WordPress visitors to purpose-built theme experiences without duplicating sites."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:493
+msgid "Plugin download link could not be found."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:515
+msgid "Plugin could not be installed."
+msgstr ""
+
+#: src/Admin/SettingsApi.php:538
+msgid "Plugin must be installed before it can be activated."
 msgstr ""
 
 #: src/Admin/Upgrades.php:100
@@ -186,327 +246,397 @@ msgid "Displays the current post content inside the frontend Reader Mode view."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:232
+#: assets/src/js/admin/wpdfv-admin.js:290
 msgid "Automatic toggle is enabled"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:233
+#: assets/src/js/admin/wpdfv-admin.js:291
 msgid "Manual placement only"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:169
-#: assets/src/js/admin/wpdfv-admin.js:244
+#: assets/src/js/admin/wpdfv-admin.js:220
+#: assets/src/js/admin/wpdfv-admin.js:302
 msgid "Configure"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:245
+#: assets/src/js/admin/wpdfv-admin.js:303
 msgid "Tune the reading experience"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:249
+#: assets/src/js/admin/wpdfv-admin.js:307
 msgid "Choose where Reader Mode is available, how visitors open it, and which reading preferences are shown."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:258
+#: assets/src/js/admin/wpdfv-admin.js:316
 msgid "Reader Mode summary"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:264
+#: assets/src/js/admin/wpdfv-admin.js:322
 msgid "Current setup"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:1
-#: assets/src/js/admin/wpdfv-admin.js:270
+#: assets/src/js/admin/wpdfv-admin.js:328
 msgid "Content types"
 msgstr ""
 
 #. translators: %d: Number of enabled post types.
 #: assets/dist/js/wpdfv-admin.js:2
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:278
-#: assets/src/js/admin/wpdfv-admin.js:650
+#: assets/src/js/admin/wpdfv-admin.js:336
+#: assets/src/js/admin/wpdfv-admin.js:715
 #, js-format
 msgid "%d enabled"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:288
+#: assets/src/js/admin/wpdfv-admin.js:346
 msgid "Placement"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:302
-#: assets/src/js/admin/wpdfv-admin.js:640
+#: assets/src/js/admin/wpdfv-admin.js:360
+#: assets/src/js/admin/wpdfv-admin.js:705
 msgid "Shortcode"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:320
-#: assets/src/js/admin/wpdfv-admin.js:600
+#: assets/src/js/admin/wpdfv-admin.js:378
+#: assets/src/js/admin/wpdfv-admin.js:658
 msgid "Saving"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:321
-#: assets/src/js/admin/wpdfv-admin.js:601
+#: assets/src/js/admin/wpdfv-admin.js:379
+#: assets/src/js/admin/wpdfv-admin.js:659
 msgid "Save settings"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:330
+#: assets/src/js/admin/wpdfv-admin.js:388
 msgid "Availability and placement"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:334
+#: assets/src/js/admin/wpdfv-admin.js:392
 msgid "Control where Reader Mode is available and how visitors enter it."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:341
+#: assets/src/js/admin/wpdfv-admin.js:399
 msgid "Automatically insert reader toggle"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:366
+#: assets/src/js/admin/wpdfv-admin.js:424
 msgid "Leave this off when you only want to place the toggle with the block or shortcode."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:375
-#: assets/src/js/admin/wpdfv-admin.js:646
+#: assets/src/js/admin/wpdfv-admin.js:433
+#: assets/src/js/admin/wpdfv-admin.js:711
 msgid "Post types"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:381
+#: assets/src/js/admin/wpdfv-admin.js:439
 msgid "Choose the public content types where Reader Mode should be available."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:407
+#: assets/src/js/admin/wpdfv-admin.js:465
 msgid "Toggle placement"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:429
+#: assets/src/js/admin/wpdfv-admin.js:487
 msgid "Toggle label"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:437
+#: assets/src/js/admin/wpdfv-admin.js:495
 msgid "Shown on the frontend Reader Mode toggle and shortcode output."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:444
+#: assets/src/js/admin/wpdfv-admin.js:502
 msgid "Exit label"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:452
+#: assets/src/js/admin/wpdfv-admin.js:510
 msgid "Accessible label for the Reader Mode close control."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:461
+#: assets/src/js/admin/wpdfv-admin.js:519
 msgid "Reading tools"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:465
+#: assets/src/js/admin/wpdfv-admin.js:523
 msgid "Choose the lightweight tools visitors can use while reading."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:472
+#: assets/src/js/admin/wpdfv-admin.js:530
 msgid "Show reading progress"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:485
+#: assets/src/js/admin/wpdfv-admin.js:543
 msgid "Show estimated reading time"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:498
+#: assets/src/js/admin/wpdfv-admin.js:556
 msgid "Show reader preference controls"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:509
+#: assets/src/js/admin/wpdfv-admin.js:567
 msgid "Preferences are saved only in the visitor browser."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:520
+#: assets/src/js/admin/wpdfv-admin.js:578
 msgid "Default reader theme"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:536
+#: assets/src/js/admin/wpdfv-admin.js:594
 msgid "Default content width"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:552
+#: assets/src/js/admin/wpdfv-admin.js:610
 msgid "Default font size"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:569
+#: assets/src/js/admin/wpdfv-admin.js:627
 msgid "Template"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:570
+#: assets/src/js/admin/wpdfv-admin.js:628
 msgid "Select the block-based template used inside Reader Mode."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:578
+#: assets/src/js/admin/wpdfv-admin.js:636
 msgid "Reader template"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:619
+#: assets/src/js/admin/wpdfv-admin.js:684
 msgid "Frontend Reader Mode"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:622
+#: assets/src/js/admin/wpdfv-admin.js:687
 msgid "Give visitors a calmer way to read."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:628
+#: assets/src/js/admin/wpdfv-admin.js:693
 msgid "WP Distraction Free View turns long-form content into a focused reading experience without changing the original theme layout."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:2
-#: assets/src/js/admin/wpdfv-admin.js:636
+#: assets/src/js/admin/wpdfv-admin.js:701
 msgid "Version"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:660
+#: assets/src/js/admin/wpdfv-admin.js:725
 msgid "Quick start"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:664
+#: assets/src/js/admin/wpdfv-admin.js:729
 msgid "Enable Reader Mode for the content types readers use most."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:670
+#: assets/src/js/admin/wpdfv-admin.js:735
 msgid "Choose automatic placement, or place the Reader Mode Toggle block manually."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:676
+#: assets/src/js/admin/wpdfv-admin.js:741
 msgid "Use [wpdfv] anywhere a shortcode is the better fit."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:685
+#: assets/src/js/admin/wpdfv-admin.js:750
 msgid "Current defaults"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
 #: assets/dist/js/wpdfv.js:1
-#: assets/src/js/admin/wpdfv-admin.js:689
+#: assets/src/js/admin/wpdfv-admin.js:754
 #: assets/src/js/frontend/wpdfv.js:155
 msgid "Theme"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:693
+#: assets/src/js/admin/wpdfv-admin.js:763
 msgid "Width"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
 #: assets/dist/js/wpdfv.js:1
-#: assets/src/js/admin/wpdfv-admin.js:698
+#: assets/src/js/admin/wpdfv-admin.js:773
 #: assets/src/js/frontend/wpdfv.js:149
 msgid "Font size"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:704
+#: assets/src/js/admin/wpdfv-admin.js:784
 msgid "Progress"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:708
+#: assets/src/js/admin/wpdfv-admin.js:788
 msgid "On"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:709
+#: assets/src/js/admin/wpdfv-admin.js:789
 msgid "Off"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:716
+#: assets/src/js/admin/wpdfv-admin.js:796
 msgid "Compatibility"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:721
+#: assets/src/js/admin/wpdfv-admin.js:801
 msgid "Minimum WordPress"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:730
+#: assets/src/js/admin/wpdfv-admin.js:810
 msgid "Minimum PHP"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:173
-#: assets/src/js/admin/wpdfv-admin.js:743
+#: assets/src/js/admin/wpdfv-admin.js:224
+#: assets/src/js/admin/wpdfv-admin.js:831
 msgid "More Plugins"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:744
-msgid "Tools from the same developer"
+#: assets/src/js/admin/wpdfv-admin.js:832
+msgid "Extend your WordPress reading stack"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:748
-msgid "Explore focused WordPress plugins that pair well with a fast, reader-friendly site."
+#: assets/src/js/admin/wpdfv-admin.js:836
+msgid "Install free companion plugins directly, or explore premium tools for focused WordPress workflows."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:761
-msgid "View plugin"
+#: assets/src/js/admin/wpdfv-admin.js:843
+msgid "Free plugins"
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:78
+#: assets/src/js/admin/wpdfv-admin.js:844
+msgid "Install or activate WordPress.org plugins without leaving this screen."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:862
+msgid "Paid plugins"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:863
+msgid "Premium products for stronger protection and controlled theme experiences."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:904
+msgid "WordPress.org"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:908
+msgid "Website"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:934
+msgid "View website"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:944
+msgid "Active"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:951
+msgid "Install"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:952
+msgid "Activate"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:954
+msgid "Installing"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:955
+msgid "Activating"
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:89
 msgid "Settings could not be loaded."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:122
+#: assets/src/js/admin/wpdfv-admin.js:133
 msgid "Settings saved."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:131
+#: assets/src/js/admin/wpdfv-admin.js:142
 msgid "Settings could not be saved."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:3
-#: assets/src/js/admin/wpdfv-admin.js:165
+#: assets/src/js/admin/wpdfv-admin.js:167
+msgid "Plugin installed. You can activate it now."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:171
+msgid "Plugin activated."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:182
+msgid "Plugin action could not be completed."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:3
+#: assets/src/js/admin/wpdfv-admin.js:216
 msgid "About"
 msgstr ""
 

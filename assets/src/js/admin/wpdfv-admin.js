@@ -26,6 +26,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { Path, SVG } from '@wordpress/primitives';
 
 const SETTINGS_PATH = '/wp-distraction-free-view/v1/settings';
+const PLUGIN_ACTION_PATH = '/wp-distraction-free-view/v1/plugins';
 const checkIcon = createElement(
 	SVG,
 	{
@@ -45,7 +46,10 @@ const SettingsApp = () => {
 	const [ contentWidths, setContentWidths ] = useState( [] );
 	const [ fontSizes, setFontSizes ] = useState( [] );
 	const [ modalTemplates, setModalTemplates ] = useState( [] );
-	const [ morePlugins, setMorePlugins ] = useState( [] );
+	const [ morePlugins, setMorePlugins ] = useState( {
+		free: [],
+		paid: [],
+	} );
 	const [ aboutInfo, setAboutInfo ] = useState( {
 		minimumPhp: '',
 		minimumWordPress: '',
@@ -53,27 +57,32 @@ const SettingsApp = () => {
 	} );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
+	const [ activePluginAction, setActivePluginAction ] = useState( '' );
 	const [ notice, setNotice ] = useState( null );
+
+	const applySettingsResponse = ( response ) => {
+		setSettings( response.settings );
+		setPostTypes( response.postTypes );
+		setDisplayLocations( response.displayLocations );
+		setReaderThemes( response.readerThemes );
+		setContentWidths( response.contentWidths );
+		setFontSizes( response.fontSizes );
+		setModalTemplates( response.modalTemplates );
+		setMorePlugins(
+			normalizeMorePlugins(
+				response.morePlugins || response.recommendedPlugins || []
+			)
+		);
+		setAboutInfo( {
+			minimumPhp: response.minimumPhp,
+			minimumWordPress: response.minimumWordPress,
+			pluginVersion: response.pluginVersion,
+		} );
+	};
 
 	useEffect( () => {
 		apiFetch( { path: SETTINGS_PATH } )
-			.then( ( response ) => {
-				setSettings( response.settings );
-				setPostTypes( response.postTypes );
-				setDisplayLocations( response.displayLocations );
-				setReaderThemes( response.readerThemes );
-				setContentWidths( response.contentWidths );
-				setFontSizes( response.fontSizes );
-				setModalTemplates( response.modalTemplates );
-				setMorePlugins(
-					response.morePlugins || response.recommendedPlugins || []
-				);
-				setAboutInfo( {
-					minimumPhp: response.minimumPhp,
-					minimumWordPress: response.minimumWordPress,
-					pluginVersion: response.pluginVersion,
-				} );
-			} )
+			.then( applySettingsResponse )
 			.catch( () => {
 				setNotice( {
 					status: 'error',
@@ -118,7 +127,7 @@ const SettingsApp = () => {
 			data: settings,
 		} )
 			.then( ( response ) => {
-				setSettings( response.settings );
+				applySettingsResponse( response );
 				setNotice( {
 					status: 'success',
 					message: __(
@@ -137,6 +146,46 @@ const SettingsApp = () => {
 				} );
 			} )
 			.finally( () => setIsSaving( false ) );
+	};
+
+	const runPluginAction = ( slug, action ) => {
+		setActivePluginAction( `${ slug }:${ action }` );
+		setNotice( null );
+
+		apiFetch( {
+			path: `${ PLUGIN_ACTION_PATH }/${ encodeURIComponent(
+				slug
+			) }/${ action }`,
+			method: 'POST',
+		} )
+			.then( ( response ) => {
+				applySettingsResponse( response );
+				setNotice( {
+					status: 'success',
+					message:
+						'install' === action
+							? __(
+									'Plugin installed. You can activate it now.',
+									'wp-distraction-free-view'
+							  )
+							: __(
+									'Plugin activated.',
+									'wp-distraction-free-view'
+							  ),
+				} );
+			} )
+			.catch( ( error ) => {
+				setNotice( {
+					status: 'error',
+					message:
+						error?.message ||
+						__(
+							'Plugin action could not be completed.',
+							'wp-distraction-free-view'
+						),
+				} );
+			} )
+			.finally( () => setActivePluginAction( '' ) );
 	};
 
 	if ( isLoading ) {
@@ -197,7 +246,13 @@ const SettingsApp = () => {
 					}
 
 					if ( 'more-plugins' === tab.name ) {
-						return <MorePluginsPanel plugins={ morePlugins } />;
+						return (
+							<MorePluginsPanel
+								plugins={ morePlugins }
+								activePluginAction={ activePluginAction }
+								onPluginAction={ runPluginAction }
+							/>
+						);
 					}
 
 					return (
@@ -762,34 +817,183 @@ const AboutPanel = ( {
 	</div>
 );
 
-const MorePluginsPanel = ( { plugins } ) => (
-	<div className="wpdfv-more-plugins">
-		<ScreenIntro
-			eyebrow={ __( 'More Plugins', 'wp-distraction-free-view' ) }
-			title={ __(
-				'Tools from the same developer',
-				'wp-distraction-free-view'
-			) }
-			description={ __(
-				'Explore focused WordPress plugins that pair well with a fast, reader-friendly site.',
-				'wp-distraction-free-view'
-			) }
-		/>
-		<div className="wpdfv-plugin-grid">
-			{ plugins.map( ( plugin ) => (
-				<article key={ plugin.url } className="wpdfv-plugin-card">
-					<h3>{ plugin.label }</h3>
-					<p className="wpdfv-plugin-card__description">
-						{ plugin.description }
-					</p>
-					<ExternalLink href={ plugin.url }>
-						{ __( 'View plugin', 'wp-distraction-free-view' ) }
-					</ExternalLink>
-				</article>
-			) ) }
+const MorePluginsPanel = ( {
+	plugins,
+	activePluginAction,
+	onPluginAction,
+} ) => {
+	const freePlugins = plugins.free || [];
+	const paidPlugins = plugins.paid || [];
+
+	return (
+		<div className="wpdfv-more-plugins">
+			<ScreenIntro
+				eyebrow={ __( 'More Plugins', 'wp-distraction-free-view' ) }
+				title={ __(
+					'Extend your WordPress reading stack',
+					'wp-distraction-free-view'
+				) }
+				description={ __(
+					'Install free companion plugins directly, or explore premium tools for focused WordPress workflows.',
+					'wp-distraction-free-view'
+				) }
+			/>
+
+			<PluginSection
+				title={ __( 'Free plugins', 'wp-distraction-free-view' ) }
+				description={ __(
+					'Install or activate WordPress.org plugins without leaving this screen.',
+					'wp-distraction-free-view'
+				) }
+			>
+				<div className="wpdfv-plugin-grid">
+					{ freePlugins.map( ( plugin ) => (
+						<FreePluginCard
+							key={ plugin.slug }
+							plugin={ plugin }
+							activePluginAction={ activePluginAction }
+							onPluginAction={ onPluginAction }
+						/>
+					) ) }
+				</div>
+			</PluginSection>
+
+			<PluginSection
+				title={ __( 'Paid plugins', 'wp-distraction-free-view' ) }
+				description={ __(
+					'Premium products for stronger protection and controlled theme experiences.',
+					'wp-distraction-free-view'
+				) }
+			>
+				<div className="wpdfv-plugin-grid">
+					{ paidPlugins.map( ( plugin ) => (
+						<PaidPluginCard key={ plugin.slug } plugin={ plugin } />
+					) ) }
+				</div>
+			</PluginSection>
 		</div>
-	</div>
+	);
+};
+
+const PluginSection = ( { title, description, children } ) => (
+	<section className="wpdfv-plugin-section">
+		<div className="wpdfv-plugin-section__header">
+			<h3>{ title }</h3>
+			<p>{ description }</p>
+		</div>
+		{ children }
+	</section>
 );
+
+const FreePluginCard = ( { plugin, activePluginAction, onPluginAction } ) => {
+	const action = getFreePluginAction( plugin );
+	const isBusy = action
+		? activePluginAction === `${ plugin.slug }:${ action }`
+		: false;
+
+	return (
+		<article className="wpdfv-plugin-card">
+			<div className="wpdfv-plugin-card__content">
+				<h4>{ plugin.label }</h4>
+				<p className="wpdfv-plugin-card__description">
+					{ plugin.description }
+				</p>
+			</div>
+			<div className="wpdfv-plugin-card__links">
+				<ExternalLink href={ plugin.wordpressUrl }>
+					{ __( 'WordPress.org', 'wp-distraction-free-view' ) }
+				</ExternalLink>
+				{ plugin.websiteUrl && (
+					<ExternalLink href={ plugin.websiteUrl }>
+						{ __( 'Website', 'wp-distraction-free-view' ) }
+					</ExternalLink>
+				) }
+			</div>
+			<div className="wpdfv-plugin-card__actions">
+				<FreePluginAction
+					action={ action }
+					isBusy={ isBusy }
+					plugin={ plugin }
+					onPluginAction={ onPluginAction }
+				/>
+			</div>
+		</article>
+	);
+};
+
+const PaidPluginCard = ( { plugin } ) => (
+	<article className="wpdfv-plugin-card">
+		<div className="wpdfv-plugin-card__content">
+			<h4>{ plugin.label }</h4>
+			<p className="wpdfv-plugin-card__description">
+				{ plugin.description }
+			</p>
+		</div>
+		<div className="wpdfv-plugin-card__actions">
+			<ExternalLink href={ plugin.websiteUrl }>
+				{ __( 'View website', 'wp-distraction-free-view' ) }
+			</ExternalLink>
+		</div>
+	</article>
+);
+
+const FreePluginAction = ( { action, isBusy, plugin, onPluginAction } ) => {
+	if ( ! action ) {
+		return (
+			<span className="wpdfv-plugin-status is-active">
+				{ __( 'Active', 'wp-distraction-free-view' ) }
+			</span>
+		);
+	}
+
+	const isInstallAction = 'install' === action;
+	const label = isInstallAction
+		? __( 'Install', 'wp-distraction-free-view' )
+		: __( 'Activate', 'wp-distraction-free-view' );
+	const busyLabel = isInstallAction
+		? __( 'Installing', 'wp-distraction-free-view' )
+		: __( 'Activating', 'wp-distraction-free-view' );
+	const isDisabled =
+		isBusy ||
+		( isInstallAction ? ! plugin.canInstall : ! plugin.canActivate );
+
+	return (
+		<Button
+			variant={ isInstallAction ? 'primary' : 'secondary' }
+			isBusy={ isBusy }
+			disabled={ isDisabled }
+			onClick={ () => onPluginAction( plugin.slug, action ) }
+		>
+			{ isBusy ? busyLabel : label }
+		</Button>
+	);
+};
+
+const getFreePluginAction = ( plugin ) => {
+	if ( 'active' === plugin.status ) {
+		return '';
+	}
+
+	if ( 'installed' === plugin.status ) {
+		return 'activate';
+	}
+
+	return 'install';
+};
+
+const normalizeMorePlugins = ( plugins ) => {
+	if ( Array.isArray( plugins ) ) {
+		return {
+			free: plugins.filter( ( plugin ) => 'paid' !== plugin.type ),
+			paid: plugins.filter( ( plugin ) => 'paid' === plugin.type ),
+		};
+	}
+
+	return {
+		free: plugins?.free || [],
+		paid: plugins?.paid || [],
+	};
+};
 
 const ScreenIntro = ( { eyebrow, title, description } ) => (
 	<header className="wpdfv-screen-intro">

@@ -316,6 +316,32 @@
 	padding-top: 16px;
 }
 
+.wpdfv-more-plugins {
+	display: grid;
+	gap: 24px;
+}
+
+.wpdfv-plugin-section {
+	display: grid;
+	gap: 14px;
+}
+
+.wpdfv-plugin-section__header {
+	max-width: 760px;
+
+	h3 {
+		font-size: 17px;
+		line-height: 1.4;
+		margin: 0 0 4px;
+	}
+
+	p {
+		color: var(--wpdfv-admin-muted);
+		line-height: 1.5;
+		margin: 0;
+	}
+}
+
 .wpdfv-plugin-grid {
 	display: grid;
 	gap: 16px;
@@ -323,9 +349,13 @@
 }
 
 .wpdfv-plugin-card {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-height: 190px;
 	padding: 20px;
 
-	h3 {
+	h4 {
 		font-size: 15px;
 		line-height: 1.4;
 		margin-bottom: 8px;
@@ -333,10 +363,42 @@
 	}
 }
 
+.wpdfv-plugin-card__content {
+	flex: 1;
+}
+
 .wpdfv-plugin-card__description {
 	color: var(--wpdfv-admin-muted);
 	line-height: 1.5;
-	margin: 0 0 16px;
+	margin: 0;
+}
+
+.wpdfv-plugin-card__links,
+.wpdfv-plugin-card__actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 14px;
+}
+
+.wpdfv-plugin-card__actions {
+	border-top: 1px solid #edf0f2;
+	padding-top: 14px;
+}
+
+.wpdfv-plugin-status {
+	align-items: center;
+	border-radius: 999px;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.4;
+	padding: 4px 10px;
+}
+
+.wpdfv-plugin-status.is-active {
+	background: #edfaef;
+	color: #008a20;
 }
 
 @media (max-width: 960px) {

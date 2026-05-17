@@ -10,8 +10,10 @@
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
-$GLOBALS['wpdfv_test_options']    = [];
-$GLOBALS['wpdfv_test_shortcodes'] = [];
+$GLOBALS['wpdfv_test_active_plugins'] = [];
+$GLOBALS['wpdfv_test_options']        = [];
+$GLOBALS['wpdfv_test_plugins']        = [];
+$GLOBALS['wpdfv_test_shortcodes']     = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
@@ -39,9 +41,11 @@ if ( ! class_exists( 'WP_Post' ) ) {
 }
 
 function wpdfv_tests_reset_state() {
-	$GLOBALS['wpdfv_test_options']    = [];
-	$GLOBALS['wpdfv_test_shortcodes'] = [];
-	$_GET                             = [];
+	$GLOBALS['wpdfv_test_active_plugins'] = [];
+	$GLOBALS['wpdfv_test_options']        = [];
+	$GLOBALS['wpdfv_test_plugins']        = [];
+	$GLOBALS['wpdfv_test_shortcodes']     = [];
+	$_GET                                 = [];
 }
 
 function plugin_basename( $file ) {
@@ -88,6 +92,25 @@ function add_shortcode( $tag, $callback ) {
 
 function current_user_can( $capability ) {
 	return true;
+}
+
+function get_plugins() {
+	return $GLOBALS['wpdfv_test_plugins'];
+}
+
+function is_plugin_active( $plugin ) {
+	return in_array( $plugin, $GLOBALS['wpdfv_test_active_plugins'], true );
+}
+
+function activate_plugin( $plugin, $redirect = '', $network_wide = false, $silent = false ) {
+	$GLOBALS['wpdfv_test_active_plugins'][] = $plugin;
+	$GLOBALS['wpdfv_test_active_plugins']   = array_values( array_unique( $GLOBALS['wpdfv_test_active_plugins'] ) );
+
+	return null;
+}
+
+function is_wp_error( $thing ) {
+	return class_exists( 'WP_Error' ) && $thing instanceof \WP_Error;
 }
 
 function esc_html__( $text, $domain = 'default' ) {
@@ -175,4 +198,6 @@ require_once dirname( __DIR__ ) . '/src/Includes/Templates.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Reader.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Helpers.php';
 require_once dirname( __DIR__ ) . '/src/Admin/Upgrades.php';
+require_once dirname( __DIR__ ) . '/src/Admin/SettingsApi.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Shortcodes/Main.php';
+require_once __DIR__ . '/TestableSettingsApi.php';

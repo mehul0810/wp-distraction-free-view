@@ -188,4 +188,64 @@ class ReaderTest extends TestCase {
 
 		$this->assertSame( $settings, \get_option( 'wpdfv_settings' ) );
 	}
+
+	/**
+	 * More Plugins groups free and paid cards with install status.
+	 *
+	 * @return void
+	 */
+	public function test_more_plugins_groups_free_and_paid_cards() {
+		$GLOBALS['wpdfv_test_plugins']        = [
+			'perform/perform.php'       => [ 'Name' => 'Perform' ],
+			'cleanlinks/cleanlinks.php' => [ 'Name' => 'CleanLinks' ],
+		];
+		$GLOBALS['wpdfv_test_active_plugins'] = [ 'perform/perform.php' ];
+
+		$settings_api = new TestableSettingsApi();
+		$plugins      = $settings_api->get_more_plugins_for_tests();
+
+		$this->assertSame( [ 'perform', 'cleanlinks' ], array_column( $plugins['free'], 'slug' ) );
+		$this->assertSame( [ 'onecaptcha', 'themerouter' ], array_column( $plugins['paid'], 'slug' ) );
+		$this->assertSame( 'active', $plugins['free'][0]['status'] );
+		$this->assertSame( 'installed', $plugins['free'][1]['status'] );
+	}
+
+	/**
+	 * GiveWP companion plugins are only shown when GiveWP is active.
+	 *
+	 * @return void
+	 */
+	public function test_more_plugins_shows_givewp_integrations_when_givewp_is_active() {
+		$GLOBALS['wpdfv_test_plugins']        = [
+			'give/give.php' => [ 'Name' => 'GiveWP' ],
+		];
+		$GLOBALS['wpdfv_test_active_plugins'] = [ 'give/give.php' ];
+
+		$settings_api = new TestableSettingsApi();
+		$plugins      = $settings_api->get_more_plugins_for_tests();
+
+		$this->assertSame(
+			[ 'perform', 'klaive', 'cleanlinks', 'mg-instamojo-for-givewp' ],
+			array_column( $plugins['free'], 'slug' )
+		);
+	}
+
+	/**
+	 * Free companion plugins can be activated from the settings API.
+	 *
+	 * @return void
+	 */
+	public function test_more_plugins_can_activate_installed_free_plugin() {
+		$GLOBALS['wpdfv_test_plugins'] = [
+			'cleanlinks/cleanlinks.php' => [ 'Name' => 'CleanLinks' ],
+		];
+
+		$settings_api = new TestableSettingsApi();
+		$result       = $settings_api->activate_free_plugin_for_tests( 'cleanlinks' );
+		$plugins      = $settings_api->get_more_plugins_for_tests();
+
+		$this->assertTrue( $result );
+		$this->assertSame( [ 'cleanlinks/cleanlinks.php' ], $GLOBALS['wpdfv_test_active_plugins'] );
+		$this->assertSame( 'active', $plugins['free'][1]['status'] );
+	}
 }
