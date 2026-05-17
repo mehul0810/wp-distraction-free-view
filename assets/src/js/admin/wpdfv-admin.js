@@ -3,13 +3,9 @@ import '../../css/admin/main.scss';
 import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
-	Card,
-	CardBody,
-	CardHeader,
 	CheckboxControl,
 	ExternalLink,
 	Flex,
-	FlexBlock,
 	FlexItem,
 	Notice,
 	RadioControl,
@@ -26,7 +22,7 @@ import {
 	useMemo,
 	useState,
 } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { Path, SVG } from '@wordpress/primitives';
 
 const SETTINGS_PATH = '/wp-distraction-free-view/v1/settings';
@@ -49,7 +45,7 @@ const SettingsApp = () => {
 	const [ contentWidths, setContentWidths ] = useState( [] );
 	const [ fontSizes, setFontSizes ] = useState( [] );
 	const [ modalTemplates, setModalTemplates ] = useState( [] );
-	const [ recommendedPlugins, setRecommendedPlugins ] = useState( [] );
+	const [ morePlugins, setMorePlugins ] = useState( [] );
 	const [ aboutInfo, setAboutInfo ] = useState( {
 		minimumPhp: '',
 		minimumWordPress: '',
@@ -69,7 +65,9 @@ const SettingsApp = () => {
 				setContentWidths( response.contentWidths );
 				setFontSizes( response.fontSizes );
 				setModalTemplates( response.modalTemplates );
-				setRecommendedPlugins( response.recommendedPlugins );
+				setMorePlugins(
+					response.morePlugins || response.recommendedPlugins || []
+				);
 				setAboutInfo( {
 					minimumPhp: response.minimumPhp,
 					minimumWordPress: response.minimumWordPress,
@@ -165,26 +163,23 @@ const SettingsApp = () => {
 				activeClass="is-active"
 				tabs={ [
 					{
-						name: 'settings',
-						title: __( 'Settings', 'wp-distraction-free-view' ),
-					},
-					{
 						name: 'about',
 						title: __( 'About', 'wp-distraction-free-view' ),
 					},
 					{
-						name: 'recommended',
-						title: __(
-							'Recommended Plugins',
-							'wp-distraction-free-view'
-						),
+						name: 'configure',
+						title: __( 'Configure', 'wp-distraction-free-view' ),
+					},
+					{
+						name: 'more-plugins',
+						title: __( 'More Plugins', 'wp-distraction-free-view' ),
 					},
 				] }
 			>
 				{ ( tab ) => {
-					if ( 'settings' === tab.name ) {
+					if ( 'configure' === tab.name ) {
 						return (
-							<SettingsPanel
+							<ConfigurePanel
 								settings={ settings }
 								postTypes={ postTypes }
 								displayLocations={ displayLocations }
@@ -201,12 +196,19 @@ const SettingsApp = () => {
 						);
 					}
 
-					if ( 'about' === tab.name ) {
-						return <AboutPanel aboutInfo={ aboutInfo } />;
+					if ( 'more-plugins' === tab.name ) {
+						return <MorePluginsPanel plugins={ morePlugins } />;
 					}
 
 					return (
-						<RecommendedPlugins plugins={ recommendedPlugins } />
+						<AboutPanel
+							aboutInfo={ aboutInfo }
+							settings={ settings }
+							readerThemes={ readerThemes }
+							contentWidths={ contentWidths }
+							fontSizes={ fontSizes }
+							selectedPostTypes={ selectedPostTypes }
+						/>
 					);
 				} }
 			</TabPanel>
@@ -214,7 +216,7 @@ const SettingsApp = () => {
 	);
 };
 
-const SettingsPanel = ( {
+const ConfigurePanel = ( {
 	settings,
 	postTypes,
 	displayLocations,
@@ -227,355 +229,76 @@ const SettingsPanel = ( {
 	onTogglePostType,
 	onUpdateSetting,
 	onSave,
-} ) => (
-	<Card className="wpdfv-settings-card">
-		<CardHeader>
-			<div>
-				<h2>{ __( 'Reader Mode', 'wp-distraction-free-view' ) }</h2>
-				<p>
-					{ __(
-						'Configure the frontend reading experience shown to visitors.',
+} ) => {
+	const enabledPostTypeCount = selectedPostTypes.length;
+	const automaticModeLabel = settings.automatic_button_enabled
+		? __( 'Automatic toggle is enabled', 'wp-distraction-free-view' )
+		: __( 'Manual placement only', 'wp-distraction-free-view' );
+
+	return (
+		<form
+			className="wpdfv-configure"
+			onSubmit={ ( event ) => {
+				event.preventDefault();
+				onSave();
+			} }
+		>
+			<ScreenIntro
+				eyebrow={ __( 'Configure', 'wp-distraction-free-view' ) }
+				title={ __(
+					'Tune the reading experience',
+					'wp-distraction-free-view'
+				) }
+				description={ __(
+					'Choose where Reader Mode is available, how visitors open it, and which reading preferences are shown.',
+					'wp-distraction-free-view'
+				) }
+			/>
+
+			<div className="wpdfv-configure-layout">
+				<aside
+					className="wpdfv-status-panel"
+					aria-label={ __(
+						'Reader Mode summary',
 						'wp-distraction-free-view'
 					) }
-				</p>
-			</div>
-		</CardHeader>
-		<CardBody>
-			<div className="wpdfv-settings-grid">
-				<section className="wpdfv-settings-section">
-					<ToggleControl
-						label={ __(
-							'Automatically insert reader toggle',
-							'wp-distraction-free-view'
-						) }
-						checked={ settings.automatic_button_enabled }
-						onChange={ ( value ) => {
-							onUpdateSetting(
-								'automatic_button_enabled',
-								value
-							);
-							if ( ! value ) {
-								onUpdateSetting(
-									'display_location',
-									'manual_only'
-								);
-							} else if (
-								'manual_only' === settings.display_location
-							) {
-								onUpdateSetting(
-									'display_location',
-									'after_content'
-								);
-							}
-						} }
-						help={ __(
-							'Leave this off when you only want to place the toggle with the block or shortcode.',
-							'wp-distraction-free-view'
-						) }
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<h3>{ __( 'Post types', 'wp-distraction-free-view' ) }</h3>
-					<p>
-						{ __(
-							'Choose the public content types where the automatic reader button should appear.',
-							'wp-distraction-free-view'
-						) }
+				>
+					<p className="wpdfv-status-panel__eyebrow">
+						{ __( 'Current setup', 'wp-distraction-free-view' ) }
 					</p>
-					<div className="wpdfv-checkbox-list">
-						{ postTypes.map( ( postType ) => (
-							<CheckboxControl
-								key={ postType.slug }
-								label={ postType.label }
-								checked={ selectedPostTypes.includes(
-									postType.slug
-								) }
-								onChange={ ( value ) =>
-									onTogglePostType( postType.slug, value )
-								}
-							/>
-						) ) }
-					</div>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<RadioControl
-						label={ __(
-							'Toggle placement',
-							'wp-distraction-free-view'
-						) }
-						selected={ settings.display_location }
-						options={ displayLocations }
-						onChange={ ( value ) => {
-							onUpdateSetting( 'display_location', value );
-							onUpdateSetting(
-								'automatic_button_enabled',
-								'manual_only' !== value
-							);
-						} }
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<TextControl
-						__next40pxDefaultSize
-						label={ __(
-							'Toggle label',
-							'wp-distraction-free-view'
-						) }
-						value={ settings.button_text }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'button_text', value )
-						}
-						help={ __(
-							'Default text for the frontend Reader Mode toggle and shortcode output.',
-							'wp-distraction-free-view'
-						) }
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<TextControl
-						__next40pxDefaultSize
-						label={ __( 'Exit label', 'wp-distraction-free-view' ) }
-						value={ settings.exit_button_text }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'exit_button_text', value )
-						}
-						help={ __(
-							'Accessible label for the Reader Mode close control.',
-							'wp-distraction-free-view'
-						) }
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<ToggleControl
-						label={ __(
-							'Show reading progress',
-							'wp-distraction-free-view'
-						) }
-						checked={ settings.reading_progress_enabled }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'reading_progress_enabled', value )
-						}
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<ToggleControl
-						label={ __(
-							'Show estimated reading time',
-							'wp-distraction-free-view'
-						) }
-						checked={ settings.reading_time_enabled }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'reading_time_enabled', value )
-						}
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<ToggleControl
-						label={ __(
-							'Show reader preference controls',
-							'wp-distraction-free-view'
-						) }
-						checked={ settings.preference_controls_enabled }
-						onChange={ ( value ) =>
-							onUpdateSetting(
-								'preference_controls_enabled',
-								value
-							)
-						}
-						help={ __(
-							'Visitors can choose font size, theme, and content width. Preferences are saved only in their browser.',
-							'wp-distraction-free-view'
-						) }
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<SelectControl
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-						label={ __(
-							'Default reader theme',
-							'wp-distraction-free-view'
-						) }
-						value={ settings.default_reader_theme }
-						options={ readerThemes }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'default_reader_theme', value )
-						}
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<SelectControl
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-						label={ __(
-							'Default content width',
-							'wp-distraction-free-view'
-						) }
-						value={ settings.default_content_width }
-						options={ contentWidths }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'default_content_width', value )
-						}
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<SelectControl
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-						label={ __(
-							'Default font size',
-							'wp-distraction-free-view'
-						) }
-						value={ settings.default_font_size }
-						options={ fontSizes }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'default_font_size', value )
-						}
-					/>
-				</section>
-
-				<section className="wpdfv-settings-section">
-					<SelectControl
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-						label={ __(
-							'Reader template',
-							'wp-distraction-free-view'
-						) }
-						value={ settings.modal_template }
-						options={ modalTemplates }
-						onChange={ ( value ) =>
-							onUpdateSetting( 'modal_template', value )
-						}
-						help={ __(
-							'Choose the block-based template used inside Reader Mode.',
-							'wp-distraction-free-view'
-						) }
-					/>
-				</section>
-			</div>
-
-			<Flex className="wpdfv-settings-actions" justify="flex-end">
-				<FlexItem>
-					<Button
-						variant="primary"
-						icon={ checkIcon }
-						isBusy={ isSaving }
-						disabled={ isSaving }
-						onClick={ onSave }
-					>
-						{ isSaving
-							? __( 'Saving', 'wp-distraction-free-view' )
-							: __(
-									'Save settings',
-									'wp-distraction-free-view'
-							  ) }
-					</Button>
-				</FlexItem>
-			</Flex>
-		</CardBody>
-	</Card>
-);
-
-const AboutPanel = ( { aboutInfo } ) => (
-	<Card className="wpdfv-settings-card wpdfv-about-card">
-		<CardHeader>
-			<div>
-				<h2>
-					{ __(
-						'About WP Distraction Free View',
-						'wp-distraction-free-view'
-					) }
-				</h2>
-				<p>
-					{ __(
-						'A lightweight frontend Reader Mode for focused reading on WordPress sites.',
-						'wp-distraction-free-view'
-					) }
-				</p>
-			</div>
-		</CardHeader>
-		<CardBody>
-			<div className="wpdfv-about-grid">
-				<section className="wpdfv-about-section">
-					<h3>
-						{ __( 'What it does', 'wp-distraction-free-view' ) }
-					</h3>
-					<p>
-						{ __(
-							'WP Distraction Free View helps visitors read posts, pages, and selected public post types in a clean Reader Mode without changing the original theme layout.',
-							'wp-distraction-free-view'
-						) }
-					</p>
-				</section>
-
-				<section className="wpdfv-about-section">
-					<h3>
-						{ __( 'How to use it', 'wp-distraction-free-view' ) }
-					</h3>
-					<ul>
-						<li>
-							{ __(
-								'Enable the post types that should support Reader Mode.',
-								'wp-distraction-free-view'
-							) }
-						</li>
-						<li>
-							{ __(
-								'Place the Reader Mode Toggle block where you want manual control.',
-								'wp-distraction-free-view'
-							) }
-						</li>
-						<li>
-							{ __(
-								'Use the existing [wpdfv] shortcode when block placement is not available.',
-								'wp-distraction-free-view'
-							) }
-						</li>
-					</ul>
-				</section>
-
-				<section className="wpdfv-about-section">
-					<h3>
-						{ __( 'Compatibility', 'wp-distraction-free-view' ) }
-					</h3>
-					<dl className="wpdfv-about-details">
+					<h3>{ automaticModeLabel }</h3>
+					<dl>
 						<div>
 							<dt>
 								{ __(
-									'Plugin version',
+									'Content types',
 									'wp-distraction-free-view'
 								) }
 							</dt>
-							<dd>{ aboutInfo.pluginVersion }</dd>
+							<dd>
+								{ sprintf(
+									/* translators: %d: Number of enabled post types. */
+									__(
+										'%d enabled',
+										'wp-distraction-free-view'
+									),
+									enabledPostTypeCount
+								) }
+							</dd>
 						</div>
 						<div>
 							<dt>
 								{ __(
-									'Minimum WordPress',
+									'Placement',
 									'wp-distraction-free-view'
 								) }
 							</dt>
-							<dd>{ aboutInfo.minimumWordPress }</dd>
-						</div>
-						<div>
-							<dt>
-								{ __(
-									'Minimum PHP',
-									'wp-distraction-free-view'
+							<dd>
+								{ getDisplayLocationLabel(
+									displayLocations,
+									settings.display_location
 								) }
-							</dt>
-							<dd>{ aboutInfo.minimumPhp }</dd>
+							</dd>
 						</div>
 						<div>
 							<dt>
@@ -589,70 +312,525 @@ const AboutPanel = ( { aboutInfo } ) => (
 							</dd>
 						</div>
 					</dl>
-				</section>
+					<Button
+						variant="primary"
+						icon={ checkIcon }
+						isBusy={ isSaving }
+						disabled={ isSaving }
+						type="submit"
+					>
+						{ isSaving
+							? __( 'Saving', 'wp-distraction-free-view' )
+							: __(
+									'Save settings',
+									'wp-distraction-free-view'
+							  ) }
+					</Button>
+				</aside>
 
-				<section className="wpdfv-about-section">
-					<h3>
-						{ __( 'Useful links', 'wp-distraction-free-view' ) }
-					</h3>
-					<ul className="wpdfv-about-links">
-						<li>
-							<ExternalLink href="https://wordpress.org/plugins/wp-distraction-free-view/">
-								{ __(
-									'Plugin page',
+				<div className="wpdfv-settings-panels">
+					<SettingsSection
+						title={ __(
+							'Availability and placement',
+							'wp-distraction-free-view'
+						) }
+						description={ __(
+							'Control where Reader Mode is available and how visitors enter it.',
+							'wp-distraction-free-view'
+						) }
+					>
+						<div className="wpdfv-field-row">
+							<ToggleControl
+								label={ __(
+									'Automatically insert reader toggle',
 									'wp-distraction-free-view'
 								) }
-							</ExternalLink>
-						</li>
-						<li>
-							<ExternalLink href="https://wordpress.org/support/plugin/wp-distraction-free-view/">
-								{ __(
-									'Support forum',
+								checked={ settings.automatic_button_enabled }
+								onChange={ ( value ) => {
+									onUpdateSetting(
+										'automatic_button_enabled',
+										value
+									);
+									if ( ! value ) {
+										onUpdateSetting(
+											'display_location',
+											'manual_only'
+										);
+									} else if (
+										'manual_only' ===
+										settings.display_location
+									) {
+										onUpdateSetting(
+											'display_location',
+											'after_content'
+										);
+									}
+								} }
+								help={ __(
+									'Leave this off when you only want to place the toggle with the block or shortcode.',
 									'wp-distraction-free-view'
 								) }
-							</ExternalLink>
-						</li>
-						<li>
-							<ExternalLink href="https://github.com/mehul0810/wp-distraction-free-view">
-								{ __(
-									'GitHub repository',
-									'wp-distraction-free-view'
-								) }
-							</ExternalLink>
-						</li>
-					</ul>
-				</section>
-			</div>
-		</CardBody>
-	</Card>
-);
+							/>
+						</div>
 
-const RecommendedPlugins = ( { plugins } ) => (
-	<div className="wpdfv-recommended-grid">
-		{ plugins.map( ( plugin ) => (
-			<Card key={ plugin.url } className="wpdfv-plugin-card">
-				<CardHeader>
-					<h2>{ plugin.label }</h2>
-				</CardHeader>
-				<CardBody>
-					<Flex align="flex-start" gap={ 4 }>
-						<FlexBlock>
-							<p>{ plugin.description }</p>
-						</FlexBlock>
+						<div className="wpdfv-field-row">
+							<h4>
+								{ __(
+									'Post types',
+									'wp-distraction-free-view'
+								) }
+							</h4>
+							<p className="wpdfv-field-row__description">
+								{ __(
+									'Choose the public content types where Reader Mode should be available.',
+									'wp-distraction-free-view'
+								) }
+							</p>
+							<div className="wpdfv-checkbox-list">
+								{ postTypes.map( ( postType ) => (
+									<CheckboxControl
+										key={ postType.slug }
+										label={ postType.label }
+										checked={ selectedPostTypes.includes(
+											postType.slug
+										) }
+										onChange={ ( value ) =>
+											onTogglePostType(
+												postType.slug,
+												value
+											)
+										}
+									/>
+								) ) }
+							</div>
+						</div>
+
+						<div className="wpdfv-field-row">
+							<RadioControl
+								label={ __(
+									'Toggle placement',
+									'wp-distraction-free-view'
+								) }
+								selected={ settings.display_location }
+								options={ displayLocations }
+								onChange={ ( value ) => {
+									onUpdateSetting(
+										'display_location',
+										value
+									);
+									onUpdateSetting(
+										'automatic_button_enabled',
+										'manual_only' !== value
+									);
+								} }
+							/>
+						</div>
+
+						<div className="wpdfv-field-grid">
+							<TextControl
+								__next40pxDefaultSize
+								label={ __(
+									'Toggle label',
+									'wp-distraction-free-view'
+								) }
+								value={ settings.button_text }
+								onChange={ ( value ) =>
+									onUpdateSetting( 'button_text', value )
+								}
+								help={ __(
+									'Shown on the frontend Reader Mode toggle and shortcode output.',
+									'wp-distraction-free-view'
+								) }
+							/>
+							<TextControl
+								__next40pxDefaultSize
+								label={ __(
+									'Exit label',
+									'wp-distraction-free-view'
+								) }
+								value={ settings.exit_button_text }
+								onChange={ ( value ) =>
+									onUpdateSetting( 'exit_button_text', value )
+								}
+								help={ __(
+									'Accessible label for the Reader Mode close control.',
+									'wp-distraction-free-view'
+								) }
+							/>
+						</div>
+					</SettingsSection>
+
+					<SettingsSection
+						title={ __(
+							'Reading tools',
+							'wp-distraction-free-view'
+						) }
+						description={ __(
+							'Choose the lightweight tools visitors can use while reading.',
+							'wp-distraction-free-view'
+						) }
+					>
+						<div className="wpdfv-field-grid">
+							<ToggleControl
+								label={ __(
+									'Show reading progress',
+									'wp-distraction-free-view'
+								) }
+								checked={ settings.reading_progress_enabled }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'reading_progress_enabled',
+										value
+									)
+								}
+							/>
+							<ToggleControl
+								label={ __(
+									'Show estimated reading time',
+									'wp-distraction-free-view'
+								) }
+								checked={ settings.reading_time_enabled }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'reading_time_enabled',
+										value
+									)
+								}
+							/>
+							<ToggleControl
+								label={ __(
+									'Show reader preference controls',
+									'wp-distraction-free-view'
+								) }
+								checked={ settings.preference_controls_enabled }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'preference_controls_enabled',
+										value
+									)
+								}
+								help={ __(
+									'Preferences are saved only in the visitor browser.',
+									'wp-distraction-free-view'
+								) }
+							/>
+						</div>
+
+						<div className="wpdfv-field-grid">
+							<SelectControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								label={ __(
+									'Default reader theme',
+									'wp-distraction-free-view'
+								) }
+								value={ settings.default_reader_theme }
+								options={ readerThemes }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'default_reader_theme',
+										value
+									)
+								}
+							/>
+							<SelectControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								label={ __(
+									'Default content width',
+									'wp-distraction-free-view'
+								) }
+								value={ settings.default_content_width }
+								options={ contentWidths }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'default_content_width',
+										value
+									)
+								}
+							/>
+							<SelectControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								label={ __(
+									'Default font size',
+									'wp-distraction-free-view'
+								) }
+								value={ settings.default_font_size }
+								options={ fontSizes }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'default_font_size',
+										value
+									)
+								}
+							/>
+						</div>
+					</SettingsSection>
+
+					<SettingsSection
+						title={ __( 'Template', 'wp-distraction-free-view' ) }
+						description={ __(
+							'Select the block-based template used inside Reader Mode.',
+							'wp-distraction-free-view'
+						) }
+					>
+						<SelectControl
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							label={ __(
+								'Reader template',
+								'wp-distraction-free-view'
+							) }
+							value={ settings.modal_template }
+							options={ modalTemplates }
+							onChange={ ( value ) =>
+								onUpdateSetting( 'modal_template', value )
+							}
+						/>
+					</SettingsSection>
+
+					<Flex className="wpdfv-settings-actions" justify="flex-end">
 						<FlexItem>
-							<ExternalLink href={ plugin.url }>
-								{ __(
-									'View plugin',
-									'wp-distraction-free-view'
-								) }
-							</ExternalLink>
+							<Button
+								variant="primary"
+								icon={ checkIcon }
+								isBusy={ isSaving }
+								disabled={ isSaving }
+								type="submit"
+							>
+								{ isSaving
+									? __( 'Saving', 'wp-distraction-free-view' )
+									: __(
+											'Save settings',
+											'wp-distraction-free-view'
+									  ) }
+							</Button>
 						</FlexItem>
 					</Flex>
-				</CardBody>
-			</Card>
-		) ) }
+				</div>
+			</div>
+		</form>
+	);
+};
+
+const AboutPanel = ( {
+	aboutInfo,
+	settings,
+	readerThemes,
+	contentWidths,
+	fontSizes,
+	selectedPostTypes,
+} ) => (
+	<div className="wpdfv-about">
+		<section className="wpdfv-hero-panel">
+			<div>
+				<p className="wpdfv-eyebrow">
+					{ __( 'Frontend Reader Mode', 'wp-distraction-free-view' ) }
+				</p>
+				<h2>
+					{ __(
+						'Give visitors a calmer way to read.',
+						'wp-distraction-free-view'
+					) }
+				</h2>
+				<p className="wpdfv-hero-panel__description">
+					{ __(
+						'WP Distraction Free View turns long-form content into a focused reading experience without changing the original theme layout.',
+						'wp-distraction-free-view'
+					) }
+				</p>
+			</div>
+			<dl className="wpdfv-hero-metrics">
+				<div>
+					<dt>{ __( 'Version', 'wp-distraction-free-view' ) }</dt>
+					<dd>{ aboutInfo.pluginVersion }</dd>
+				</div>
+				<div>
+					<dt>{ __( 'Shortcode', 'wp-distraction-free-view' ) }</dt>
+					<dd>
+						<code>[wpdfv]</code>
+					</dd>
+				</div>
+				<div>
+					<dt>{ __( 'Post types', 'wp-distraction-free-view' ) }</dt>
+					<dd>
+						{ sprintf(
+							/* translators: %d: Number of enabled post types. */
+							__( '%d enabled', 'wp-distraction-free-view' ),
+							selectedPostTypes.length
+						) }
+					</dd>
+				</div>
+			</dl>
+		</section>
+
+		<div className="wpdfv-about-layout">
+			<InfoPanel
+				title={ __( 'Quick start', 'wp-distraction-free-view' ) }
+			>
+				<ol className="wpdfv-steps">
+					<li>
+						{ __(
+							'Enable Reader Mode for the content types readers use most.',
+							'wp-distraction-free-view'
+						) }
+					</li>
+					<li>
+						{ __(
+							'Choose automatic placement, or place the Reader Mode Toggle block manually.',
+							'wp-distraction-free-view'
+						) }
+					</li>
+					<li>
+						{ __(
+							'Use [wpdfv] anywhere a shortcode is the better fit.',
+							'wp-distraction-free-view'
+						) }
+					</li>
+				</ol>
+			</InfoPanel>
+
+			<InfoPanel
+				title={ __( 'Current defaults', 'wp-distraction-free-view' ) }
+			>
+				<dl className="wpdfv-compact-details">
+					<div>
+						<dt>{ __( 'Theme', 'wp-distraction-free-view' ) }</dt>
+						<dd>
+							{ getOptionLabel(
+								readerThemes,
+								settings.default_reader_theme
+							) }
+						</dd>
+					</div>
+					<div>
+						<dt>{ __( 'Width', 'wp-distraction-free-view' ) }</dt>
+						<dd>
+							{ getOptionLabel(
+								contentWidths,
+								settings.default_content_width
+							) }
+						</dd>
+					</div>
+					<div>
+						<dt>
+							{ __( 'Font size', 'wp-distraction-free-view' ) }
+						</dt>
+						<dd>
+							{ getOptionLabel(
+								fontSizes,
+								settings.default_font_size
+							) }
+						</dd>
+					</div>
+					<div>
+						<dt>
+							{ __( 'Progress', 'wp-distraction-free-view' ) }
+						</dt>
+						<dd>
+							{ settings.reading_progress_enabled
+								? __( 'On', 'wp-distraction-free-view' )
+								: __( 'Off', 'wp-distraction-free-view' ) }
+						</dd>
+					</div>
+				</dl>
+			</InfoPanel>
+
+			<InfoPanel
+				title={ __( 'Compatibility', 'wp-distraction-free-view' ) }
+			>
+				<dl className="wpdfv-compact-details">
+					<div>
+						<dt>
+							{ __(
+								'Minimum WordPress',
+								'wp-distraction-free-view'
+							) }
+						</dt>
+						<dd>{ aboutInfo.minimumWordPress }</dd>
+					</div>
+					<div>
+						<dt>
+							{ __( 'Minimum PHP', 'wp-distraction-free-view' ) }
+						</dt>
+						<dd>{ aboutInfo.minimumPhp }</dd>
+					</div>
+				</dl>
+			</InfoPanel>
+		</div>
 	</div>
 );
+
+const MorePluginsPanel = ( { plugins } ) => (
+	<div className="wpdfv-more-plugins">
+		<ScreenIntro
+			eyebrow={ __( 'More Plugins', 'wp-distraction-free-view' ) }
+			title={ __(
+				'Tools from the same developer',
+				'wp-distraction-free-view'
+			) }
+			description={ __(
+				'Explore focused WordPress plugins that pair well with a fast, reader-friendly site.',
+				'wp-distraction-free-view'
+			) }
+		/>
+		<div className="wpdfv-plugin-grid">
+			{ plugins.map( ( plugin ) => (
+				<article key={ plugin.url } className="wpdfv-plugin-card">
+					<h3>{ plugin.label }</h3>
+					<p className="wpdfv-plugin-card__description">
+						{ plugin.description }
+					</p>
+					<ExternalLink href={ plugin.url }>
+						{ __( 'View plugin', 'wp-distraction-free-view' ) }
+					</ExternalLink>
+				</article>
+			) ) }
+		</div>
+	</div>
+);
+
+const ScreenIntro = ( { eyebrow, title, description } ) => (
+	<header className="wpdfv-screen-intro">
+		<p className="wpdfv-eyebrow">{ eyebrow }</p>
+		<h2>{ title }</h2>
+		<p className="wpdfv-screen-intro__description">{ description }</p>
+	</header>
+);
+
+const SettingsSection = ( { title, description, children } ) => (
+	<section className="wpdfv-settings-panel">
+		<div className="wpdfv-settings-panel__header">
+			<h3>{ title }</h3>
+			<p className="wpdfv-settings-panel__description">{ description }</p>
+		</div>
+		<div className="wpdfv-settings-panel__body">{ children }</div>
+	</section>
+);
+
+const InfoPanel = ( { title, children } ) => (
+	<section className="wpdfv-info-panel">
+		<h3>{ title }</h3>
+		{ children }
+	</section>
+);
+
+const getDisplayLocationLabel = ( displayLocations, selectedValue ) => {
+	const selectedLocation = displayLocations.find(
+		( location ) => location.value === selectedValue
+	);
+
+	return selectedLocation?.label || selectedValue;
+};
+
+const getOptionLabel = ( options, selectedValue ) => {
+	const selectedOption = options.find(
+		( option ) => option.value === selectedValue
+	);
+
+	return selectedOption?.label || selectedValue;
+};
 
 const root = document.getElementById( 'wpdfv-settings-app' );
 

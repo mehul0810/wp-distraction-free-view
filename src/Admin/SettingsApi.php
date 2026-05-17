@@ -103,6 +103,8 @@ class SettingsApi {
 	 * @return WP_REST_Response
 	 */
 	public function get_settings_response() {
+		$more_plugins = $this->get_more_plugins();
+
 		return rest_ensure_response(
 			[
 				'settings'           => $this->get_prepared_settings(),
@@ -113,7 +115,8 @@ class SettingsApi {
 				'contentWidths'      => Reader::get_content_width_options(),
 				'fontSizes'          => Reader::get_font_size_options(),
 				'modalTemplates'     => Templates::get_template_options(),
-				'recommendedPlugins' => $this->get_recommended_plugins(),
+				'morePlugins'        => $more_plugins,
+				'recommendedPlugins' => $more_plugins,
 				'restNamespace'      => WPDFV_REST_NAMESPACE,
 				'minimumWordPress'   => '6.0',
 				'minimumPhp'         => '8.2',
@@ -217,13 +220,13 @@ class SettingsApi {
 	}
 
 	/**
-	 * Get recommended plugin cards.
+	 * Get additional plugin cards.
 	 *
 	 * @since 2.0.0
 	 *
 	 * @return array
 	 */
-	protected function get_recommended_plugins() {
+	protected function get_more_plugins() {
 		return [
 			[
 				'label'       => esc_html__( 'Perform', 'wp-distraction-free-view' ),
