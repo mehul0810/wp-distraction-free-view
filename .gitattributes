@@ -1,6 +1,5 @@
 # Directories
 /.wordpress-org export-ignore
-/wp-org-asset-variations export-ignore
 /.github export-ignore
 /tests export-ignore
 /node_modules export-ignore
