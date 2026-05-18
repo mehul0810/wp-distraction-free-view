@@ -45,46 +45,45 @@ const PREFERENCE_OPTIONS = {
 		{ label: __( 'Wide', 'wp-distraction-free-view' ), value: 'wide' },
 	],
 };
-const printIcon = createElement(
-	SVG,
-	{
-		xmlns: 'http://www.w3.org/2000/svg',
-		viewBox: '0 0 24 24',
-	},
-	createElement( Path, {
-		d: 'M7 3h10v5H7V3Zm1.5 1.5v2h7v-2h-7ZM6 10.5A2.5 2.5 0 0 0 3.5 13v4.5H7V21h10v-3.5h3.5V13a2.5 2.5 0 0 0-2.5-2.5H6Zm12 1.5a1 1 0 0 1 1 1v3h-2v-2H7v2H5v-3a1 1 0 0 1 1-1h12Zm-9.5 3.5v4h7v-4h-7Zm8.25-2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z',
-	} )
-);
-const settingsIcon = createElement(
-	SVG,
-	{
-		xmlns: 'http://www.w3.org/2000/svg',
-		viewBox: '0 0 24 24',
-	},
-	createElement( Path, {
-		d: 'M12 8.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5Zm0 1.5a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Zm7.5 2.4v-1.3l-2.05-.5a5.9 5.9 0 0 0-.54-1.29l1.1-1.8-.92-.92-1.8 1.1c-.4-.23-.83-.41-1.29-.54L13.5 5.35h-3l-.5 2.05c-.46.13-.89.31-1.29.54l-1.8-1.1-.92.92 1.1 1.8c-.23.4-.41.83-.54 1.29l-2.05.5v1.3l2.05.5c.13.46.31.89.54 1.29l-1.1 1.8.92.92 1.8-1.1c.4.23.83.41 1.29.54l.5 2.05h3l.5-2.05c.46-.13.89-.31 1.29-.54l1.8 1.1.92-.92-1.1-1.8c.23-.4.41-.83.54-1.29l2.05-.5Z',
-	} )
-);
-const closeIcon = createElement(
-	SVG,
-	{
-		xmlns: 'http://www.w3.org/2000/svg',
-		viewBox: '0 0 24 24',
-	},
-	createElement( Path, {
-		d: 'm13.06 12 5.22-5.22-1.06-1.06L12 10.94 6.78 5.72 5.72 6.78 10.94 12l-5.22 5.22 1.06 1.06L12 13.06l5.22 5.22 1.06-1.06L13.06 12Z',
-	} )
-);
-const fullscreenIcon = createElement(
-	SVG,
-	{
-		xmlns: 'http://www.w3.org/2000/svg',
-		viewBox: '0 0 24 24',
-	},
-	createElement( Path, {
-		d: 'M6 4a2 2 0 0 0-2 2v3h1.5V6a.5.5 0 0 1 .5-.5h3V4H6Zm3 14.5H6a.5.5 0 0 1-.5-.5v-3H4v3a2 2 0 0 0 2 2h3v-1.5Zm6 1.5v-1.5h3a.5.5 0 0 0 .5-.5v-3H20v3a2 2 0 0 1-2 2h-3Zm3-16a2 2 0 0 1 2 2v3h-1.5V6a.5.5 0 0 0-.5-.5h-3V4h3Z',
-	} )
-);
+const createHeroIcon = ( paths ) =>
+	createElement(
+		SVG,
+		{
+			fill: 'none',
+			xmlns: 'http://www.w3.org/2000/svg',
+			stroke: 'currentColor',
+			strokeLinecap: 'round',
+			strokeLinejoin: 'round',
+			strokeWidth: '1.5',
+			viewBox: '0 0 24 24',
+		},
+		paths.map( ( path ) =>
+			createElement( Path, {
+				d: path,
+				key: path,
+			} )
+		)
+	);
+const settingsIcon = createHeroIcon( [
+	'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.991l1.005.828c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.241.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.991l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z',
+	'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+] );
+const printIcon = createHeroIcon( [
+	'M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Z',
+] );
+const closeIcon = createHeroIcon( [ 'M6 18 18 6M6 6l12 12' ] );
+const fullscreenIcon = createHeroIcon( [
+	'M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9',
+	'M20.25 3.75v4.5m0-4.5h-4.5m4.5 0L15 9',
+	'M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15',
+	'M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15',
+] );
+const exitFullscreenIcon = createHeroIcon( [
+	'M9 9V4.5M9 9H4.5M9 9 3.75 3.75',
+	'M9 15v4.5M9 15H4.5M9 15l-5.25 5.25',
+	'M15 9h4.5M15 9V4.5M15 9l5.25-5.25',
+	'M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25',
+] );
 
 const isEnabled = ( key ) => READER_CONFIG[ key ] !== false;
 
@@ -188,6 +187,7 @@ const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ isSettingsOpen, setIsSettingsOpen ] = useState( false );
+	const [ isFullscreen, setIsFullscreen ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const [ title, setTitle ] = useState( '' );
 	const [ content, setContent ] = useState( '' );
@@ -262,6 +262,30 @@ const ReaderApp = () => {
 			);
 			document.body.classList.remove( 'wpdfv-reader-mode-active' );
 		};
+	}, [ isOpen ] );
+
+	useEffect( () => {
+		if ( ! isOpen ) {
+			setIsFullscreen( false );
+			return undefined;
+		}
+
+		const handleFullscreenChange = () => {
+			setIsFullscreen(
+				document.fullscreenElement?.classList?.contains(
+					'wpdfv-reader-modal'
+				) || false
+			);
+		};
+
+		document.addEventListener( 'fullscreenchange', handleFullscreenChange );
+		handleFullscreenChange();
+
+		return () =>
+			document.removeEventListener(
+				'fullscreenchange',
+				handleFullscreenChange
+			);
 	}, [ isOpen ] );
 
 	useEffect( () => {
@@ -342,6 +366,7 @@ const ReaderApp = () => {
 	const closeReader = () => {
 		setIsOpen( false );
 		setIsSettingsOpen( false );
+		setIsFullscreen( false );
 		setError( '' );
 	};
 
@@ -414,11 +439,22 @@ const ReaderApp = () => {
 						<Button
 							variant="link"
 							size="compact"
-							icon={ fullscreenIcon }
-							label={ __(
-								'Fullscreen',
-								'wp-distraction-free-view'
-							) }
+							icon={
+								isFullscreen
+									? exitFullscreenIcon
+									: fullscreenIcon
+							}
+							label={
+								isFullscreen
+									? __(
+											'Exit fullscreen',
+											'wp-distraction-free-view'
+									  )
+									: __(
+											'Fullscreen',
+											'wp-distraction-free-view'
+									  )
+							}
 							showTooltip={ false }
 							onClick={ toggleFullscreen }
 						/>

@@ -80,12 +80,18 @@ body.wpdfv-reader-mode-active {
 
 	.components-button.is-link {
 		align-items: center;
+		color: var(--wp-admin-theme-color, #3858e9);
 		display: inline-flex;
 		height: 32px;
 		justify-content: center;
 		min-width: 32px;
 		padding: 0;
 		text-decoration: none;
+
+		svg {
+			fill: none;
+			stroke: currentcolor;
+		}
 	}
 }
 
