@@ -16,10 +16,10 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Features
 
 - Frontend Reader Mode for posts, pages, and enabled public custom post types.
-- Manual placement with the Reader Mode Toggle block or the existing `[wpdfv]` shortcode.
+- Manual placement with the Reader Mode Toggle block or the `[wpdfv]` shortcode.
 - Optional automatic toggle insertion before content, after content, or as a floating button.
 - URL activation with `?reader-mode=1` on enabled single content.
-- Visitor preferences for font size, theme, and content width stored in localStorage.
+- Visitor preferences for font size, theme, and content width from the Reader settings control in the modal header, stored in localStorage.
 - Optional reading progress and estimated reading time.
 - Block-based Reader Mode template support for full site editing themes.
 - WordPress-components settings screen and REST-backed settings persistence.
@@ -79,6 +79,8 @@ npm run build
 
 The settings page is available at **Settings > Reader Mode**.
 
+The screen is organized into **About**, **Configure**, and **More Plugins** tabs. Reader Mode configuration lives under **Configure**.
+
 Available settings:
 
 - Enable Reader Mode for selected public post types.
@@ -97,7 +99,7 @@ Automatic insertion is disabled for new installs. Existing installs keep their p
 
 ## Shortcodes
 
-Use the existing shortcode from the master branch:
+Use the shortcode:
 
 ```text
 [wpdfv]
@@ -106,6 +108,8 @@ Use the existing shortcode from the master branch:
 ## Blocks
 
 Use the **WP Distraction Free View / Reader Mode Toggle** block in posts, pages, public custom post types, single templates, and Query Loop templates.
+
+The block is dynamic and uses the current post context, so it opens the correct post when placed in single templates or inside Query Loop templates.
 
 ## Modal Templates
 
@@ -143,7 +147,7 @@ Preserved public surfaces:
 - Visit a single post.
 - Enter and exit Reader Mode.
 - Test query param activation with `?reader-mode=1`.
-- Test existing shortcode `[wpdfv]`.
+- Test shortcode `[wpdfv]`.
 - Test mobile viewport.
 - Test dark, sepia, and light themes.
 - Test font size and width preferences.

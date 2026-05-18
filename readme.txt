@@ -17,14 +17,14 @@ WP Distraction Free View adds a clean frontend Reader Mode to WordPress, helping
 
 WordPress core already includes distraction-free writing tools for the admin editor. This plugin is for the frontend visitor reading experience.
 
-Use it to offer focused reading for posts, pages, and selected public custom post types. Visitors can open content in a polished Reader Mode overlay, adjust font size, switch between light/dark/sepia themes, choose a comfortable content width, print the reader view, or use browser fullscreen.
+Use it to offer focused reading for posts, pages, and selected public custom post types. Visitors can open content in a polished Reader Mode overlay, use the Reader settings control in the modal header to adjust font size, switch between light/dark/sepia themes, choose a comfortable content width, print the reader view, or use browser fullscreen.
 
 = Features =
 
 1. Frontend Reader Mode for posts, pages, and selected public custom post types.
 2. Clean reading column with comfortable typography, spacing, and width.
 3. Reader Mode Toggle block for posts, pages, custom post types, and Query Loop templates.
-4. Shortcode support with the existing `[wpdfv]` shortcode from the master branch.
+4. Shortcode support with `[wpdfv]`.
 5. Optional automatic toggle placement before content, after content, or as a floating button.
 6. URL activation with `?reader-mode=1`.
 7. Visitor preferences for font size, theme, and content width saved in localStorage only.
@@ -37,6 +37,8 @@ Use it to offer focused reading for posts, pages, and selected public custom pos
 = Settings Overview =
 
 Go to **Settings > Reader Mode** to configure:
+
+The settings screen is organized into **About**, **Configure**, and **More Plugins** tabs. Reader Mode configuration lives under **Configure**.
 
 * Enable Reader Mode for selected public post types.
 * Toggle placement: manual only, before content, after content, or floating.
@@ -56,7 +58,7 @@ Automatic toggle insertion is disabled for new installs. Existing installs keep 
 
 Use the Reader Mode Toggle block in posts, pages, public custom post types, single templates, and Query Loop templates.
 
-Use the existing shortcode from the master branch:
+Use the shortcode:
 
 `[wpdfv]`
 
@@ -85,7 +87,7 @@ No. WordPress core distraction-free mode is for writing in the admin editor. WP 
 
 = Can I place the Reader Mode toggle manually? =
 
-Yes. Use the Reader Mode Toggle block or the existing `[wpdfv]` shortcode.
+Yes. Use the Reader Mode Toggle block or the `[wpdfv]` shortcode.
 
 = Can Reader Mode open from a URL? =
 
@@ -105,13 +107,13 @@ Yes. The plugin registers a default block-based Reader Mode template and a WP Di
 
 = Will old settings keep working? =
 
-Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdfv_general` values are migrated during upgrade. The shortcode surface stays aligned with master: `[wpdfv]`.
+Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdfv_general` values are migrated during upgrade. The supported shortcode remains `[wpdfv]`.
 
 == Screenshots ==
 
 1. Reader Mode settings screen.
 2. Reader Mode toggle on frontend content.
-3. Fullscreen Reader Mode with reading preferences.
+3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
 
@@ -127,7 +129,7 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Changed: Rebuilt admin settings and Reader Mode modal with WordPress components and REST API.
 - Changed: Modernized the asset build around `@wordpress/scripts`.
 - Changed: Automatic toggle insertion is disabled for new installs while existing installs keep their previous automatic insertion behavior unless it was already disabled.
-- Changed: Kept the shortcode surface aligned with master by using `[wpdfv]` as the only shortcode.
+- Changed: Kept `[wpdfv]` as the only documented shortcode.
 - Changed: Default toggle label for new installs is now "Read in Reader Mode".
 - Changed: Settings menu copy now frames the feature as Reader Mode.
 - Added: PHPUnit test coverage and CI workflow for PHP, PHPCS, JS/CSS linting, and asset builds.
@@ -194,4 +196,4 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 == Upgrade Notice ==
 
 = 1.7.0 =
-Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options continue to work, and the supported shortcode surface remains `[wpdfv]`.
+Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options continue to work, and the supported shortcode remains `[wpdfv]`.
