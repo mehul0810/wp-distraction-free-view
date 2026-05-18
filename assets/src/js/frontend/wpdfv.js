@@ -52,9 +52,27 @@ const printIcon = createElement(
 		viewBox: '0 0 24 24',
 	},
 	createElement( Path, {
-		clipRule: 'evenodd',
-		d: 'M12.848 8a1 1 0 0 1-.914-.594l-.723-1.63a.5.5 0 0 0-.447-.276H5a.5.5 0 0 0-.5.5v11.5a.5.5 0 0 0 .5.5h14a.5.5 0 0 0 .5-.5v-9A.5.5 0 0 0 19 8h-6.152Zm.612-1.5a.5.5 0 0 1-.462-.31l-.445-1.084A2 2 0 0 0 10.763 4H5a2 2 0 0 0-2 2v11.5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-5.54Z',
-		fillRule: 'evenodd',
+		d: 'M7 3h10v5H7V3Zm1.5 1.5v2h7v-2h-7ZM6 10.5A2.5 2.5 0 0 0 3.5 13v4.5H7V21h10v-3.5h3.5V13a2.5 2.5 0 0 0-2.5-2.5H6Zm12 1.5a1 1 0 0 1 1 1v3h-2v-2H7v2H5v-3a1 1 0 0 1 1-1h12Zm-9.5 3.5v4h7v-4h-7Zm8.25-2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z',
+	} )
+);
+const settingsIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+	},
+	createElement( Path, {
+		d: 'M12 8.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5Zm0 1.5a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Zm7.5 2.4v-1.3l-2.05-.5a5.9 5.9 0 0 0-.54-1.29l1.1-1.8-.92-.92-1.8 1.1c-.4-.23-.83-.41-1.29-.54L13.5 5.35h-3l-.5 2.05c-.46.13-.89.31-1.29.54l-1.8-1.1-.92.92 1.1 1.8c-.23.4-.41.83-.54 1.29l-2.05.5v1.3l2.05.5c.13.46.31.89.54 1.29l-1.1 1.8.92.92 1.8-1.1c.4.23.83.41 1.29.54l.5 2.05h3l.5-2.05c.46-.13.89-.31 1.29-.54l1.8 1.1.92-.92-1.1-1.8c.23-.4.41-.83.54-1.29l2.05-.5Z',
+	} )
+);
+const closeIcon = createElement(
+	SVG,
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+	},
+	createElement( Path, {
+		d: 'm13.06 12 5.22-5.22-1.06-1.06L12 10.94 6.78 5.72 5.72 6.78 10.94 12l-5.22 5.22 1.06 1.06L12 13.06l5.22 5.22 1.06-1.06L13.06 12Z',
 	} )
 );
 const fullscreenIcon = createElement(
@@ -169,6 +187,7 @@ const PreferenceControls = ( { preferences, onChange } ) => (
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
+	const [ isSettingsOpen, setIsSettingsOpen ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const [ title, setTitle ] = useState( '' );
 	const [ content, setContent ] = useState( '' );
@@ -300,6 +319,7 @@ const ReaderApp = () => {
 		setTitle( '' );
 		setContent( '' );
 		setReadingTime( null );
+		setIsSettingsOpen( false );
 		setProgress( 0 );
 
 		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
@@ -321,6 +341,7 @@ const ReaderApp = () => {
 
 	const closeReader = () => {
 		setIsOpen( false );
+		setIsSettingsOpen( false );
 		setError( '' );
 	};
 
@@ -341,6 +362,13 @@ const ReaderApp = () => {
 		window.print();
 	};
 
+	const showReadingTime =
+		isEnabled( 'readingTimeEnabled' ) &&
+		! isLoading &&
+		! error &&
+		readingTime?.label;
+	const showPreferenceControls = isEnabled( 'preferenceControlsEnabled' );
+
 	return (
 		isOpen && (
 			<Modal
@@ -352,6 +380,28 @@ const ReaderApp = () => {
 				}
 				headerActions={
 					<div className="wpdfv-reader-header-actions">
+						{ showReadingTime && (
+							<span className="wpdfv-reading-time wpdfv-reading-time--header">
+								{ readingTime.label }
+							</span>
+						) }
+						{ showPreferenceControls && (
+							<Button
+								variant="link"
+								size="compact"
+								icon={ settingsIcon }
+								label={ __(
+									'Reader settings',
+									'wp-distraction-free-view'
+								) }
+								showTooltip={ false }
+								aria-controls="wpdfv-reader-settings-panel"
+								aria-expanded={ isSettingsOpen }
+								onClick={ () =>
+									setIsSettingsOpen( ( value ) => ! value )
+								}
+							/>
+						) }
 						<Button
 							variant="link"
 							size="compact"
@@ -386,6 +436,41 @@ const ReaderApp = () => {
 					</div>
 				) }
 
+				{ showPreferenceControls && isSettingsOpen && (
+					<aside
+						className="wpdfv-reader-settings-panel"
+						id="wpdfv-reader-settings-panel"
+						aria-label={ __(
+							'Reader settings',
+							'wp-distraction-free-view'
+						) }
+					>
+						<div className="wpdfv-reader-settings-panel__header">
+							<h2>
+								{ __(
+									'Reader settings',
+									'wp-distraction-free-view'
+								) }
+							</h2>
+							<Button
+								variant="link"
+								size="compact"
+								icon={ closeIcon }
+								label={ __(
+									'Close reader settings',
+									'wp-distraction-free-view'
+								) }
+								showTooltip={ false }
+								onClick={ () => setIsSettingsOpen( false ) }
+							/>
+						</div>
+						<PreferenceControls
+							preferences={ preferences }
+							onChange={ updatePreference }
+						/>
+					</aside>
+				) }
+
 				<div className="wpdfv-reader-content" id="wpdfv-print">
 					{ isLoading && (
 						<div className="wpdfv-reader-loading">
@@ -397,23 +482,6 @@ const ReaderApp = () => {
 						<Notice status="error" isDismissible={ false }>
 							{ error }
 						</Notice>
-					) }
-
-					{ ! isLoading && ! error && (
-						<div className="wpdfv-reader-toolbar">
-							{ isEnabled( 'readingTimeEnabled' ) &&
-								readingTime?.label && (
-									<p className="wpdfv-reading-time">
-										{ readingTime.label }
-									</p>
-								) }
-							{ isEnabled( 'preferenceControlsEnabled' ) && (
-								<PreferenceControls
-									preferences={ preferences }
-									onChange={ updatePreference }
-								/>
-							) }
-						</div>
 					) }
 
 					{ ! isLoading && content && <RawHTML>{ content }</RawHTML> }
