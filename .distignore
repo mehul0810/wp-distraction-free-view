@@ -1,8 +1,10 @@
 /.git
 .gitignore
 .gitattributes
+.DS_Store
 
 /.idea
+/.vscode
 /.github
 /.wordpress-org
 /.storybook
@@ -10,12 +12,14 @@
 /tests
 /node_modules
 /assets/src
-/vendor/bin
-/vendor/composer/installers
+/vendor
+/coverage
 
 .scrutinizer.yml
 .travis.yml
 .editorconfig
+.nvmrc
+.node-version
 .babelrc
 .jscrsrc
 .jshintrc
@@ -29,11 +33,16 @@
 .lintstagedrc.json
 .distignore
 .stylelintignore
+.phpunit.result.cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 sample-data/wordpress.sql
 sample-data/sample-data.numbers
+babel.config.js
+eslint.config.js
 bower.json
-composer.json
 composer.lock
 package.json
 package-lock.json
