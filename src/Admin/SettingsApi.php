@@ -155,6 +155,7 @@ class SettingsApi {
 				'minimumWordPress'   => '6.0',
 				'minimumPhp'         => '8.2',
 				'pluginVersion'      => WPDFV_VERSION,
+				'brandIconUrl'       => WPDFV_PLUGIN_URL . 'assets/dist/images/wpdfv-icon.png',
 			]
 		);
 	}

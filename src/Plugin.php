@@ -87,11 +87,67 @@ final class Plugin {
 	 * @return void
 	 */
 	public function activate( $network_wide = false ) {
-		if ( false === get_option( 'wpdfv_settings', false ) ) {
-			update_option( 'wpdfv_settings', Includes\Reader::get_default_settings(), false );
+		if ( is_multisite() && $network_wide ) {
+			$this->activate_network();
+			return;
 		}
 
-		update_option( 'wpdfv_version', WPDFV_VERSION, false );
+		$this->activate_site();
+	}
+
+	/**
+	 * Initialize options for a single site.
+	 *
+	 * Existing installs must not be marked as current during activation before
+	 * the upgrade runner has a chance to migrate legacy option data on init.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	private function activate_site() {
+		$has_settings        = false !== get_option( 'wpdfv_settings', false );
+		$has_legacy_settings = false !== get_option( 'wpdfv_general', false );
+
+		if ( ! $has_settings && ! $has_legacy_settings ) {
+			update_option( 'wpdfv_settings', Includes\Reader::get_default_settings(), false );
+			update_option( 'wpdfv_version', WPDFV_VERSION, false );
+			return;
+		}
+
+		if ( false === get_option( 'wpdfv_version', false ) ) {
+			update_option( 'wpdfv_version', '1.0.0', false );
+		}
+	}
+
+	/**
+	 * Initialize options across a multisite network in bounded batches.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	private function activate_network() {
+		$number = 100;
+		$offset = 0;
+
+		do {
+			$site_ids = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => $number,
+					'offset' => $offset,
+				]
+			);
+
+			foreach ( $site_ids as $site_id ) {
+				switch_to_blog( $site_id );
+				$this->activate_site();
+				restore_current_blog();
+			}
+
+			$offset += $number;
+		} while ( count( $site_ids ) === $number );
 	}
 
 	/**

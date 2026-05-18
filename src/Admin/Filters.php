@@ -44,7 +44,7 @@ class Filters {
 				esc_html__( 'Settings', 'wp-distraction-free-view' )
 			),
 			'support'  => sprintf(
-				'<a target="_blank" href="%1$s">%2$s</a>',
+				'<a target="_blank" rel="noopener noreferrer" href="%1$s">%2$s</a>',
 				esc_url( 'https://wordpress.org/support/plugin/wp-distraction-free-view/' ),
 				esc_html__( 'Support', 'wp-distraction-free-view' )
 			),

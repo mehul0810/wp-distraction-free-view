@@ -423,8 +423,18 @@ const ReaderApp = () => {
 	);
 };
 
-const root = document.createElement( 'div' );
-root.id = 'wpdfv-reader-root';
-document.body.appendChild( root );
+if ( ! window.wpdfvReaderModeInitialized ) {
+	window.wpdfvReaderModeInitialized = true;
 
-render( <ReaderApp />, root );
+	const root =
+		document.getElementById( 'wpdfv-reader-root' ) ||
+		document.createElement( 'div' );
+
+	root.id = 'wpdfv-reader-root';
+
+	if ( ! root.parentNode ) {
+		document.body.appendChild( root );
+	}
+
+	render( <ReaderApp />, root );
+}

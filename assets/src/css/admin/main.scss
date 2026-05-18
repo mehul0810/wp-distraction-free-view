@@ -69,10 +69,10 @@
 	justify-content: center;
 	width: 48px;
 
-	svg {
+	img {
 		display: block;
-		height: 31px;
-		width: 31px;
+		height: 100%;
+		width: 100%;
 	}
 }
 
@@ -135,7 +135,9 @@
 
 	&:focus-visible {
 		border-radius: 3px;
-		box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wpdfv-admin-primary);
+		box-shadow:
+			0 0 0 2px #fff,
+			0 0 0 4px var(--wpdfv-admin-primary);
 		outline: 2px solid transparent;
 	}
 
@@ -545,9 +547,9 @@
 		height: 42px;
 		width: 42px;
 
-		svg {
-			height: 27px;
-			width: 27px;
+		img {
+			height: 100%;
+			width: 100%;
 		}
 	}
 

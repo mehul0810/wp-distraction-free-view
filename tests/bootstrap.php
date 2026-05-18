@@ -11,8 +11,14 @@
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
 $GLOBALS['wpdfv_test_active_plugins'] = [];
+$GLOBALS['wpdfv_test_enqueued']       = [
+	'scripts' => [],
+	'styles'  => [],
+	'inline'  => [],
+];
 $GLOBALS['wpdfv_test_options']        = [];
 $GLOBALS['wpdfv_test_plugins']        = [];
+$GLOBALS['wpdfv_test_posts']          = [];
 $GLOBALS['wpdfv_test_shortcodes']     = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
@@ -37,13 +43,26 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		 * @var string
 		 */
 		public $post_content = '';
+
+		/**
+		 * Post status.
+		 *
+		 * @var string
+		 */
+		public $post_status = 'publish';
 	}
 }
 
 function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_active_plugins'] = [];
+	$GLOBALS['wpdfv_test_enqueued']       = [
+		'scripts' => [],
+		'styles'  => [],
+		'inline'  => [],
+	];
 	$GLOBALS['wpdfv_test_options']        = [];
 	$GLOBALS['wpdfv_test_plugins']        = [];
+	$GLOBALS['wpdfv_test_posts']          = [];
 	$GLOBALS['wpdfv_test_shortcodes']     = [];
 	$_GET                                 = [];
 }
@@ -84,14 +103,67 @@ function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 )
 	return true;
 }
 
+function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+	return true;
+}
+
 function add_shortcode( $tag, $callback ) {
 	$GLOBALS['wpdfv_test_shortcodes'][ $tag ] = $callback;
 
 	return true;
 }
 
-function current_user_can( $capability ) {
+function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
+	$atts = (array) $atts;
+	$out  = [];
+
+	foreach ( $pairs as $name => $default ) {
+		$out[ $name ] = array_key_exists( $name, $atts ) ? $atts[ $name ] : $default;
+	}
+
+	return $out;
+}
+
+function current_user_can( $capability, ...$args ) {
 	return true;
+}
+
+function is_multisite() {
+	return false;
+}
+
+function wp_register_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
+	return true;
+}
+
+function wp_enqueue_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
+	$GLOBALS['wpdfv_test_enqueued']['styles'][] = $handle;
+
+	return true;
+}
+
+function wp_register_script( $handle, $src = '', $deps = [], $ver = false, $args = [] ) {
+	return true;
+}
+
+function wp_enqueue_script( $handle, $src = '', $deps = [], $ver = false, $args = [] ) {
+	$GLOBALS['wpdfv_test_enqueued']['scripts'][] = $handle;
+
+	return true;
+}
+
+function wp_set_script_translations( $handle, $domain = 'default', $path = '' ) {
+	return true;
+}
+
+function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+	$GLOBALS['wpdfv_test_enqueued']['inline'][ $handle ][] = $data;
+
+	return true;
+}
+
+function wp_json_encode( $value, $flags = 0, $depth = 512 ) {
+	return json_encode( $value, $flags, $depth );
 }
 
 function get_plugins() {
@@ -111,6 +183,57 @@ function activate_plugin( $plugin, $redirect = '', $network_wide = false, $silen
 
 function is_wp_error( $thing ) {
 	return class_exists( 'WP_Error' ) && $thing instanceof \WP_Error;
+}
+
+function get_post( $post_id = null ) {
+	$post_id = absint( $post_id );
+
+	return $GLOBALS['wpdfv_test_posts'][ $post_id ] ?? null;
+}
+
+function get_post_type( $post = null ) {
+	if ( $post instanceof WP_Post ) {
+		return $post->post_type;
+	}
+
+	$post = get_post( $post );
+
+	return $post instanceof WP_Post ? $post->post_type : false;
+}
+
+// phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid -- WordPress core function shim.
+function get_the_ID() {
+	global $post;
+
+	return $post instanceof WP_Post ? $post->ID : 0;
+}
+
+function get_the_title( $post = 0 ) {
+	$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+	return $post instanceof WP_Post ? 'Test title' : '';
+}
+
+function get_block_wrapper_attributes( $attributes = [] ) {
+	$class_name = isset( $attributes['class'] ) ? $attributes['class'] : '';
+
+	return '' !== $class_name ? 'class="' . esc_attr( $class_name ) . '"' : '';
+}
+
+function post_password_required( $post = null ) {
+	return false;
+}
+
+function get_post_status( $post = null ) {
+	$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+	return $post instanceof WP_Post ? $post->post_status : false;
+}
+
+function is_post_publicly_viewable( $post = null ) {
+	$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+	return $post instanceof WP_Post && 'publish' === $post->post_status;
 }
 
 function esc_html__( $text, $domain = 'default' ) {
@@ -197,7 +320,10 @@ require_once dirname( __DIR__ ) . '/config/constants.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Templates.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Reader.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Helpers.php';
+require_once dirname( __DIR__ ) . '/src/Includes/Actions.php';
+require_once dirname( __DIR__ ) . '/src/Includes/Blocks.php';
 require_once dirname( __DIR__ ) . '/src/Admin/Upgrades.php';
 require_once dirname( __DIR__ ) . '/src/Admin/SettingsApi.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Shortcodes/Main.php';
+require_once dirname( __DIR__ ) . '/src/Plugin.php';
 require_once __DIR__ . '/TestableSettingsApi.php';

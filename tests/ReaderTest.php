@@ -9,10 +9,12 @@ namespace WPDFV\Tests;
 
 use PHPUnit\Framework\TestCase;
 use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Blocks;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
 use WPDFV\Includes\Shortcodes\Main;
 use WPDFV\Includes\Templates;
+use WPDFV\Plugin;
 
 /**
  * Tests for Reader Mode settings, upgrades, and rendering helpers.
@@ -215,6 +217,126 @@ class ReaderTest extends TestCase {
 		$this->assertFalse( $settings['automatic_button_enabled'] );
 		$this->assertSame( 'Read Mode', $settings['button_text'] );
 		$this->assertSame( 'Exit Reader Mode', $settings['exit_button_text'] );
+	}
+
+	/**
+	 * Activation must not skip migrations for old inactive installs.
+	 *
+	 * @return void
+	 */
+	public function test_activation_keeps_legacy_install_pending_for_upgrade() {
+		\update_option(
+			'wpdfv_general',
+			[
+				'display_read_mode_at' => 'before_content',
+				'read_mode_btn_text'   => 'Legacy label',
+			],
+			false
+		);
+
+		$plugin = new Plugin();
+		$plugin->activate();
+
+		$this->assertSame( '1.0.0', \get_option( 'wpdfv_version' ) );
+
+		$upgrades = new Upgrades();
+		$upgrades->process_automatic_upgrades();
+
+		$settings = \get_option( 'wpdfv_settings' );
+
+		$this->assertSame( WPDFV_VERSION, \get_option( 'wpdfv_version' ) );
+		$this->assertSame( 'before_content', $settings['display_location'] );
+		$this->assertSame( 'Legacy label', $settings['button_text'] );
+	}
+
+	/**
+	 * Reader access must respect the enabled post type list.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_access_requires_enabled_post_type() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post' ],
+				]
+			),
+			false
+		);
+
+		$post            = new \WP_Post();
+		$post->ID        = 42;
+		$post->post_type = 'book';
+
+		$shortcode = new class() extends Main {
+			public function can_read_post_for_tests( \WP_Post $post ) {
+				return $this->can_read_post( $post );
+			}
+		};
+
+		$this->assertFalse( $shortcode->can_read_post_for_tests( $post ) );
+	}
+
+	/**
+	 * Manual shortcode output should not create toggles for disabled post types.
+	 *
+	 * @return void
+	 */
+	public function test_shortcode_does_not_render_for_disabled_post_type() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post' ],
+				]
+			),
+			false
+		);
+
+		$post            = new \WP_Post();
+		$post->ID        = 42;
+		$post->post_type = 'book';
+
+		$GLOBALS['wpdfv_test_posts'][42] = $post;
+
+		$shortcode = new Main();
+
+		$this->assertSame( '', $shortcode->render_shortcode( [ 'post_id' => 42 ] ) );
+	}
+
+	/**
+	 * Dynamic block output should enqueue the shared frontend handle once.
+	 *
+	 * @return void
+	 */
+	public function test_reader_block_uses_shared_frontend_assets() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post' ],
+				]
+			),
+			false
+		);
+
+		$block = (object) [
+			'context' => [
+				'postId'   => 42,
+				'postType' => 'post',
+			],
+		];
+
+		$blocks = new Blocks();
+		$markup = $blocks->render_reader_button( [], '', $block );
+
+		$this->assertStringContainsString( 'data-post-id="42"', $markup );
+		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
+		$this->assertArrayHasKey( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['inline'] );
 	}
 
 	/**

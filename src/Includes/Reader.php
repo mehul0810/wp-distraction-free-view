@@ -386,7 +386,8 @@ class Reader {
 	 * @return int
 	 */
 	public static function calculate_reading_time( $content ) {
-		$content = do_blocks( strip_shortcodes( (string) $content ) );
+		$content = strip_shortcodes( (string) $content );
+		$content = function_exists( 'strip_blocks' ) ? strip_blocks( $content ) : preg_replace( '/<!--\s+\/?wp:.*?-->/s', ' ', $content );
 		$content = wp_strip_all_tags( html_entity_decode( $content, ENT_QUOTES, get_bloginfo( 'charset' ) ) );
 		$words   = str_word_count( $content );
 
@@ -413,7 +414,20 @@ class Reader {
 	 * @return string
 	 */
 	public static function get_reading_time_label( \WP_Post $post ) {
-		$minutes = self::calculate_reading_time( $post->post_content );
+		return self::format_reading_time_label( self::calculate_reading_time( $post->post_content ) );
+	}
+
+	/**
+	 * Format a localized reading time label.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param int $minutes Reading time in minutes.
+	 *
+	 * @return string
+	 */
+	public static function format_reading_time_label( $minutes ) {
+		$minutes = max( 1, absint( $minutes ) );
 
 		return sprintf(
 			/* translators: %s: Reading time in minutes. */

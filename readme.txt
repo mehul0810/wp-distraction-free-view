@@ -131,6 +131,10 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Changed: Default toggle label for new installs is now "Read in Reader Mode".
 - Changed: Settings menu copy now frames the feature as Reader Mode.
 - Added: PHPUnit test coverage and CI workflow for PHP, PHPCS, JS/CSS linting, and asset builds.
+- Fixed: Activation no longer marks legacy inactive installs as fully upgraded before migrations run.
+- Fixed: Reader Mode block output now uses the shared frontend asset handle and settings payload.
+- Fixed: Reader content requests now respect the enabled post type configuration.
+- Fixed: Reading time is calculated once per Reader Mode response without rendering dynamic blocks.
 - Fixed: Shortcode rendering no longer calls a removed helper function.
 - Fixed: Runtime autoloading no longer depends on Composer vendor files.
 
@@ -190,4 +194,4 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 == Upgrade Notice ==
 
 = 1.7.0 =
-Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options and legacy shortcodes continue to work.
+Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options continue to work, and the supported shortcode surface remains `[wpdfv]`.

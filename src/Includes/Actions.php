@@ -14,11 +14,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Actions {
 	/**
+	 * Whether frontend configuration has already been attached to the script.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @var bool
+	 */
+	private static $frontend_settings_added = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 */
 	public function __construct() {
+		add_action( 'init', [ __CLASS__, 'register_frontend_assets' ], 5 );
 		add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
 		add_action( 'wp_footer', [ $this, 'render_floating_button' ] );
 	}
@@ -35,21 +45,31 @@ class Actions {
 			return;
 		}
 
+		self::enqueue_frontend_assets();
+	}
+
+	/**
+	 * Register frontend assets so dynamic blocks can reuse the same handles.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	public static function register_frontend_assets() {
 		$asset_path = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv.asset.php';
 		$asset      = is_readable( $asset_path ) ? require $asset_path : [
 			'dependencies' => [ 'wp-api-fetch', 'wp-components', 'wp-element', 'wp-i18n' ],
 			'version'      => WPDFV_VERSION,
 		];
 
-		wp_enqueue_style( 'wp-components' );
-		wp_enqueue_style(
+		wp_register_style(
 			'wpdfv-core',
 			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv.css',
 			[ 'wp-components' ],
 			$asset['version']
 		);
 
-		wp_enqueue_script(
+		wp_register_script(
 			'wpdfv-core',
 			WPDFV_PLUGIN_URL . 'assets/dist/js/wpdfv.js',
 			$asset['dependencies'],
@@ -58,7 +78,28 @@ class Actions {
 		);
 
 		wp_set_script_translations( 'wpdfv-core', 'wp-distraction-free-view', WPDFV_PLUGIN_DIR . 'languages' );
-		wp_add_inline_script( 'wpdfv-core', 'window.wpdfvReaderMode = ' . wp_json_encode( $this->get_frontend_settings() ) . ';', 'before' );
+	}
+
+	/**
+	 * Enqueue the shared frontend reader assets and attach runtime settings.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	public static function enqueue_frontend_assets() {
+		self::register_frontend_assets();
+
+		wp_enqueue_style( 'wp-components' );
+		wp_enqueue_style( 'wpdfv-core' );
+		wp_enqueue_script( 'wpdfv-core' );
+
+		if ( self::$frontend_settings_added ) {
+			return;
+		}
+
+		wp_add_inline_script( 'wpdfv-core', 'window.wpdfvReaderMode = ' . wp_json_encode( self::get_frontend_settings() ) . ';', 'before' );
+		self::$frontend_settings_added = true;
 	}
 
 	/**
@@ -136,7 +177,7 @@ class Actions {
 	 *
 	 * @return array
 	 */
-	protected function get_frontend_settings() {
+	protected static function get_frontend_settings() {
 		$settings = Reader::get_settings();
 		$post     = get_post();
 

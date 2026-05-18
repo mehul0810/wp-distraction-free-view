@@ -40,25 +40,6 @@ const checkIcon = createElement(
 		d: 'M16.5 7.5 10 13.9l-2.5-2.4-1 1 3.5 3.6 7.5-7.6z',
 	} )
 );
-const readerMarkIcon = createElement(
-	SVG,
-	{
-		xmlns: 'http://www.w3.org/2000/svg',
-		viewBox: '0 0 24 24',
-		focusable: 'false',
-	},
-	createElement( Path, {
-		d: 'M5.8 4.5c2.3 0 4.1.5 5.5 1.5 1.4-1 3.2-1.5 5.5-1.5.6 0 1.1.5 1.1 1.1v12.6c0 .6-.5 1.1-1.1 1.1-2.1 0-3.7.4-4.9 1.3-.4.3-.8.3-1.2 0-1.2-.9-2.8-1.3-4.9-1.3-.6 0-1.1-.5-1.1-1.1V5.6c0-.6.5-1.1 1.1-1.1Z',
-	} ),
-	createElement( Path, {
-		d: 'M11.3 6v13.3M7.1 7.3c1.4.1 2.6.4 3.5 1M15.5 7.3c-1.4.1-2.6.4-3.5 1',
-		fill: 'none',
-		stroke: '#fff',
-		strokeLinecap: 'round',
-		strokeWidth: '1.4',
-	} )
-);
-
 const SettingsApp = () => {
 	const [ settings, setSettings ] = useState( null );
 	const [ postTypes, setPostTypes ] = useState( [] );
@@ -72,6 +53,7 @@ const SettingsApp = () => {
 		paid: [],
 	} );
 	const [ aboutInfo, setAboutInfo ] = useState( {
+		brandIconUrl: '',
 		minimumPhp: '',
 		minimumWordPress: '',
 		pluginVersion: '',
@@ -110,6 +92,7 @@ const SettingsApp = () => {
 			)
 		);
 		setAboutInfo( {
+			brandIconUrl: response.brandIconUrl,
 			minimumPhp: response.minimumPhp,
 			minimumWordPress: response.minimumWordPress,
 			pluginVersion: response.pluginVersion,
@@ -279,6 +262,7 @@ const SettingsApp = () => {
 			<SettingsHeader
 				tabs={ tabs }
 				activeTab={ activeTab }
+				brandIconUrl={ aboutInfo.brandIconUrl }
 				pluginVersion={ aboutInfo.pluginVersion }
 				onChangeTab={ setActiveTab }
 			/>
@@ -306,7 +290,13 @@ const SettingsApp = () => {
 	);
 };
 
-const SettingsHeader = ( { tabs, activeTab, pluginVersion, onChangeTab } ) => (
+const SettingsHeader = ( {
+	tabs,
+	activeTab,
+	brandIconUrl,
+	pluginVersion,
+	onChangeTab,
+} ) => (
 	<header className="wpdfv-settings-header">
 		<div className="wpdfv-settings-header__inner">
 			<div className="wpdfv-settings-header__brand-row">
@@ -315,7 +305,9 @@ const SettingsHeader = ( { tabs, activeTab, pluginVersion, onChangeTab } ) => (
 						className="wpdfv-settings-brand__mark"
 						aria-hidden="true"
 					>
-						{ readerMarkIcon }
+						{ brandIconUrl && (
+							<img src={ brandIconUrl } alt="" loading="eager" />
+						) }
 					</span>
 					<h1 className="wpdfv-settings-brand__name">
 						<span>

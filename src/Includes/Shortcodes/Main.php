@@ -57,6 +57,12 @@ class Main {
 			$post_id = $post instanceof \WP_Post ? $post->ID : 0;
 		}
 
+		$post_type = get_post_type( $post_id );
+
+		if ( ! $post_type || ! Reader::is_post_type_enabled( $post_type ) ) {
+			return '';
+		}
+
 		return Helpers::display_read_mode_button( $post_id );
 	}
 
@@ -117,6 +123,7 @@ class Main {
 		}
 
 		$content = Templates::render_modal_content( $post );
+		$minutes = Reader::calculate_reading_time( $post->post_content );
 
 		return rest_ensure_response(
 			[
@@ -124,8 +131,8 @@ class Main {
 				'title'       => get_the_title( $post ),
 				'content'     => wp_kses_post( $content ),
 				'readingTime' => [
-					'minutes' => Reader::calculate_reading_time( $post->post_content ),
-					'label'   => Reader::get_reading_time_label( $post ),
+					'minutes' => $minutes,
+					'label'   => Reader::format_reading_time_label( $minutes ),
 				],
 			]
 		);
@@ -141,6 +148,10 @@ class Main {
 	 * @return bool
 	 */
 	protected function can_read_post( \WP_Post $post ) {
+		if ( ! Reader::is_post_type_enabled( $post->post_type ) ) {
+			return false;
+		}
+
 		if ( post_password_required( $post ) ) {
 			return false;
 		}

@@ -30,6 +30,5 @@
 		}
 	},
 	"editorScript": "file:../../assets/dist/js/wpdfv-block.js",
-	"style": "file:../../assets/dist/wpdfv.css",
-	"viewScript": "file:../../assets/dist/js/wpdfv.js"
+	"style": "wpdfv-core"
 }
