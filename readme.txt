@@ -138,7 +138,7 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Fixed: Reader content requests now respect the enabled post type configuration.
 - Fixed: Reading time is calculated once per Reader Mode response without rendering dynamic blocks.
 - Fixed: Shortcode rendering no longer calls a removed helper function.
-- Fixed: Runtime autoloading no longer depends on Composer vendor files.
+- Changed: Runtime autoloading now uses Composer's PSR-4 autoloader.
 
 = 1.6.0: 16th May 2021 =
 - Refactor: Improved UX for the admin settings UI

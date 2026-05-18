@@ -40,23 +40,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Constants.
 require_once __DIR__ . '/config/constants.php';
 
-// Automatically load plugin classes without requiring Composer at runtime.
-spl_autoload_register(
-	static function ( $class_name ) {
-		$prefix = __NAMESPACE__ . '\\';
+// Load Composer's PSR-4 autoloader for namespaced plugin classes.
+$wpdfv_autoload = __DIR__ . '/vendor/autoload.php';
 
-		if ( 0 !== strpos( $class_name, $prefix ) ) {
-			return;
+if ( ! is_readable( $wpdfv_autoload ) ) {
+	add_action(
+		'admin_notices',
+		static function () {
+			echo '<div class="notice notice-error"><p>';
+			esc_html_e( 'WP Distraction Free View requires the Composer autoloader. Run composer install or install the packaged plugin release.', 'wp-distraction-free-view' );
+			echo '</p></div>';
 		}
+	);
 
-		$relative_class = substr( $class_name, strlen( $prefix ) );
-		$file           = WPDFV_PLUGIN_DIR . 'src/' . str_replace( '\\', '/', $relative_class ) . '.php';
+	return;
+}
 
-		if ( is_readable( $file ) ) {
-			require_once $file;
-		}
-	}
-);
+require_once $wpdfv_autoload;
 
 // Initialize the plugin.
 $plugin = new Plugin();

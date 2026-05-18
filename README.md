@@ -31,7 +31,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 - PHP 8.2 or later
 - Node.js 24.15.0
 - npm 11 or later
-- Composer for PHP development tooling
+- Composer for PHP autoloading and development tooling
 
 The Node version is pinned in `.nvmrc` and `.node-version`.
 
@@ -164,5 +164,5 @@ This repository is for development. For user support, use the [WordPress.org sup
 
 - Commit `package-lock.json` whenever npm dependency metadata changes.
 - Built assets are generated into `assets/dist`.
-- Runtime plugin code does not require Composer autoload files.
+- Runtime plugin code uses Composer's PSR-4 autoloader. Production packages include the no-dev Composer autoload files generated from `composer.json`.
 - The plugin is licensed under GPL-2.0-or-later.
