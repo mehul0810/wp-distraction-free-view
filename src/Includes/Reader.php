@@ -405,6 +405,76 @@ class Reader {
 	}
 
 	/**
+	 * Sanitize rendered Reader Mode content before returning it to the modal.
+	 *
+	 * KSES removes disallowed tags but can leave text inside removed script-like
+	 * elements behind. Strip those complete element blocks first so shortcode
+	 * embed configuration does not become visible reader content.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string        $content Rendered modal template content.
+	 * @param \WP_Post|null $post    Optional post being rendered.
+	 *
+	 * @return string
+	 */
+	public static function sanitize_rendered_content( $content, ?\WP_Post $post = null ) {
+		$content = (string) $content;
+
+		/**
+		 * Filter full element blocks removed from rendered Reader Mode content.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @param string[]      $tags Element tag names to remove with their contents.
+		 * @param string        $content Rendered modal template content before stripping.
+		 * @param \WP_Post|null $post Current post, when available.
+		 */
+		$tags = apply_filters( 'wpdfv_modal_content_strip_tags', [ 'script', 'style', 'noscript' ], $content, $post );
+
+		if ( is_array( $tags ) ) {
+			$tags = array_values(
+				array_filter(
+					array_map(
+						static function ( $tag ) {
+							return preg_match( '/^[a-z][a-z0-9:-]*$/i', (string) $tag ) ? (string) $tag : '';
+						},
+						$tags
+					)
+				)
+			);
+		} else {
+			$tags = [];
+		}
+
+		if ( ! empty( $tags ) ) {
+			$content = preg_replace( '#<(' . implode( '|', array_map( 'preg_quote', $tags ) ) . ')\b[^>]*>.*?</\1>#is', '', $content );
+		}
+
+		/**
+		 * Filter rendered Reader Mode content before final KSES sanitization.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @param string        $content Rendered modal template content.
+		 * @param \WP_Post|null $post Current post, when available.
+		 */
+		$content = (string) apply_filters( 'wpdfv_modal_content_before_kses', $content, $post );
+
+		$content = wp_kses_post( $content );
+
+		/**
+		 * Filter sanitized Reader Mode content before it is returned by REST.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @param string        $content Sanitized Reader Mode content.
+		 * @param \WP_Post|null $post Current post, when available.
+		 */
+		return (string) apply_filters( 'wpdfv_modal_content_after_kses', $content, $post );
+	}
+
+	/**
 	 * Get the localized reading time label for a post.
 	 *
 	 * @since 1.7.0

@@ -117,6 +117,12 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Changelog ==
 
+= 1.7.1 =
+- Fixed: Reader Mode content now strips complete script, style, and noscript blocks before final sanitization so shortcode embed configuration is not displayed as raw text.
+- Fixed: Updated the Reader Mode Toggle block metadata to Block API version 3 for current editor compatibility.
+- Fixed: Hardened uninstall safety with the required WordPress uninstall guard.
+- Changed: Release workflows now replace existing GitHub ZIP assets on rerun and CI validates the generated production package with Plugin Check.
+
 = 1.7.0 =
 - Added: Frontend Reader Mode positioning and product copy while keeping the WP Distraction Free View name and slug.
 - Added: Reader Mode Toggle block for posts, pages, public custom post types, and Query Loop templates.
@@ -194,6 +200,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.7.1 =
+Improves Reader Mode compatibility with shortcode embeds that output inline scripts and hardens release/package validation.
 
 = 1.7.0 =
 Adds the new frontend Reader Mode experience, visitor preferences, reading progress, reading time, URL activation, shortcode compatibility, and idempotent settings migration from 1.6.0. Existing saved options continue to work, and the supported shortcode remains `[wpdfv]`.

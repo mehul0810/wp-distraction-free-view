@@ -17,6 +17,7 @@ $GLOBALS['wpdfv_test_enqueued']       = [
 	'inline'  => [],
 ];
 $GLOBALS['wpdfv_test_options']        = [];
+$GLOBALS['wpdfv_test_filters']        = [];
 $GLOBALS['wpdfv_test_plugins']        = [];
 $GLOBALS['wpdfv_test_posts']          = [];
 $GLOBALS['wpdfv_test_shortcodes']     = [];
@@ -53,6 +54,10 @@ if ( ! class_exists( 'WP_Post' ) ) {
 	}
 }
 
+require_once __DIR__ . '/shims/WP_Error.php';
+require_once __DIR__ . '/shims/WP_REST_Request.php';
+require_once __DIR__ . '/shims/WP_REST_Response.php';
+
 function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_active_plugins'] = [];
 	$GLOBALS['wpdfv_test_enqueued']       = [
@@ -61,6 +66,7 @@ function wpdfv_tests_reset_state() {
 		'inline'  => [],
 	];
 	$GLOBALS['wpdfv_test_options']        = [];
+	$GLOBALS['wpdfv_test_filters']        = [];
 	$GLOBALS['wpdfv_test_plugins']        = [];
 	$GLOBALS['wpdfv_test_posts']          = [];
 	$GLOBALS['wpdfv_test_shortcodes']     = [];
@@ -104,6 +110,11 @@ function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 )
 }
 
 function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+	$GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ][] = [
+		'callback'      => $callback,
+		'accepted_args' => $accepted_args,
+	];
+
 	return true;
 }
 
@@ -282,6 +293,10 @@ function wp_strip_all_tags( $text ) {
 	return trim( strip_tags( $text ) );
 }
 
+function wp_kses_post( $content ) {
+	return preg_replace( '#</?(script|style|noscript)\b[^>]*>#i', '', (string) $content );
+}
+
 function strip_shortcodes( $content ) {
 	return preg_replace( '/\[[^\]]+\]/', '', (string) $content );
 }
@@ -294,8 +309,35 @@ function get_bloginfo( $show = '' ) {
 	return 'charset' === $show ? 'UTF-8' : '';
 }
 
-function apply_filters( $hook_name, $value ) {
+function apply_filters( $hook_name, $value, ...$args ) {
+	if ( empty( $GLOBALS['wpdfv_test_filters'][ $hook_name ] ) ) {
+		return $value;
+	}
+
+	ksort( $GLOBALS['wpdfv_test_filters'][ $hook_name ] );
+
+	foreach ( $GLOBALS['wpdfv_test_filters'][ $hook_name ] as $callbacks ) {
+		foreach ( $callbacks as $callback ) {
+			$accepted_args = max( 1, (int) $callback['accepted_args'] );
+			$value         = call_user_func_array( $callback['callback'], array_slice( array_merge( [ $value ], $args ), 0, $accepted_args ) );
+		}
+	}
+
 	return $value;
+}
+
+function rest_ensure_response( $response ) {
+	return $response instanceof WP_REST_Response ? $response : new WP_REST_Response( $response );
+}
+
+function setup_postdata( $post ) {
+	$GLOBALS['post'] = $post;
+
+	return true;
+}
+
+function wp_reset_postdata() {
+	unset( $GLOBALS['post'] );
 }
 
 function absint( $value ) {

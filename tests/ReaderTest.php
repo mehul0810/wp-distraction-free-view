@@ -125,6 +125,89 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Reader content sanitization removes executable blocks with their contents.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_removes_script_like_blocks() {
+		$content = '<p>Start</p><script>window.option_df_3751 = {"outline":[]};</script><style>.reader{color:red;}</style><noscript>Enable JavaScript</noscript><p>End</p>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '<p>Start</p>', $result );
+		$this->assertStringContainsString( '<p>End</p>', $result );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $result );
+		$this->assertStringNotContainsString( '.reader{color:red;}', $result );
+		$this->assertStringNotContainsString( 'Enable JavaScript', $result );
+		$this->assertStringNotContainsString( '<script', $result );
+	}
+
+	/**
+	 * Escaped JavaScript examples in visible code samples remain readable.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_preserves_escaped_code_samples() {
+		$content = '<pre><code>&lt;script&gt;window.option_df_3751 = {};&lt;/script&gt;</code></pre>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '&lt;script&gt;window.option_df_3751 = {};&lt;/script&gt;', $result );
+		$this->assertStringContainsString( '<pre><code>', $result );
+	}
+
+	/**
+	 * Developers can customize which full element blocks are removed.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_allows_custom_strip_tags() {
+		\add_filter(
+			'wpdfv_modal_content_strip_tags',
+			static function ( $tags ) {
+				$tags[] = 'template';
+
+				return $tags;
+			}
+		);
+
+		$result = Reader::sanitize_rendered_content( '<p>Visible</p><template>Hidden template data</template>' );
+
+		$this->assertStringContainsString( 'Visible', $result );
+		$this->assertStringNotContainsString( 'Hidden template data', $result );
+	}
+
+	/**
+	 * REST content responses return sanitized Reader Mode content.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_response_sanitizes_rendered_content() {
+		\update_option( 'wpdfv_settings', Reader::get_default_settings(), false );
+
+		$post               = new \WP_Post();
+		$post->ID           = 42;
+		$post->post_type    = 'post';
+		$post->post_content = 'Readable content.';
+
+		$GLOBALS['wpdfv_test_posts'][42] = $post;
+
+		\add_filter(
+			'wpdfv_modal_template_content',
+			static function () {
+				return '<article><p>Readable content.</p><script>window.option_df_3751 = {"outline":[]};</script></article>';
+			}
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'id', 42 );
+
+		$response = ( new Main() )->get_content_response( $request );
+		$data     = $response->get_data();
+
+		$this->assertStringContainsString( 'Readable content.', $data['content'] );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $data['content'] );
+	}
+
+	/**
 	 * Reader toggle rendering keeps the legacy class and adds new semantics.
 	 *
 	 * @return void
