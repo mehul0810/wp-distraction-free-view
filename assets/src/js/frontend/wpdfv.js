@@ -14,6 +14,7 @@ import {
 	render,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
@@ -86,6 +87,48 @@ const exitFullscreenIcon = createHeroIcon( [
 ] );
 
 const isEnabled = ( key ) => READER_CONFIG[ key ] !== false;
+
+const SCRIPT_BOOLEAN_ATTRIBUTES = [ 'async', 'defer', 'nomodule' ];
+
+const createReaderScriptElement = ( script ) => {
+	if ( ! script || 'object' !== typeof script ) {
+		return null;
+	}
+
+	const element = document.createElement( 'script' );
+	const attributes = script.attributes || {};
+
+	Object.entries( attributes ).forEach( ( [ name, value ] ) => {
+		if ( ! /^[a-z][a-z0-9:-]*$/i.test( name ) ) {
+			return;
+		}
+
+		if ( SCRIPT_BOOLEAN_ATTRIBUTES.includes( name ) ) {
+			element[ name ] = true;
+			element.setAttribute( name, name );
+			return;
+		}
+
+		element.setAttribute( name, String( value ) );
+	} );
+
+	if (
+		script.src &&
+		! Object.prototype.hasOwnProperty.call( attributes, 'async' )
+	) {
+		element.async = false;
+	}
+
+	if ( script.src ) {
+		element.src = script.src;
+	}
+
+	if ( script.content ) {
+		element.text = script.content;
+	}
+
+	return element.src || element.text ? element : null;
+};
 
 const normalizePreference = ( type, value, fallback ) => {
 	const allowed = PREFERENCE_OPTIONS[ type ].map(
@@ -191,9 +234,12 @@ const ReaderApp = () => {
 	const [ error, setError ] = useState( '' );
 	const [ title, setTitle ] = useState( '' );
 	const [ content, setContent ] = useState( '' );
+	const [ scripts, setScripts ] = useState( [] );
 	const [ readingTime, setReadingTime ] = useState( null );
 	const [ progress, setProgress ] = useState( 0 );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
+	const contentRef = useRef( null );
+	const scriptNodesRef = useRef( [] );
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -325,6 +371,55 @@ const ReaderApp = () => {
 		};
 	}, [ isOpen, content ] );
 
+	useEffect( () => {
+		if ( ! isOpen ) {
+			return undefined;
+		}
+
+		const overlay = document
+			.querySelector( '.wpdfv-reader-modal' )
+			?.closest( '.components-modal__screen-overlay' );
+
+		if (
+			overlay?.parentNode === document.body &&
+			overlay !== document.body.firstChild
+		) {
+			document.body.insertBefore( overlay, document.body.firstChild );
+		}
+
+		return undefined;
+	}, [ isOpen, content ] );
+
+	useEffect( () => {
+		scriptNodesRef.current.forEach( ( node ) => node.remove() );
+		scriptNodesRef.current = [];
+
+		if (
+			! isOpen ||
+			isLoading ||
+			error ||
+			! content ||
+			! contentRef.current ||
+			! Array.isArray( scripts )
+		) {
+			return undefined;
+		}
+
+		const nodes = scripts
+			.map( createReaderScriptElement )
+			.filter( Boolean );
+
+		nodes.forEach( ( node ) => contentRef.current.appendChild( node ) );
+		scriptNodesRef.current = nodes;
+
+		return () => {
+			nodes.forEach( ( node ) => node.remove() );
+			scriptNodesRef.current = scriptNodesRef.current.filter(
+				( node ) => ! nodes.includes( node )
+			);
+		};
+	}, [ isOpen, isLoading, error, content, scripts ] );
+
 	const updatePreference = ( key, value ) => {
 		setPreferences( ( current ) => ( {
 			...current,
@@ -342,6 +437,7 @@ const ReaderApp = () => {
 		setError( '' );
 		setTitle( '' );
 		setContent( '' );
+		setScripts( [] );
 		setReadingTime( null );
 		setIsSettingsOpen( false );
 		setProgress( 0 );
@@ -350,6 +446,9 @@ const ReaderApp = () => {
 			.then( ( response ) => {
 				setTitle( response.title );
 				setContent( response.content );
+				setScripts(
+					Array.isArray( response.scripts ) ? response.scripts : []
+				);
 				setReadingTime( response.readingTime );
 			} )
 			.catch( () => {
@@ -368,6 +467,7 @@ const ReaderApp = () => {
 		setIsSettingsOpen( false );
 		setIsFullscreen( false );
 		setError( '' );
+		setScripts( [] );
 	};
 
 	const toggleFullscreen = () => {
@@ -507,7 +607,11 @@ const ReaderApp = () => {
 					</aside>
 				) }
 
-				<div className="wpdfv-reader-content" id="wpdfv-print">
+				<div
+					className="wpdfv-reader-content"
+					id="wpdfv-print"
+					ref={ contentRef }
+				>
 					{ isLoading && (
 						<div className="wpdfv-reader-loading">
 							<Spinner />
@@ -536,8 +640,11 @@ if ( ! window.wpdfvReaderModeInitialized ) {
 
 	root.id = 'wpdfv-reader-root';
 
-	if ( ! root.parentNode ) {
-		document.body.appendChild( root );
+	if (
+		root.parentNode !== document.body ||
+		root !== document.body.firstChild
+	) {
+		document.body.insertBefore( root, document.body.firstChild );
 	}
 
 	render( <ReaderApp />, root );

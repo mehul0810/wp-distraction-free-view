@@ -481,6 +481,282 @@ class Reader {
 	}
 
 	/**
+	 * Prepare rendered Reader Mode content and executable scripts for the modal.
+	 *
+	 * Scripts inserted through shortcode output need to run after the modal HTML
+	 * is mounted. Extracting them before KSES keeps script bodies out of visible
+	 * reader text while still allowing compatible shortcode embeds to initialize.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string        $content Rendered modal template content.
+	 * @param \WP_Post|null $post    Optional post being rendered.
+	 *
+	 * @return array{content:string,scripts:array}
+	 */
+	public static function prepare_rendered_content( $content, ?\WP_Post $post = null ) {
+		$prepared = self::extract_rendered_scripts( (string) $content, $post );
+
+		return [
+			'content' => self::sanitize_rendered_content( $prepared['content'], $post ),
+			'scripts' => $prepared['scripts'],
+		];
+	}
+
+	/**
+	 * Extract script tags from rendered content before final sanitization.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string        $content Rendered modal template content.
+	 * @param \WP_Post|null $post    Optional post being rendered.
+	 *
+	 * @return array{content:string,scripts:array}
+	 */
+	protected static function extract_rendered_scripts( $content, ?\WP_Post $post = null ) {
+		$scripts = [];
+		$content = (string) preg_replace_callback(
+			'#<script\b([^>]*)>(.*?)</script>#is',
+			static function ( $matches ) use ( &$scripts ) {
+				$script = self::normalize_rendered_script( $matches[1], $matches[2] );
+
+				if ( ! empty( $script ) ) {
+					$scripts[] = $script;
+				}
+
+				return '';
+			},
+			$content
+		);
+
+		/**
+		 * Filter scripts extracted from rendered Reader Mode content.
+		 *
+		 * Returning an empty array disables modal script execution. Scripts are
+		 * still removed from visible content before the REST response is sent.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @param array          $scripts Extracted script definitions.
+		 * @param \WP_Post|null $post    Current post, when available.
+		 */
+		$scripts = apply_filters( 'wpdfv_modal_content_scripts', $scripts, $post );
+
+		return [
+			'content' => $content,
+			'scripts' => self::sanitize_extracted_scripts( $scripts ),
+		];
+	}
+
+	/**
+	 * Normalize one extracted script tag.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $attributes Raw script tag attributes.
+	 * @param string $content    Raw script contents.
+	 *
+	 * @return array
+	 */
+	protected static function normalize_rendered_script( $attributes, $content ) {
+		$attributes = self::parse_script_attributes( $attributes );
+		$script     = [
+			'attributes' => $attributes,
+			'content'    => (string) $content,
+		];
+
+		if ( ! empty( $attributes['src'] ) ) {
+			$script['src'] = $attributes['src'];
+		}
+
+		if ( ! empty( $attributes['type'] ) ) {
+			$script['type'] = $attributes['type'];
+		}
+
+		return $script;
+	}
+
+	/**
+	 * Parse script tag attributes into a safe associative array.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $attributes Raw script tag attributes.
+	 *
+	 * @return array
+	 */
+	protected static function parse_script_attributes( $attributes ) {
+		if ( '' === trim( (string) $attributes ) ) {
+			return [];
+		}
+
+		preg_match_all(
+			'/([^\s\/=<>]+)(?:\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=<>`]+)))?/',
+			(string) $attributes,
+			$matches,
+			PREG_SET_ORDER
+		);
+
+		$parsed = [];
+
+		foreach ( $matches as $match ) {
+			$name = strtolower( (string) $match[1] );
+
+			if ( ! self::is_allowed_script_attribute( $name ) ) {
+				continue;
+			}
+
+			$value = true;
+
+			if ( array_key_exists( 2, $match ) && '' !== $match[2] ) {
+				$value = html_entity_decode( $match[2], ENT_QUOTES, get_bloginfo( 'charset' ) );
+			} elseif ( array_key_exists( 3, $match ) && '' !== $match[3] ) {
+				$value = html_entity_decode( $match[3], ENT_QUOTES, get_bloginfo( 'charset' ) );
+			} elseif ( array_key_exists( 4, $match ) && '' !== $match[4] ) {
+				$value = html_entity_decode( $match[4], ENT_QUOTES, get_bloginfo( 'charset' ) );
+			}
+
+			$parsed[ $name ] = self::sanitize_script_attribute_value( $name, $value );
+		}
+
+		return array_filter(
+			$parsed,
+			static function ( $value ) {
+				return null !== $value;
+			}
+		);
+	}
+
+	/**
+	 * Determine whether a script attribute can be replayed in the modal.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $name Attribute name.
+	 *
+	 * @return bool
+	 */
+	protected static function is_allowed_script_attribute( $name ) {
+		if ( str_starts_with( $name, 'data-' ) ) {
+			return true;
+		}
+
+		return in_array(
+			$name,
+			[
+				'async',
+				'charset',
+				'class',
+				'crossorigin',
+				'defer',
+				'id',
+				'integrity',
+				'nonce',
+				'nomodule',
+				'referrerpolicy',
+				'src',
+				'type',
+			],
+			true
+		);
+	}
+
+	/**
+	 * Sanitize a replayed script attribute value.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string      $name  Attribute name.
+	 * @param string|bool $value Attribute value.
+	 *
+	 * @return string|bool|null
+	 */
+	protected static function sanitize_script_attribute_value( $name, $value ) {
+		if ( in_array( $name, [ 'async', 'defer', 'nomodule' ], true ) ) {
+			return true;
+		}
+
+		if ( true === $value ) {
+			return null;
+		}
+
+		if ( 'src' === $name ) {
+			$src = esc_url_raw( (string) $value );
+
+			return '' !== $src ? $src : null;
+		}
+
+		return sanitize_text_field( (string) $value );
+	}
+
+	/**
+	 * Sanitize extracted script definitions after filters run.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param mixed $scripts Extracted script definitions.
+	 *
+	 * @return array
+	 */
+	protected static function sanitize_extracted_scripts( $scripts ) {
+		if ( ! is_array( $scripts ) ) {
+			return [];
+		}
+
+		$sanitized = [];
+
+		foreach ( $scripts as $script ) {
+			if ( ! is_array( $script ) ) {
+				continue;
+			}
+
+			$raw_attributes = isset( $script['attributes'] ) && is_array( $script['attributes'] ) ? $script['attributes'] : [];
+			$attributes     = [];
+
+			foreach ( $raw_attributes as $name => $value ) {
+				$name = strtolower( (string) $name );
+
+				if ( ! self::is_allowed_script_attribute( $name ) ) {
+					continue;
+				}
+
+				$value = self::sanitize_script_attribute_value( $name, $value );
+
+				if ( null !== $value ) {
+					$attributes[ $name ] = $value;
+				}
+			}
+
+			$src = isset( $script['src'] ) ? esc_url_raw( (string) $script['src'] ) : '';
+
+			if ( '' !== $src ) {
+				$attributes['src'] = $src;
+			}
+
+			$next = [
+				'attributes' => $attributes,
+				'content'    => isset( $script['content'] ) ? (string) $script['content'] : '',
+			];
+
+			if ( ! empty( $attributes['src'] ) ) {
+				$next['src'] = $attributes['src'];
+			}
+
+			if ( ! empty( $attributes['type'] ) ) {
+				$next['type'] = $attributes['type'];
+			}
+
+			if ( '' === $next['content'] && empty( $next['src'] ) ) {
+				continue;
+			}
+
+			$sanitized[] = $next;
+		}
+
+		return $sanitized;
+	}
+
+	/**
 	 * Protect visible code examples before stripping escaped script residue.
 	 *
 	 * Reader Mode should remove executable/embed setup fragments, but should not

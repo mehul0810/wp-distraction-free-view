@@ -187,6 +187,26 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Prepared Reader Mode content returns shortcode scripts separately.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_extracts_scripts_for_modal_execution() {
+		$content  = '<article><p>Readable content.</p><script id="df-shortcode-script" class="df-shortcode-script" type="application/javascript" data-book="3751">window.option_df_3751 = {"outline":[]}; window.wpdfvScriptRan = true;</script></article>';
+		$prepared = Reader::prepare_rendered_content( $content );
+
+		$this->assertStringContainsString( 'Readable content.', $prepared['content'] );
+		$this->assertStringNotContainsString( '<script', $prepared['content'] );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $prepared['content'] );
+		$this->assertCount( 1, $prepared['scripts'] );
+		$this->assertSame( 'df-shortcode-script', $prepared['scripts'][0]['attributes']['id'] );
+		$this->assertSame( 'df-shortcode-script', $prepared['scripts'][0]['attributes']['class'] );
+		$this->assertSame( 'application/javascript', $prepared['scripts'][0]['attributes']['type'] );
+		$this->assertSame( '3751', $prepared['scripts'][0]['attributes']['data-book'] );
+		$this->assertStringContainsString( 'window.wpdfvScriptRan = true;', $prepared['scripts'][0]['content'] );
+	}
+
+	/**
 	 * Developers can customize which full element blocks are removed.
 	 *
 	 * @return void
@@ -237,6 +257,9 @@ class ReaderTest extends TestCase {
 
 		$this->assertStringContainsString( 'Readable content.', $data['content'] );
 		$this->assertStringNotContainsString( 'window.option_df_3751', $data['content'] );
+		$this->assertArrayHasKey( 'scripts', $data );
+		$this->assertCount( 1, $data['scripts'] );
+		$this->assertStringContainsString( 'window.option_df_3751', $data['scripts'][0]['content'] );
 	}
 
 	/**

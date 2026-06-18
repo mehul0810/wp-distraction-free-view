@@ -271,6 +271,10 @@ function esc_attr( $text ) {
 	return esc_html( $text );
 }
 
+function esc_url_raw( $url ) {
+	return filter_var( (string) $url, FILTER_SANITIZE_URL );
+}
+
 function sanitize_key( $key ) {
 	return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', (string) $key ) );
 }

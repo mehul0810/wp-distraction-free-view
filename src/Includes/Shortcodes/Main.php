@@ -122,14 +122,15 @@ class Main {
 			);
 		}
 
-		$content = Reader::sanitize_rendered_content( Templates::render_modal_content( $post ), $post );
-		$minutes = Reader::calculate_reading_time( $post->post_content );
+		$prepared = Reader::prepare_rendered_content( Templates::render_modal_content( $post ), $post );
+		$minutes  = Reader::calculate_reading_time( $post->post_content );
 
 		return rest_ensure_response(
 			[
 				'id'          => $post->ID,
 				'title'       => get_the_title( $post ),
-				'content'     => $content,
+				'content'     => $prepared['content'],
+				'scripts'     => $prepared['scripts'],
 				'readingTime' => [
 					'minutes' => $minutes,
 					'label'   => Reader::format_reading_time_label( $minutes ),
