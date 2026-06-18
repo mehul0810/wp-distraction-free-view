@@ -9,7 +9,7 @@ Stable tag: 1.7.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-WP Distraction Free View adds a clean frontend Reader Mode to WordPress, helping visitors focus on your content without sidebars, widgets, navigation, and visual clutter.
+Adds frontend Reader Mode so visitors can focus on posts, pages, and selected public post types.
 
 == Description ==
 
