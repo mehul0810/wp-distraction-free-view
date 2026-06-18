@@ -8,6 +8,8 @@
 /.github
 /.wordpress-org
 /.storybook
+/build
+/release
 
 /tests
 /node_modules

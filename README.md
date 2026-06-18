@@ -75,6 +75,12 @@ npm run lint:css
 npm run build
 ```
 
+## Release Workflow
+
+The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
+
+CI also builds the production package from `.distignore`, validates the package shape, and runs Plugin Check against the generated package directory rather than the raw source checkout.
+
 ## Settings
 
 The settings page is available at **Settings > Reader Mode**.

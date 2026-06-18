@@ -4,20 +4,23 @@ on:
   release:
     types: [ released ]
 
+permissions:
+  contents: write
+
 jobs:
   tag:
     name: New release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install composer dependencies
         uses: php-actions/composer@v2
         with:
           dev: no
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -36,12 +39,7 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: wp-distraction-free-view
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload release asset idempotently
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{github.workspace}}/wp-distraction-free-view.zip
-          asset_name: ${{ github.event.repository.name }}.zip
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ github.workspace }}/wp-distraction-free-view.zip#${{ github.event.repository.name }}.zip" --clobber
