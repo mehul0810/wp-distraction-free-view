@@ -451,6 +451,12 @@ class Reader {
 			$content = preg_replace( '#<(' . implode( '|', array_map( 'preg_quote', $tags ) ) . ')\b[^>]*>.*?</\1>#is', '', $content );
 		}
 
+		$protected_samples = [];
+		$content           = self::protect_visible_code_samples( $content, $protected_samples );
+		$content           = self::strip_escaped_executable_blocks( $content, $tags );
+		$content           = self::strip_script_text_residue( $content, $post );
+		$content           = self::restore_protected_samples( $content, $protected_samples );
+
 		/**
 		 * Filter rendered Reader Mode content before final KSES sanitization.
 		 *
@@ -472,6 +478,212 @@ class Reader {
 		 * @param \WP_Post|null $post Current post, when available.
 		 */
 		return (string) apply_filters( 'wpdfv_modal_content_after_kses', $content, $post );
+	}
+
+	/**
+	 * Protect visible code examples before stripping escaped script residue.
+	 *
+	 * Reader Mode should remove executable/embed setup fragments, but should not
+	 * hide intentional code samples that authors display in pre/code elements.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $content Rendered modal template content.
+	 * @param array  $samples Protected samples keyed by placeholder.
+	 *
+	 * @return string
+	 */
+	protected static function protect_visible_code_samples( $content, array &$samples ) {
+		return (string) preg_replace_callback(
+			'#<(pre|code)\b[^>]*>.*?</\1>#is',
+			static function ( $matches ) use ( &$samples ) {
+				$placeholder             = '%%WPDFV_PROTECTED_CODE_SAMPLE_' . count( $samples ) . '%%';
+				$samples[ $placeholder ] = $matches[0];
+
+				return $placeholder;
+			},
+			$content
+		);
+	}
+
+	/**
+	 * Restore visible code examples after script residue stripping.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $content Rendered modal template content.
+	 * @param array  $samples Protected samples keyed by placeholder.
+	 *
+	 * @return string
+	 */
+	protected static function restore_protected_samples( $content, array $samples ) {
+		return ! empty( $samples ) ? strtr( $content, $samples ) : $content;
+	}
+
+	/**
+	 * Strip escaped executable blocks that would otherwise render as raw text.
+	 *
+	 * Some embed plugins escape their inline setup scripts before Reader Mode
+	 * receives the rendered content. KSES cannot remove those because they are
+	 * already text, so remove escaped script-like blocks outside visible code.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string $content Rendered modal template content.
+	 * @param array  $tags    Element tag names to remove with their contents.
+	 *
+	 * @return string
+	 */
+	protected static function strip_escaped_executable_blocks( $content, array $tags ) {
+		if ( empty( $tags ) ) {
+			return $content;
+		}
+
+		$tag_pattern   = implode(
+			'|',
+			array_map(
+				static function ( $tag ) {
+					return preg_quote( $tag, '~' );
+				},
+				$tags
+			)
+		);
+		$escaped_lt    = '(?:&lt;|&#0*60;?|&#x0*3c;?)';
+		$escaped_gt    = '(?:&gt;|&#0*62;?|&#x0*3e;?)';
+		$escaped_slash = '(?:/|&#0*47;?|&#x0*2f;?)';
+
+		return (string) preg_replace(
+			'~' . $escaped_lt . '\s*(' . $tag_pattern . ')\b.*?' . $escaped_gt . '.*?' . $escaped_lt . '\s*' . $escaped_slash . '\s*\1\s*' . $escaped_gt . '~is',
+			'',
+			$content
+		);
+	}
+
+	/**
+	 * Strip standalone JavaScript setup residue that no longer has script tags.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string        $content Rendered modal template content.
+	 * @param \WP_Post|null $post    Optional post being rendered.
+	 *
+	 * @return string
+	 */
+	protected static function strip_script_text_residue( $content, ?\WP_Post $post = null ) {
+		$patterns = self::get_script_text_residue_patterns( $post );
+
+		if ( empty( $patterns ) ) {
+			return $content;
+		}
+
+		$content = self::strip_script_text_residue_elements( $content, '#<(p|span)\b[^>]*>.*?</\1>#is', $patterns );
+		$content = self::strip_script_text_residue_elements( $content, '#<div\b[^>]*>(?:(?!</?div\b).)*</div>#is', $patterns );
+
+		return (string) preg_replace_callback(
+			'~(^|[\r\n])([^\r\n]*(?:window\.option_df_|window\.DFLIP|DFLIP\.parseBooks)[^\r\n]*)(?=[\r\n]|$)~i',
+			static function ( $matches ) use ( $patterns ) {
+				if ( str_contains( $matches[2], '<' ) || str_contains( $matches[2], '>' ) ) {
+					return $matches[0];
+				}
+
+				return self::looks_like_script_text_residue( $matches[2], $patterns ) ? $matches[1] : $matches[0];
+			},
+			$content
+		);
+	}
+
+	/**
+	 * Strip script residue from standalone HTML elements.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string   $content  Rendered modal template content.
+	 * @param string   $pattern  Element-matching regular expression.
+	 * @param string[] $patterns Regular expressions used to identify script residue.
+	 *
+	 * @return string
+	 */
+	protected static function strip_script_text_residue_elements( $content, $pattern, array $patterns ) {
+		return (string) preg_replace_callback(
+			$pattern,
+			static function ( $matches ) use ( $patterns ) {
+				return self::looks_like_script_text_residue( $matches[0], $patterns ) ? '' : $matches[0];
+			},
+			$content
+		);
+	}
+
+	/**
+	 * Get patterns used to detect inline embed setup residue.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param \WP_Post|null $post Optional post being rendered.
+	 *
+	 * @return string[]
+	 */
+	protected static function get_script_text_residue_patterns( ?\WP_Post $post = null ) {
+		$patterns = [
+			'/\bwindow\.option_df_[a-z0-9_]+\s*=/i',
+			'/\bwindow\.DFLIP\b/i',
+			'/\bDFLIP\.parseBooks\s*\(/i',
+		];
+
+		/**
+		 * Filter text patterns removed from rendered Reader Mode content.
+		 *
+		 * This filter is intentionally narrower than the element-strip filter:
+		 * it only handles embed setup code that has already become visible text.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @param string[]      $patterns Regular expressions used to identify script residue.
+		 * @param \WP_Post|null $post     Current post, when available.
+		 */
+		$patterns = apply_filters( 'wpdfv_modal_content_script_text_patterns', $patterns, $post );
+
+		if ( ! is_array( $patterns ) ) {
+			return [];
+		}
+
+		return array_values(
+			array_filter(
+				array_map(
+					static function ( $pattern ) {
+						return is_string( $pattern ) && '' !== $pattern ? $pattern : '';
+					},
+					$patterns
+				)
+			)
+		);
+	}
+
+	/**
+	 * Determine whether a text fragment is script setup residue.
+	 *
+	 * @since 1.7.1
+	 *
+	 * @param string   $content  Content fragment.
+	 * @param string[] $patterns Regular expressions used to identify script residue.
+	 *
+	 * @return bool
+	 */
+	protected static function looks_like_script_text_residue( $content, array $patterns ) {
+		$text = trim( wp_strip_all_tags( html_entity_decode( $content, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+
+		if ( '' === $text ) {
+			return false;
+		}
+
+		foreach ( $patterns as $pattern ) {
+			$result = @preg_match( $pattern, $text ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid filtered patterns are ignored below.
+
+			if ( 1 === $result ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

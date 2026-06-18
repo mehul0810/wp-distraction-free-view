@@ -155,6 +155,38 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Escaped executable blocks outside code samples should not print as text.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_removes_escaped_script_blocks_outside_code_samples() {
+		$content = '<p>Start</p><div>&lt;script class="df-shortcode-script" type="application/javascript"&gt;window.option_df_3751 = {"outline":[]}; if(window.DFLIP &amp;&amp; window.DFLIP.parseBooks){ window.DFLIP.parseBooks(); }&lt;/script&gt;</div><pre><code>&lt;script&gt;window.option_df_visible = {};&lt;/script&gt;</code></pre><p>End</p>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '<p>Start</p>', $result );
+		$this->assertStringContainsString( '<p>End</p>', $result );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $result );
+		$this->assertStringNotContainsString( 'DFLIP.parseBooks', $result );
+		$this->assertStringContainsString( 'window.option_df_visible', $result );
+	}
+
+	/**
+	 * Script bodies that already became standalone text should be removed.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_removes_standalone_flipbook_script_residue() {
+		$content = '<div class="entry-content"><p>Before script content.</p><p>window.option_df_3751 = {"outline":[],"autoEnableOutline":"false"};</p><div>if(window.DFLIP &amp;&amp; window.DFLIP.parseBooks){ window.DFLIP.parseBooks(); }</div><p>After script content.</p></div>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '<p>Before script content.</p>', $result );
+		$this->assertStringContainsString( '<p>After script content.</p>', $result );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $result );
+		$this->assertStringNotContainsString( 'autoEnableOutline', $result );
+		$this->assertStringNotContainsString( 'DFLIP.parseBooks', $result );
+	}
+
+	/**
 	 * Developers can customize which full element blocks are removed.
 	 *
 	 * @return void
