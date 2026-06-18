@@ -478,6 +478,26 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Built block editor assets must declare every WordPress package they use.
+	 *
+	 * @return void
+	 */
+	public function test_reader_block_editor_asset_declares_runtime_dependencies() {
+		$asset_file = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv-block.asset.php';
+
+		$this->assertFileExists( $asset_file );
+
+		$asset = require $asset_file;
+
+		$this->assertIsArray( $asset );
+		$this->assertArrayHasKey( 'dependencies', $asset );
+
+		foreach ( [ 'wp-block-editor', 'wp-blocks', 'wp-components', 'wp-element', 'wp-i18n' ] as $dependency ) {
+			$this->assertContains( $dependency, $asset['dependencies'] );
+		}
+	}
+
+	/**
 	 * More Plugins groups free and paid cards with install status.
 	 *
 	 * @return void
