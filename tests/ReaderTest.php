@@ -330,7 +330,7 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
-	 * Development-only 2.x markers are normalized to the 1.7.0 release path.
+	 * Development-only 2.x markers are normalized to the current release path.
 	 *
 	 * @return void
 	 */
@@ -350,7 +350,7 @@ class ReaderTest extends TestCase {
 
 		$settings = \get_option( 'wpdfv_settings' );
 
-		$this->assertSame( '1.7.0', \get_option( 'wpdfv_version' ) );
+		$this->assertSame( WPDFV_VERSION, \get_option( 'wpdfv_version' ) );
 		$this->assertSame( 'manual_only', $settings['display_location'] );
 		$this->assertFalse( $settings['automatic_button_enabled'] );
 		$this->assertSame( 'Read Mode', $settings['button_text'] );
