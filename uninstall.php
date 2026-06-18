@@ -9,8 +9,8 @@
  * @author     Mehul Gohil <hello@mehulgohil.com>
  */
 
-// Bailout, if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
+// Bailout unless WordPress is running this file through the uninstall flow.
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
