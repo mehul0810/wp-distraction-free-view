@@ -2,16 +2,11 @@ import '../../css/frontend/wpdfv.scss';
 
 import apiFetch from '@wordpress/api-fetch';
 import {
-	Button,
-	ButtonGroup,
-	Modal,
-	Notice,
-	Spinner,
-} from '@wordpress/components';
-import {
 	createElement,
+	forwardRef,
 	RawHTML,
 	render,
+	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
@@ -23,6 +18,14 @@ import { Path, SVG } from '@wordpress/primitives';
 const CONTENT_PATH = '/wp-distraction-free-view/v1/content/';
 const READER_CONFIG = window.wpdfvReaderMode || {};
 const DEFAULT_STORAGE_KEY = 'wpdfv_reader_preferences';
+const FOCUSABLE_SELECTOR = [
+	'a[href]',
+	'button:not([disabled])',
+	'input:not([disabled])',
+	'select:not([disabled])',
+	'textarea:not([disabled])',
+	'[tabindex]:not([tabindex="-1"])',
+].join( ',' );
 const PREFERENCE_OPTIONS = {
 	fontSize: [
 		{ label: __( 'Small', 'wp-distraction-free-view' ), value: 'small' },
@@ -184,22 +187,210 @@ const getStoredPreferences = () => {
 	}
 };
 
+const getFocusableElements = ( container ) =>
+	Array.from( container.querySelectorAll( FOCUSABLE_SELECTOR ) ).filter(
+		( element ) => {
+			const ownerWindow = element.ownerDocument.defaultView;
+			const style = ownerWindow?.getComputedStyle( element );
+
+			return (
+				! element.hidden &&
+				! element.getAttribute( 'aria-hidden' ) &&
+				'none' !== style?.display &&
+				'hidden' !== style?.visibility &&
+				element.getClientRects().length > 0
+			);
+		}
+	);
+
+const ReaderButton = forwardRef( function ReaderButton(
+	{
+		ariaLabel,
+		children,
+		className = '',
+		disabled = false,
+		icon,
+		isPressed,
+		label,
+		onClick,
+		variant = 'secondary',
+		...props
+	},
+	ref
+) {
+	const classes = [
+		'components-button',
+		`is-${ variant }`,
+		icon && ! children ? 'has-icon' : '',
+		className,
+	]
+		.filter( Boolean )
+		.join( ' ' );
+	const accessibleLabel = ariaLabel || label;
+
+	return (
+		<button
+			ref={ ref }
+			type="button"
+			className={ classes }
+			disabled={ disabled }
+			aria-label={ accessibleLabel }
+			aria-pressed={ isPressed }
+			title={ accessibleLabel }
+			onClick={ onClick }
+			{ ...props }
+		>
+			{ icon && (
+				<span className="wpdfv-reader-button__icon">{ icon }</span>
+			) }
+			{ children && (
+				<span className="wpdfv-reader-button__text">{ children }</span>
+			) }
+		</button>
+	);
+} );
+
+const ReaderSpinner = () => (
+	<span className="wpdfv-reader-spinner" aria-hidden="true" />
+);
+
+const ReaderNotice = ( { children, status = 'info' } ) => (
+	<div
+		className={ `wpdfv-reader-notice wpdfv-reader-notice--${ status }` }
+		role={ 'error' === status ? 'alert' : 'status' }
+	>
+		{ children }
+	</div>
+);
+
+const ReaderDialog = ( {
+	bodyOpenClassName,
+	children,
+	className,
+	closeButtonLabel,
+	headerActions,
+	onRequestClose,
+	title,
+} ) => {
+	const dialogRef = useRef( null );
+	const titleId = 'wpdfv-reader-modal-title';
+	const closeRef = useRef( null );
+	const previouslyFocusedRef = useRef( null );
+
+	useEffect( () => {
+		const ownerDocument = dialogRef.current?.ownerDocument || document;
+
+		previouslyFocusedRef.current = ownerDocument.activeElement;
+		ownerDocument.body.classList.add( bodyOpenClassName );
+		closeRef.current?.focus();
+
+		return () => {
+			ownerDocument.body.classList.remove( bodyOpenClassName );
+
+			if (
+				previouslyFocusedRef.current &&
+				ownerDocument.contains( previouslyFocusedRef.current )
+			) {
+				previouslyFocusedRef.current.focus();
+			}
+		};
+	}, [ bodyOpenClassName ] );
+
+	useEffect( () => {
+		const ownerDocument = dialogRef.current?.ownerDocument || document;
+		const handleKeyDown = ( event ) => {
+			if ( 'Escape' === event.key ) {
+				event.preventDefault();
+				onRequestClose();
+				return;
+			}
+
+			if ( 'Tab' !== event.key || ! dialogRef.current ) {
+				return;
+			}
+
+			const focusable = getFocusableElements( dialogRef.current );
+
+			if ( 0 === focusable.length ) {
+				event.preventDefault();
+				dialogRef.current.focus();
+				return;
+			}
+
+			const first = focusable[ 0 ];
+			const last = focusable[ focusable.length - 1 ];
+
+			if ( event.shiftKey && ownerDocument.activeElement === first ) {
+				event.preventDefault();
+				last.focus();
+				return;
+			}
+
+			if ( ! event.shiftKey && ownerDocument.activeElement === last ) {
+				event.preventDefault();
+				first.focus();
+			}
+		};
+
+		ownerDocument.addEventListener( 'keydown', handleKeyDown );
+
+		return () =>
+			ownerDocument.removeEventListener( 'keydown', handleKeyDown );
+	}, [ onRequestClose ] );
+
+	return (
+		<div className="components-modal__screen-overlay">
+			<div
+				ref={ dialogRef }
+				className={ className }
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={ titleId }
+				tabIndex="-1"
+			>
+				<div className="components-modal__header">
+					<div className="components-modal__header-heading-container">
+						<h1
+							className="components-modal__header-heading"
+							id={ titleId }
+						>
+							{ title }
+						</h1>
+					</div>
+					{ headerActions }
+					<ReaderButton
+						ref={ closeRef }
+						variant="link"
+						icon={ closeIcon }
+						label={ closeButtonLabel }
+						onClick={ onRequestClose }
+					/>
+				</div>
+				<div className="components-modal__content">{ children }</div>
+			</div>
+		</div>
+	);
+};
+
 const PreferenceGroup = ( { label, options, value, onChange } ) => (
 	<fieldset className="wpdfv-reader-preference-group">
 		<legend>{ label }</legend>
-		<ButtonGroup aria-label={ label }>
+		<div
+			className="components-button-group"
+			role="group"
+			aria-label={ label }
+		>
 			{ options.map( ( option ) => (
-				<Button
+				<ReaderButton
 					key={ option.value }
 					variant={ value === option.value ? 'primary' : 'secondary' }
-					size="compact"
-					aria-pressed={ value === option.value }
+					isPressed={ value === option.value }
 					onClick={ () => onChange( option.value ) }
 				>
 					{ option.label }
-				</Button>
+				</ReaderButton>
 			) ) }
-		</ButtonGroup>
+		</div>
 	</fieldset>
 );
 
@@ -427,6 +618,14 @@ const ReaderApp = () => {
 		} ) );
 	};
 
+	const closeReader = useCallback( () => {
+		setIsOpen( false );
+		setIsSettingsOpen( false );
+		setIsFullscreen( false );
+		setError( '' );
+		setScripts( [] );
+	}, [] );
+
 	const openReader = ( postId ) => {
 		if ( ! postId ) {
 			return;
@@ -462,14 +661,6 @@ const ReaderApp = () => {
 			.finally( () => setIsLoading( false ) );
 	};
 
-	const closeReader = () => {
-		setIsOpen( false );
-		setIsSettingsOpen( false );
-		setIsFullscreen( false );
-		setError( '' );
-		setScripts( [] );
-	};
-
 	const toggleFullscreen = () => {
 		const modal = document.querySelector( '.wpdfv-reader-modal' );
 
@@ -496,7 +687,7 @@ const ReaderApp = () => {
 
 	return (
 		isOpen && (
-			<Modal
+			<ReaderDialog
 				bodyOpenClassName="wpdfv-reader-modal-open"
 				className={ modalClassName }
 				closeButtonLabel={
@@ -511,9 +702,8 @@ const ReaderApp = () => {
 							</span>
 						) }
 						{ showPreferenceControls && (
-							<Button
+							<ReaderButton
 								variant="link"
-								size="compact"
 								icon={ settingsIcon }
 								label={ __(
 									'Reader settings',
@@ -527,18 +717,15 @@ const ReaderApp = () => {
 								}
 							/>
 						) }
-						<Button
+						<ReaderButton
 							variant="link"
-							size="compact"
 							icon={ printIcon }
 							label={ __( 'Print', 'wp-distraction-free-view' ) }
-							showTooltip={ false }
 							onClick={ printReader }
 							disabled={ isLoading || ! content }
 						/>
-						<Button
+						<ReaderButton
 							variant="link"
-							size="compact"
 							icon={
 								isFullscreen
 									? exitFullscreenIcon
@@ -555,7 +742,6 @@ const ReaderApp = () => {
 											'wp-distraction-free-view'
 									  )
 							}
-							showTooltip={ false }
 							onClick={ toggleFullscreen }
 						/>
 					</div>
@@ -588,9 +774,8 @@ const ReaderApp = () => {
 									'wp-distraction-free-view'
 								) }
 							</h2>
-							<Button
+							<ReaderButton
 								variant="link"
-								size="compact"
 								icon={ closeIcon }
 								label={ __(
 									'Close reader settings',
@@ -614,19 +799,17 @@ const ReaderApp = () => {
 				>
 					{ isLoading && (
 						<div className="wpdfv-reader-loading">
-							<Spinner />
+							<ReaderSpinner />
 						</div>
 					) }
 
 					{ error && (
-						<Notice status="error" isDismissible={ false }>
-							{ error }
-						</Notice>
+						<ReaderNotice status="error">{ error }</ReaderNotice>
 					) }
 
 					{ ! isLoading && content && <RawHTML>{ content }</RawHTML> }
 				</div>
-			</Modal>
+			</ReaderDialog>
 		)
 	);
 };
