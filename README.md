@@ -168,6 +168,7 @@ This repository is for development. For user support, use the [WordPress.org sup
 
 ## Development Notes
 
+- Product UI and asset decisions should follow the lightweight design contract in [DESIGN.md](DESIGN.md).
 - Commit `package-lock.json` whenever npm dependency metadata changes.
 - Built assets are generated into `assets/dist`.
 - Runtime plugin code uses Composer's PSR-4 autoloader. Production packages include the no-dev Composer autoload files generated from `composer.json`.
