@@ -9,6 +9,7 @@ namespace WPDFV\Tests;
 
 use PHPUnit\Framework\TestCase;
 use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Actions;
 use WPDFV\Includes\Blocks;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
@@ -475,6 +476,38 @@ class ReaderTest extends TestCase {
 		$this->assertStringContainsString( 'data-post-id="42"', $markup );
 		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
 		$this->assertArrayHasKey( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['inline'] );
+	}
+
+	/**
+	 * Frontend Reader Mode assets should not load the admin components package.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_reader_asset_omits_wp_components_dependency() {
+		$asset_file = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv.asset.php';
+
+		$this->assertFileExists( $asset_file );
+
+		$asset = require $asset_file;
+
+		$this->assertIsArray( $asset );
+		$this->assertArrayHasKey( 'dependencies', $asset );
+		$this->assertContains( 'wp-api-fetch', $asset['dependencies'] );
+		$this->assertContains( 'wp-element', $asset['dependencies'] );
+		$this->assertNotContains( 'wp-components', $asset['dependencies'] );
+	}
+
+	/**
+	 * Visitor enqueue keeps wp-components styles off frontend pages.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_enqueue_does_not_enqueue_wp_components_style() {
+		Actions::enqueue_frontend_assets();
+
+		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['styles'] );
+		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
+		$this->assertNotContains( 'wp-components', $GLOBALS['wpdfv_test_enqueued']['styles'] );
 	}
 
 	/**

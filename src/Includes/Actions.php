@@ -58,14 +58,14 @@ class Actions {
 	public static function register_frontend_assets() {
 		$asset_path = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv.asset.php';
 		$asset      = is_readable( $asset_path ) ? require $asset_path : [
-			'dependencies' => [ 'wp-api-fetch', 'wp-components', 'wp-element', 'wp-i18n' ],
+			'dependencies' => [ 'wp-api-fetch', 'wp-element', 'wp-i18n', 'wp-primitives' ],
 			'version'      => WPDFV_VERSION,
 		];
 
 		wp_register_style(
 			'wpdfv-core',
 			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv.css',
-			[ 'wp-components' ],
+			[],
 			$asset['version']
 		);
 
@@ -90,7 +90,6 @@ class Actions {
 	public static function enqueue_frontend_assets() {
 		self::register_frontend_assets();
 
-		wp_enqueue_style( 'wp-components' );
 		wp_enqueue_style( 'wpdfv-core' );
 		wp_enqueue_script( 'wpdfv-core' );
 
