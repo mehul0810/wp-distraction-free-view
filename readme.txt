@@ -31,8 +31,9 @@ Use it to offer focused reading for posts, pages, and selected public custom pos
 8. Optional reading progress indicator.
 9. Optional estimated reading time.
 10. Block-based Reader Mode templates for full site editing themes.
-11. WordPress-components settings screen.
-12. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
+11. Scoped Reader Mode custom CSS for administrators with the WordPress CSS editing capability.
+12. WordPress-components settings screen.
+13. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
 
 = Settings Overview =
 
@@ -50,6 +51,7 @@ The settings screen is organized into **About**, **Configure**, and **More Plugi
 * Default font size: small, default, or large.
 * Custom toggle label.
 * Custom exit label.
+* Reader Mode custom CSS.
 * Reader template.
 
 Automatic toggle insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
@@ -108,6 +110,27 @@ Yes. Reader Mode includes icon-only print and fullscreen controls in the modal h
 = Can block themes customize the Reader Mode layout? =
 
 Yes. The plugin registers a default block-based Reader Mode template and a WP Distraction Free View pattern category. Themes and site-specific code can add more templates with the `wpdfv_modal_templates` filter.
+
+= Can I customize Reader Mode styles? =
+
+Yes. Users who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from Settings > Reader Mode > Configure > Custom CSS.
+
+Scope selectors to Reader Mode containers, for example:
+
+`
+.wpdfv-reader-modal .wpdfv-reader-content {
+	font-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+	color: #1f2937;
+}
+
+.wpdfv-reader-modal {
+	--wpdfv-reader-accent-color: #3858e9;
+}
+`
 
 = Will old settings keep working? =
 

@@ -46,6 +46,7 @@ class ReaderTest extends TestCase {
 		$this->assertTrue( $defaults['reading_progress_enabled'] );
 		$this->assertTrue( $defaults['reading_time_enabled'] );
 		$this->assertTrue( $defaults['preference_controls_enabled'] );
+		$this->assertSame( '', $defaults['custom_css'] );
 	}
 
 	/**
@@ -68,6 +69,7 @@ class ReaderTest extends TestCase {
 				'default_reader_theme'        => 'neon',
 				'default_content_width'       => 'wide',
 				'default_font_size'           => 'large',
+				'custom_css'                  => "<style>\n.wpdfv-reader-modal { color: red; }\n</style>",
 			],
 			[ 'post', 'page', 'book' ]
 		);
@@ -83,6 +85,101 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 'light', $settings['default_reader_theme'] );
 		$this->assertSame( 'wide', $settings['default_content_width'] );
 		$this->assertSame( 'large', $settings['default_font_size'] );
+		$this->assertSame( '.wpdfv-reader-modal { color: red; }', $settings['custom_css'] );
+	}
+
+	/**
+	 * Reader Mode custom CSS strips wrappers, invalid control characters, and large payloads.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_custom_css() {
+		$css = "<style id=\"reader-css\">\n.wpdfv-reader-modal {\n\tcolor: red;\x00\x07\n}\n</style>";
+
+		$this->assertSame(
+			".wpdfv-reader-modal {\n\tcolor: red;\n}",
+			Reader::sanitize_custom_css( $css )
+		);
+
+		$this->assertSame(
+			Reader::CUSTOM_CSS_MAX_LENGTH,
+			strlen( Reader::sanitize_custom_css( str_repeat( 'a', Reader::CUSTOM_CSS_MAX_LENGTH + 10 ) ) )
+		);
+	}
+
+	/**
+	 * Settings responses hide custom CSS from users without the CSS editing capability.
+	 *
+	 * @return void
+	 */
+	public function test_settings_response_hides_custom_css_without_capability() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'custom_css' => '.wpdfv-reader-modal { color: red; }',
+				]
+			),
+			false
+		);
+
+		$GLOBALS['wpdfv_test_user_caps']['edit_css'] = false;
+
+		$response = ( new TestableSettingsApi() )->get_settings_response();
+		$data     = $response->get_data();
+
+		$this->assertFalse( $data['canEditCustomCss'] );
+		$this->assertSame( '', $data['settings']['custom_css'] );
+	}
+
+	/**
+	 * Users without edit_css can save other settings without clearing existing custom CSS.
+	 *
+	 * @return void
+	 */
+	public function test_settings_update_preserves_custom_css_without_capability() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'custom_css' => '.wpdfv-reader-modal { color: red; }',
+				]
+			),
+			false
+		);
+
+		$GLOBALS['wpdfv_test_user_caps']['edit_css'] = false;
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'button_text', 'Focus' );
+		$request->set_param( 'custom_css', '.wpdfv-reader-modal { color: blue; }' );
+
+		( new TestableSettingsApi() )->update_settings_response( $request );
+
+		$settings = \get_option( 'wpdfv_settings' );
+
+		$this->assertSame( 'Focus', $settings['button_text'] );
+		$this->assertSame( '.wpdfv-reader-modal { color: red; }', $settings['custom_css'] );
+	}
+
+	/**
+	 * Users with edit_css can save sanitized custom CSS.
+	 *
+	 * @return void
+	 */
+	public function test_settings_update_saves_custom_css_with_capability() {
+		$GLOBALS['wpdfv_test_user_caps']['edit_css'] = true;
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'custom_css', '<style>.wpdfv-reader-modal { color: blue; }</style>' );
+
+		( new TestableSettingsApi() )->update_settings_response( $request );
+
+		$settings = \get_option( 'wpdfv_settings' );
+
+		$this->assertSame( '.wpdfv-reader-modal { color: blue; }', $settings['custom_css'] );
 	}
 
 	/**
@@ -509,6 +606,68 @@ class ReaderTest extends TestCase {
 		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['styles'] );
 		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
 		$this->assertNotContains( 'wp-components', $GLOBALS['wpdfv_test_enqueued']['styles'] );
+	}
+
+	/**
+	 * Frontend custom CSS is attached to the Reader Mode stylesheet, not frontend settings JSON.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_enqueue_adds_custom_css_inline_style() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'custom_css' => '.wpdfv-reader-modal { color: red; }',
+				]
+			),
+			false
+		);
+
+		Actions::enqueue_frontend_assets();
+
+		$this->assertSame(
+			[ '.wpdfv-reader-modal { color: red; }' ],
+			$GLOBALS['wpdfv_test_enqueued']['inline_styles']['wpdfv-core']
+		);
+		$this->assertStringNotContainsString(
+			'custom_css',
+			$GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'][0]
+		);
+		$this->assertStringNotContainsString(
+			'.wpdfv-reader-modal',
+			$GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'][0]
+		);
+	}
+
+	/**
+	 * Developers can filter Reader Mode custom CSS before frontend output.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_custom_css_filter_can_disable_output() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'custom_css' => '.wpdfv-reader-modal { color: red; }',
+				]
+			),
+			false
+		);
+
+		\add_filter(
+			'wpdfv_custom_css',
+			static function () {
+				return '';
+			}
+		);
+
+		Actions::enqueue_frontend_assets();
+
+		$this->assertArrayNotHasKey( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['inline_styles'] );
 	}
 
 	/**

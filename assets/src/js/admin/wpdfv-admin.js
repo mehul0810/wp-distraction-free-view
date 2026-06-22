@@ -19,6 +19,7 @@ import {
 	render,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
@@ -48,6 +49,7 @@ const SettingsApp = () => {
 	const [ contentWidths, setContentWidths ] = useState( [] );
 	const [ fontSizes, setFontSizes ] = useState( [] );
 	const [ modalTemplates, setModalTemplates ] = useState( [] );
+	const [ canEditCustomCss, setCanEditCustomCss ] = useState( false );
 	const [ morePlugins, setMorePlugins ] = useState( {
 		free: [],
 		paid: [],
@@ -86,6 +88,7 @@ const SettingsApp = () => {
 		setContentWidths( response.contentWidths );
 		setFontSizes( response.fontSizes );
 		setModalTemplates( response.modalTemplates );
+		setCanEditCustomCss( !! response.canEditCustomCss );
 		setMorePlugins(
 			normalizeMorePlugins(
 				response.morePlugins || response.recommendedPlugins || []
@@ -226,6 +229,7 @@ const SettingsApp = () => {
 					contentWidths={ contentWidths }
 					fontSizes={ fontSizes }
 					modalTemplates={ modalTemplates }
+					canEditCustomCss={ canEditCustomCss }
 					selectedPostTypes={ selectedPostTypes }
 					isSaving={ isSaving }
 					onTogglePostType={ togglePostType }
@@ -388,6 +392,7 @@ const ConfigurePanel = ( {
 	contentWidths,
 	fontSizes,
 	modalTemplates,
+	canEditCustomCss,
 	selectedPostTypes,
 	isSaving,
 	onTogglePostType,
@@ -754,6 +759,29 @@ const ConfigurePanel = ( {
 						/>
 					</SettingsSection>
 
+					{ canEditCustomCss && (
+						<SettingsSection
+							title={ __(
+								'Custom CSS',
+								'wp-distraction-free-view'
+							) }
+							description={ __(
+								'Add CSS that applies only to WP Distraction Free View Reader Mode output.',
+								'wp-distraction-free-view'
+							) }
+						>
+							<CustomCssControl
+								value={ settings.custom_css || '' }
+								codeEditorSettings={
+									window.wpdfvAdminSettings?.codeEditor
+								}
+								onChange={ ( value ) =>
+									onUpdateSetting( 'custom_css', value )
+								}
+							/>
+						</SettingsSection>
+					) }
+
 					<Flex className="wpdfv-settings-actions" justify="flex-end">
 						<FlexItem>
 							<Button
@@ -775,6 +803,96 @@ const ConfigurePanel = ( {
 				</div>
 			</div>
 		</form>
+	);
+};
+
+const CustomCssControl = ( { value, codeEditorSettings, onChange } ) => {
+	const textareaRef = useRef();
+	const editorRef = useRef();
+	const textareaId = 'wpdfv-custom-css';
+	const exampleCss = `.wpdfv-reader-modal .wpdfv-reader-content {
+\tfont-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+\tcolor: #1f2937;
+}
+
+.wpdfv-reader-modal {
+\t--wpdfv-reader-accent-color: #3858e9;
+}`;
+
+	useEffect( () => {
+		if (
+			editorRef.current ||
+			! textareaRef.current ||
+			! codeEditorSettings ||
+			! window.wp?.codeEditor
+		) {
+			return;
+		}
+
+		const editor = window.wp.codeEditor.initialize(
+			textareaRef.current,
+			codeEditorSettings
+		);
+
+		editorRef.current = editor;
+		editor.codemirror.on( 'change', () => {
+			onChange( editor.codemirror.getValue() );
+		} );
+	}, [ codeEditorSettings, onChange ] );
+
+	useEffect( () => {
+		if (
+			editorRef.current &&
+			editorRef.current.codemirror.getValue() !== value
+		) {
+			editorRef.current.codemirror.setValue( value );
+		}
+	}, [ value ] );
+
+	return (
+		<div className="wpdfv-custom-css">
+			<label className="wpdfv-custom-css__label" htmlFor={ textareaId }>
+				{ __( 'Reader Mode CSS', 'wp-distraction-free-view' ) }
+			</label>
+			<textarea
+				ref={ textareaRef }
+				id={ textareaId }
+				className="wpdfv-custom-css__textarea"
+				value={ value }
+				rows={ 12 }
+				onChange={ ( event ) => onChange( event.target.value ) }
+				aria-describedby="wpdfv-custom-css-help"
+			/>
+			<p
+				id="wpdfv-custom-css-help"
+				className="wpdfv-field-row__description"
+			>
+				{ __(
+					'Scope selectors to .wpdfv-reader-modal, .wpdfv-reader-content, or .wpdfv-fullscreen-container.',
+					'wp-distraction-free-view'
+				) }
+			</p>
+			<div className="wpdfv-custom-css__examples">
+				<h4>
+					{ __(
+						'Scoped selector examples',
+						'wp-distraction-free-view'
+					) }
+				</h4>
+				<pre
+					aria-label={ __(
+						'Example CSS',
+						'wp-distraction-free-view'
+					) }
+				>
+					<code>{ exampleCss }</code>
+				</pre>
+			</div>
+		</div>
 	);
 };
 

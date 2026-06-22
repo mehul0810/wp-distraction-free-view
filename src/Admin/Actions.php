@@ -62,6 +62,18 @@ class Actions {
 			true
 		);
 
+		$code_editor_settings = wp_enqueue_code_editor( [ 'type' => 'text/css' ] );
+
+		wp_add_inline_script(
+			'wpdfv-admin',
+			'window.wpdfvAdminSettings = ' . wp_json_encode(
+				[
+					'codeEditor' => $code_editor_settings,
+				]
+			) . ';',
+			'before'
+		);
+
 		wp_set_script_translations( 'wpdfv-admin', 'wp-distraction-free-view', WPDFV_PLUGIN_DIR . 'languages' );
 	}
 }

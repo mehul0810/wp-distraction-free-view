@@ -138,10 +138,16 @@ class SettingsApi {
 	 */
 	public function get_settings_response() {
 		$more_plugins = $this->get_more_plugins();
+		$can_edit_css = current_user_can( Reader::get_custom_css_capability() );
+		$settings     = $this->get_prepared_settings();
+
+		if ( ! $can_edit_css ) {
+			$settings['custom_css'] = '';
+		}
 
 		return rest_ensure_response(
 			[
-				'settings'           => $this->get_prepared_settings(),
+				'settings'           => $settings,
 				'defaults'           => $this->get_default_settings(),
 				'postTypes'          => array_values( $this->get_public_post_types() ),
 				'displayLocations'   => $this->get_display_locations(),
@@ -156,6 +162,7 @@ class SettingsApi {
 				'minimumPhp'         => '8.2',
 				'pluginVersion'      => WPDFV_VERSION,
 				'brandIconUrl'       => WPDFV_PLUGIN_URL . 'assets/dist/images/wpdfv-icon.png',
+				'canEditCustomCss'   => $can_edit_css,
 			]
 		);
 	}
@@ -233,7 +240,12 @@ class SettingsApi {
 			$data = $request->get_body_params();
 		}
 
-		$settings = $this->sanitize_settings_data( $data );
+		$settings          = $this->sanitize_settings_data( $data );
+		$existing_settings = $this->get_prepared_settings();
+
+		if ( ! current_user_can( Reader::get_custom_css_capability() ) ) {
+			$settings['custom_css'] = isset( $existing_settings['custom_css'] ) ? $existing_settings['custom_css'] : '';
+		}
 
 		update_option( $this->get_settings_key(), $settings, false );
 

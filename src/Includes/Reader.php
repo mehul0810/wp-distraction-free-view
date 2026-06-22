@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Reader {
 	/**
+	 * Maximum custom CSS length in bytes.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var int
+	 */
+	const CUSTOM_CSS_MAX_LENGTH = 20480;
+
+	/**
 	 * Reader Mode query parameter.
 	 *
 	 * @since 1.7.0
@@ -57,6 +66,7 @@ class Reader {
 			'default_reader_theme'        => 'light',
 			'default_content_width'       => 'default',
 			'default_font_size'           => 'default',
+			'custom_css'                  => '',
 		];
 	}
 
@@ -118,6 +128,7 @@ class Reader {
 		$reader_theme     = isset( $data['default_reader_theme'] ) ? sanitize_key( $data['default_reader_theme'] ) : $defaults['default_reader_theme'];
 		$content_width    = isset( $data['default_content_width'] ) ? sanitize_key( $data['default_content_width'] ) : $defaults['default_content_width'];
 		$font_size        = isset( $data['default_font_size'] ) ? sanitize_key( $data['default_font_size'] ) : $defaults['default_font_size'];
+		$custom_css       = isset( $data['custom_css'] ) ? self::sanitize_custom_css( $data['custom_css'] ) : $defaults['custom_css'];
 
 		$automatic_enabled = isset( $data['automatic_button_enabled'] ) ? (bool) $data['automatic_button_enabled'] : $defaults['automatic_button_enabled'];
 
@@ -138,7 +149,77 @@ class Reader {
 			'default_reader_theme'        => in_array( $reader_theme, self::get_allowed_reader_themes(), true ) ? $reader_theme : $defaults['default_reader_theme'],
 			'default_content_width'       => in_array( $content_width, self::get_allowed_content_widths(), true ) ? $content_width : $defaults['default_content_width'],
 			'default_font_size'           => in_array( $font_size, self::get_allowed_font_sizes(), true ) ? $font_size : $defaults['default_font_size'],
+			'custom_css'                  => $custom_css,
 		];
+	}
+
+	/**
+	 * Sanitize Reader Mode custom CSS.
+	 *
+	 * This intentionally does not use safecss_filter_attr(), which is scoped to
+	 * inline style attributes rather than complete stylesheet text.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param mixed $css Raw CSS.
+	 *
+	 * @return string
+	 */
+	public static function sanitize_custom_css( $css ) {
+		$css = is_scalar( $css ) ? (string) $css : '';
+		$css = preg_replace( '/^\xEF\xBB\xBF/', '', $css );
+		$css = preg_replace( '#^\s*<style\b[^>]*>#i', '', $css );
+		$css = preg_replace( '#</style>\s*$#i', '', $css );
+		$css = str_replace( "\0", '', $css );
+		$css = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $css );
+
+		if ( strlen( $css ) > self::CUSTOM_CSS_MAX_LENGTH ) {
+			$css = substr( $css, 0, self::CUSTOM_CSS_MAX_LENGTH );
+		}
+
+		return trim( $css );
+	}
+
+	/**
+	 * Get the required capability for Reader Mode custom CSS editing.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return string
+	 */
+	public static function get_custom_css_capability() {
+		/**
+		 * Filter the capability required to view and save Reader Mode custom CSS.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $capability Required capability.
+		 */
+		return (string) apply_filters( 'wpdfv_custom_css_capability', 'edit_css' );
+	}
+
+	/**
+	 * Get saved Reader Mode custom CSS after developer filtering.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return string
+	 */
+	public static function get_custom_css() {
+		$settings = self::get_settings();
+		$css      = isset( $settings['custom_css'] ) ? self::sanitize_custom_css( $settings['custom_css'] ) : '';
+
+		/**
+		 * Filter the final Reader Mode custom CSS before frontend output.
+		 *
+		 * Return an empty string to disable custom CSS output.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $css      Sanitized custom CSS.
+		 * @param array  $settings Sanitized Reader Mode settings.
+		 */
+		return self::sanitize_custom_css( apply_filters( 'wpdfv_custom_css', $css, $settings ) );
 	}
 
 	/**

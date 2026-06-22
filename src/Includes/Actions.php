@@ -92,6 +92,7 @@ class Actions {
 
 		wp_enqueue_style( 'wpdfv-core' );
 		wp_enqueue_script( 'wpdfv-core' );
+		self::add_custom_css();
 
 		if ( self::$frontend_settings_added ) {
 			return;
@@ -99,6 +100,23 @@ class Actions {
 
 		wp_add_inline_script( 'wpdfv-core', 'window.wpdfvReaderMode = ' . wp_json_encode( self::get_frontend_settings() ) . ';', 'before' );
 		self::$frontend_settings_added = true;
+	}
+
+	/**
+	 * Attach Reader Mode custom CSS to the frontend stylesheet handle.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected static function add_custom_css() {
+		$custom_css = Reader::get_custom_css();
+
+		if ( '' === $custom_css ) {
+			return;
+		}
+
+		wp_add_inline_style( 'wpdfv-core', $custom_css );
 	}
 
 	/**
