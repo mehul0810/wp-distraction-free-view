@@ -71,6 +71,12 @@ function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_posts']          = [];
 	$GLOBALS['wpdfv_test_shortcodes']     = [];
 	$_GET                                 = [];
+
+	if ( class_exists( '\WPDFV\Includes\Actions' ) ) {
+		$frontend_settings_added = new ReflectionProperty( '\WPDFV\Includes\Actions', 'frontend_settings_added' );
+		$frontend_settings_added->setAccessible( true );
+		$frontend_settings_added->setValue( null, false );
+	}
 }
 
 function plugin_basename( $file ) {

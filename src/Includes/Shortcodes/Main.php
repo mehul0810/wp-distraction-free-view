@@ -11,6 +11,7 @@ use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
+use WPDFV\Includes\Actions;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
 use WPDFV\Includes\Templates;
@@ -62,6 +63,8 @@ class Main {
 		if ( ! $post_type || ! Reader::is_post_type_enabled( $post_type ) ) {
 			return '';
 		}
+
+		Actions::enqueue_frontend_assets();
 
 		return Helpers::display_read_mode_button( $post_id );
 	}
