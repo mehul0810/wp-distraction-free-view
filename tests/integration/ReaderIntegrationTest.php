@@ -7,9 +7,9 @@
 
 namespace WPDFV\Tests\Integration;
 
+use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 use WP_REST_Server;
-use WP_UnitTestCase;
 use WPDFV\Admin\Upgrades;
 use WPDFV\Includes\Reader;
 use WPDFV\Plugin;
@@ -17,7 +17,7 @@ use WPDFV\Plugin;
 /**
  * Covers WordPress contracts that the fast shim tests cannot prove.
  */
-class ReaderIntegrationTest extends WP_UnitTestCase {
+class ReaderIntegrationTest extends TestCase {
 	/**
 	 * REST server instance before the test.
 	 *
@@ -26,12 +26,26 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 	private $server;
 
 	/**
+	 * Post IDs created by the test.
+	 *
+	 * @var int[]
+	 */
+	private $post_ids = [];
+
+	/**
+	 * Site IDs created by the test.
+	 *
+	 * @var int[]
+	 */
+	private $site_ids = [];
+
+	/**
 	 * Set up WordPress REST routing for each test.
 	 *
 	 * @return void
 	 */
-	public function set_up() {
-		parent::set_up();
+	protected function setUp(): void {
+		parent::setUp();
 
 		$this->server              = isset( $GLOBALS['wp_rest_server'] ) ? $GLOBALS['wp_rest_server'] : null;
 		$GLOBALS['wp_rest_server'] = new WP_REST_Server();
@@ -46,10 +60,22 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 	 *
 	 * @return void
 	 */
-	public function tear_down() {
+	protected function tearDown(): void {
+		foreach ( $this->post_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+
+		foreach ( $this->site_ids as $site_id ) {
+			wp_delete_site( $site_id );
+		}
+
+		delete_option( 'wpdfv_settings' );
+		delete_option( 'wpdfv_version' );
+		delete_option( 'wpdfv_general' );
+		delete_option( 'wpdfv_upgrade_error' );
 		$GLOBALS['wp_rest_server'] = $this->server;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**
@@ -70,7 +96,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_rest_content_returns_403_for_password_protected_post() {
-		$post_id = self::factory()->post->create(
+		$post_id = $this->create_post(
 			[
 				'post_status'   => 'publish',
 				'post_password' => 'secret',
@@ -89,7 +115,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_rest_content_returns_403_for_private_post() {
-		$post_id = self::factory()->post->create(
+		$post_id = $this->create_post(
 			[
 				'post_status' => 'private',
 			]
@@ -118,7 +144,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 			false
 		);
 
-		$post_id = self::factory()->post->create(
+		$post_id = $this->create_post(
 			[
 				'post_status' => 'publish',
 				'post_type'   => 'post',
@@ -137,7 +163,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_rest_content_returns_200_for_public_post() {
-		$post_id = self::factory()->post->create(
+		$post_id = $this->create_post(
 			[
 				'post_content' => '<p>Readable integration content.</p>',
 				'post_status'  => 'publish',
@@ -167,7 +193,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 		$this->assertSame( 'Reader Mode Toggle', $block->title );
 		$this->assertContains( 'postId', $block->uses_context );
 
-		$post_id = self::factory()->post->create(
+		$post_id = $this->create_post(
 			[
 				'post_status' => 'publish',
 			]
@@ -238,7 +264,7 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Run integration tests with WP_MULTISITE=1 to cover network activation.' );
 		}
 
-		$site_id = self::factory()->blog->create();
+		$site_id = $this->create_site();
 		delete_option( 'wpdfv_settings' );
 		delete_option( 'wpdfv_version' );
 
@@ -268,5 +294,66 @@ class ReaderIntegrationTest extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', '/wp-distraction-free-view/v1/content/' . absint( $post_id ) );
 
 		return rest_get_server()->dispatch( $request );
+	}
+
+	/**
+	 * Create a WordPress post and track it for cleanup.
+	 *
+	 * @param array $args Post arguments.
+	 *
+	 * @return int
+	 */
+	private function create_post( array $args = [] ) {
+		$post_id = wp_insert_post(
+			array_merge(
+				[
+					'post_author'  => 1,
+					'post_content' => 'Reader content.',
+					'post_status'  => 'publish',
+					'post_title'   => 'Reader test post',
+					'post_type'    => 'post',
+				],
+				$args
+			),
+			true
+		);
+
+		$this->assertNotWPError( $post_id );
+		$this->post_ids[] = $post_id;
+
+		return $post_id;
+	}
+
+	/**
+	 * Create a multisite blog and track it for cleanup.
+	 *
+	 * @return int
+	 */
+	private function create_site() {
+		$site_id = wp_insert_site(
+			[
+				'domain' => 'site' . wp_rand( 1000, 9999 ) . '.example.org',
+				'path'   => '/',
+			]
+		);
+
+		$this->assertNotWPError( $site_id );
+		$this->site_ids[] = $site_id;
+
+		return $site_id;
+	}
+
+	/**
+	 * Assert a value is not a WP_Error instance.
+	 *
+	 * @param mixed $actual Value to inspect.
+	 *
+	 * @return void
+	 */
+	private function assertNotWPError( $actual ) {
+		$this->assertFalse(
+			is_wp_error( $actual ),
+			is_wp_error( $actual ) ? $actual->get_error_message() : 'Value is not a WP_Error.'
+		);
 	}
 }
