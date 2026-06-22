@@ -36,6 +36,24 @@ class SettingsApi {
 	public $prefix = 'wpdfv';
 
 	/**
+	 * Public post type options cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected $public_post_types_cache = null;
+
+	/**
+	 * Installed plugins cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected $installed_plugins_cache = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -248,6 +266,7 @@ class SettingsApi {
 		}
 
 		update_option( $this->get_settings_key(), $settings, false );
+		$this->invalidate_settings_request_cache();
 
 		return $this->get_settings_response();
 	}
@@ -299,6 +318,10 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_public_post_types() {
+		if ( null !== $this->public_post_types_cache ) {
+			return $this->public_post_types_cache;
+		}
+
 		$post_types = get_post_types( [ 'public' => true ], 'objects' );
 		$options    = [];
 
@@ -309,7 +332,9 @@ class SettingsApi {
 			];
 		}
 
-		return $options;
+		$this->public_post_types_cache = $options;
+
+		return $this->public_post_types_cache;
 	}
 
 	/**
@@ -530,6 +555,8 @@ class SettingsApi {
 			);
 		}
 
+		$this->invalidate_plugin_request_cache();
+
 		return true;
 	}
 
@@ -568,6 +595,8 @@ class SettingsApi {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+
+		$this->invalidate_plugin_request_cache();
 
 		return true;
 	}
@@ -624,13 +653,45 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_installed_plugins() {
+		if ( null !== $this->installed_plugins_cache ) {
+			return $this->installed_plugins_cache;
+		}
+
 		$this->load_plugin_admin_functions();
 
 		if ( ! function_exists( 'get_plugins' ) ) {
-			return [];
+			$this->installed_plugins_cache = [];
+
+			return $this->installed_plugins_cache;
 		}
 
-		return get_plugins();
+		$this->installed_plugins_cache = get_plugins();
+
+		return $this->installed_plugins_cache;
+	}
+
+	/**
+	 * Clear per-request settings caches after settings are saved.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected function invalidate_settings_request_cache() {
+		$this->public_post_types_cache = null;
+		Reader::invalidate_request_cache();
+		Templates::invalidate_request_cache();
+	}
+
+	/**
+	 * Clear per-request plugin status caches after plugin actions.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected function invalidate_plugin_request_cache() {
+		$this->installed_plugins_cache = null;
 	}
 
 	/**

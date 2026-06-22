@@ -108,6 +108,83 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Reader settings and public post type lookups are cached per request.
+	 *
+	 * @return void
+	 */
+	public function test_reader_settings_are_cached_per_request() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post', 'book' ],
+				]
+			),
+			false
+		);
+
+		$this->assertSame( [ 'post', 'book' ], Reader::get_settings()['where_to_display'] );
+		$this->assertSame( [ 'post', 'book' ], Reader::where_to_display() );
+		$this->assertTrue( Reader::is_post_type_enabled( 'book' ) );
+		$this->assertSame( 1, $GLOBALS['wpdfv_test_get_post_types_calls'] );
+	}
+
+	/**
+	 * Settings update responses invalidate the cached normalized settings.
+	 *
+	 * @return void
+	 */
+	public function test_settings_update_invalidates_reader_settings_cache() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'button_text' => 'Before cache',
+				]
+			),
+			false
+		);
+
+		$this->assertSame( 'Before cache', Reader::get_settings()['button_text'] );
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'button_text', 'After cache' );
+
+		( new TestableSettingsApi() )->update_settings_response( $request );
+
+		$this->assertSame( 'After cache', Reader::get_settings()['button_text'] );
+	}
+
+	/**
+	 * Template catalogs and options are cached per request.
+	 *
+	 * @return void
+	 */
+	public function test_template_options_are_cached_per_request() {
+		$template_filter_calls = 0;
+
+		\add_filter(
+			'wpdfv_modal_templates',
+			static function ( $templates ) use ( &$template_filter_calls ) {
+				++$template_filter_calls;
+				$templates['compact'] = [
+					'label'       => 'Compact',
+					'description' => 'Compact layout',
+					'content'     => '<!-- wp:post-title /-->',
+				];
+
+				return $templates;
+			}
+		);
+
+		$this->assertContains( 'compact', array_column( Templates::get_template_options(), 'value' ) );
+		$this->assertContains( 'compact', array_column( Templates::get_template_options(), 'value' ) );
+		$this->assertSame( 1, $template_filter_calls );
+	}
+
+	/**
 	 * Settings responses hide custom CSS from users without the CSS editing capability.
 	 *
 	 * @return void
@@ -781,6 +858,7 @@ class ReaderTest extends TestCase {
 		$this->assertSame( [ 'onecaptcha', 'themerouter' ], array_column( $plugins['paid'], 'slug' ) );
 		$this->assertSame( 'active', $plugins['free'][0]['status'] );
 		$this->assertSame( 'installed', $plugins['free'][1]['status'] );
+		$this->assertSame( 1, $GLOBALS['wpdfv_test_get_plugins_calls'] );
 	}
 
 	/**
@@ -820,5 +898,6 @@ class ReaderTest extends TestCase {
 		$this->assertTrue( $result );
 		$this->assertSame( [ 'cleanlinks/cleanlinks.php' ], $GLOBALS['wpdfv_test_active_plugins'] );
 		$this->assertSame( 'active', $plugins['free'][1]['status'] );
+		$this->assertSame( 2, $GLOBALS['wpdfv_test_get_plugins_calls'] );
 	}
 }

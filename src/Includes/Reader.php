@@ -19,6 +19,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Reader {
 	/**
+	 * Normalized settings cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected static $settings_cache = null;
+
+	/**
+	 * Public post type slugs cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected static $public_post_type_slugs_cache = null;
+
+	/**
 	 * Maximum custom CSS length in bytes.
 	 *
 	 * @since 1.8.0
@@ -78,13 +96,31 @@ class Reader {
 	 * @return array
 	 */
 	public static function get_settings() {
+		if ( null !== self::$settings_cache ) {
+			return self::$settings_cache;
+		}
+
 		$settings = get_option( 'wpdfv_settings', [] );
 
 		if ( ! is_array( $settings ) ) {
 			$settings = [];
 		}
 
-		return self::sanitize_settings_data( array_merge( self::get_default_settings(), $settings ) );
+		self::$settings_cache = self::sanitize_settings_data( array_merge( self::get_default_settings(), $settings ) );
+
+		return self::$settings_cache;
+	}
+
+	/**
+	 * Clear per-request settings and catalog caches.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	public static function invalidate_request_cache() {
+		self::$settings_cache               = null;
+		self::$public_post_type_slugs_cache = null;
 	}
 
 	/**
@@ -1083,10 +1119,18 @@ class Reader {
 	 * @return array
 	 */
 	protected static function get_public_post_type_slugs() {
-		if ( ! function_exists( 'get_post_types' ) ) {
-			return [ 'post', 'page' ];
+		if ( null !== self::$public_post_type_slugs_cache ) {
+			return self::$public_post_type_slugs_cache;
 		}
 
-		return array_keys( get_post_types( [ 'public' => true ], 'objects' ) );
+		if ( ! function_exists( 'get_post_types' ) ) {
+			self::$public_post_type_slugs_cache = [ 'post', 'page' ];
+
+			return self::$public_post_type_slugs_cache;
+		}
+
+		self::$public_post_type_slugs_cache = array_keys( get_post_types( [ 'public' => true ], 'objects' ) );
+
+		return self::$public_post_type_slugs_cache;
 	}
 }

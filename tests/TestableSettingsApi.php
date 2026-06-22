@@ -23,6 +23,24 @@ class TestableSettingsApi extends SettingsApi {
 	}
 
 	/**
+	 * Expose public post type options.
+	 *
+	 * @return array
+	 */
+	public function get_public_post_types_for_tests() {
+		return $this->get_public_post_types();
+	}
+
+	/**
+	 * Expose installed plugin data.
+	 *
+	 * @return array
+	 */
+	public function get_installed_plugins_for_tests() {
+		return $this->get_installed_plugins();
+	}
+
+	/**
 	 * Activate a free companion plugin from the test catalog.
 	 *
 	 * @param string $slug Plugin slug.
