@@ -66,6 +66,10 @@ Reader Mode can also open from the URL on enabled single content:
 
 `https://example.com/my-post/?reader-mode=1`
 
+Setup and troubleshooting guide:
+
+https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.0/docs/reader-mode-setup.md
+
 = Template Customization =
 
 The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
