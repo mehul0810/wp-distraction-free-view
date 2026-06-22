@@ -117,6 +117,10 @@ Use the **WP Distraction Free View / Reader Mode Toggle** block in posts, pages,
 
 The block is dynamic and uses the current post context, so it opens the correct post when placed in single templates or inside Query Loop templates.
 
+## Setup and Troubleshooting
+
+For step-by-step placement guidance, URL activation, preference privacy notes, and shortcode/embed troubleshooting, see [Reader Mode Setup and Troubleshooting](docs/reader-mode-setup.md).
+
 ## Modal Templates
 
 The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
