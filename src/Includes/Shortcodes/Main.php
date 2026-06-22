@@ -132,6 +132,7 @@ class Main {
 			[
 				'id'          => $post->ID,
 				'title'       => get_the_title( $post ),
+				'permalink'   => get_permalink( $post ),
 				'content'     => $prepared['content'],
 				'scripts'     => $prepared['scripts'],
 				'readingTime' => [

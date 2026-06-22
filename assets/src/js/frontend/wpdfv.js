@@ -12,7 +12,7 @@ import {
 	useRef,
 	useState,
 } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { Path, SVG } from '@wordpress/primitives';
 
 const CONTENT_PATH = '/wp-distraction-free-view/v1/content/';
@@ -424,6 +424,7 @@ const ReaderApp = () => {
 	const [ isFullscreen, setIsFullscreen ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const [ title, setTitle ] = useState( '' );
+	const [ permalink, setPermalink ] = useState( '' );
 	const [ content, setContent ] = useState( '' );
 	const [ scripts, setScripts ] = useState( [] );
 	const [ readingTime, setReadingTime ] = useState( null );
@@ -635,6 +636,7 @@ const ReaderApp = () => {
 		setIsLoading( true );
 		setError( '' );
 		setTitle( '' );
+		setPermalink( '' );
 		setContent( '' );
 		setScripts( [] );
 		setReadingTime( null );
@@ -644,6 +646,7 @@ const ReaderApp = () => {
 		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
 			.then( ( response ) => {
 				setTitle( response.title );
+				setPermalink( response.permalink || '' );
 				setContent( response.content );
 				setScripts(
 					Array.isArray( response.scripts ) ? response.scripts : []
@@ -797,6 +800,23 @@ const ReaderApp = () => {
 					id="wpdfv-print"
 					ref={ contentRef }
 				>
+					{ ! isLoading && content && (
+						<header className="wpdfv-reader-print-header">
+							<h1>{ title }</h1>
+							{ permalink && (
+								<p>
+									{ sprintf(
+										/* translators: %s: Source URL for printed Reader Mode content. */
+										__(
+											'Source: %s',
+											'wp-distraction-free-view'
+										),
+										permalink
+									) }
+								</p>
+							) }
+						</header>
+					) }
 					{ isLoading && (
 						<div className="wpdfv-reader-loading">
 							<ReaderSpinner />

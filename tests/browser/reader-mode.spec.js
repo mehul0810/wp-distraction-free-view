@@ -156,6 +156,27 @@ test.describe( 'Reader Mode smoke', () => {
 			headerBox.y + headerBox.height + 1
 		);
 	} );
+
+	test( 'uses reader-friendly print media output', async ( { page } ) => {
+		await openReader( page );
+		await page.emulateMedia( { media: 'print' } );
+
+		await expect(
+			page.locator( '.wpdfv-reader-print-header' )
+		).toBeVisible();
+		await expect(
+			page.locator( '.wpdfv-reader-print-header h1' )
+		).not.toBeEmpty();
+		await expect(
+			page.locator( '.wpdfv-reader-print-header' )
+		).toContainText( /Source:/ );
+		await expect(
+			page.locator( '.wpdfv-reader-header-actions' )
+		).toBeHidden();
+		await expect( page.locator( '.wpdfv-reading-progress' ) ).toBeHidden();
+
+		await page.emulateMedia( { media: 'screen' } );
+	} );
 } );
 
 async function openReader( page ) {

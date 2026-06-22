@@ -207,6 +207,10 @@ body.wpdfv-reader-mode-active {
 	width: 100%;
 }
 
+.wpdfv-reader-print-header {
+	display: none;
+}
+
 .wpdfv-reader-modal--font-small .wpdfv-reader-content {
 	font-size: 16px;
 }
@@ -396,6 +400,16 @@ body.wpdfv-reader-mode-active {
 
 @media print {
 
+	@page {
+		margin: 0.75in;
+	}
+
+	.wpdfv-reader-content,
+	.wpdfv-reader-content * {
+		box-shadow: none !important;
+		text-shadow: none !important;
+	}
+
 	body > *:not(#wpdfv-reader-root) {
 		display: none !important;
 	}
@@ -411,6 +425,7 @@ body.wpdfv-reader-mode-active {
 	.wpdfv-reader-toolbar,
 	.wpdfv-reader-settings-panel,
 	.wpdfv-reading-progress,
+	.wpdfv-reader-loading,
 	.components-modal__header {
 		display: none !important;
 	}
@@ -418,5 +433,34 @@ body.wpdfv-reader-mode-active {
 	.wpdfv-reader-content {
 		max-width: none;
 		padding: 0;
+	}
+
+	.wpdfv-reader-print-header {
+		border-bottom: 1px solid #dcdcde;
+		display: block;
+		margin-bottom: 24px;
+		padding-bottom: 12px;
+	}
+
+	.wpdfv-reader-print-header h1 {
+		font-size: 24pt;
+		line-height: 1.2;
+		margin: 0 0 8px;
+	}
+
+	.wpdfv-reader-print-header p {
+		color: #50575e;
+		font-size: 10pt;
+		line-height: 1.4;
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.wpdfv-reader-content img,
+	.wpdfv-reader-content pre,
+	.wpdfv-reader-content blockquote,
+	.wpdfv-reader-content table {
+		break-inside: avoid;
+		page-break-inside: avoid;
 	}
 }
