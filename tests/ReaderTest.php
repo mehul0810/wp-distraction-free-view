@@ -9,6 +9,7 @@ namespace WPDFV\Tests;
 
 use PHPUnit\Framework\TestCase;
 use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Actions;
 use WPDFV\Includes\Blocks;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
@@ -475,6 +476,78 @@ class ReaderTest extends TestCase {
 		$this->assertStringContainsString( 'data-post-id="42"', $markup );
 		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
 		$this->assertArrayHasKey( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['inline'] );
+	}
+
+	/**
+	 * Manual shortcode output should enqueue the shared frontend assets.
+	 *
+	 * @return void
+	 */
+	public function test_shortcode_uses_shared_frontend_assets() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post' ],
+				]
+			),
+			false
+		);
+
+		$post            = new \WP_Post();
+		$post->ID        = 42;
+		$post->post_type = 'post';
+
+		$GLOBALS['wpdfv_test_posts'][42] = $post;
+
+		$shortcode = new Main();
+		$markup    = $shortcode->render_shortcode( [ 'post_id' => 42 ] );
+
+		$this->assertStringContainsString( 'data-post-id="42"', $markup );
+		$this->assertContains( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['scripts'] );
+		$this->assertArrayHasKey( 'wpdfv-core', $GLOBALS['wpdfv_test_enqueued']['inline'] );
+		$this->assertCount( 1, $GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'] );
+	}
+
+	/**
+	 * Multiple reader placements should not duplicate inline runtime settings.
+	 *
+	 * @return void
+	 */
+	public function test_reader_assets_add_inline_settings_once_for_multiple_placements() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'where_to_display' => [ 'post' ],
+				]
+			),
+			false
+		);
+
+		$post            = new \WP_Post();
+		$post->ID        = 42;
+		$post->post_type = 'post';
+
+		$GLOBALS['wpdfv_test_posts'][42] = $post;
+
+		$block = (object) [
+			'context' => [
+				'postId'   => 42,
+				'postType' => 'post',
+			],
+		];
+
+		$blocks    = new Blocks();
+		$shortcode = new Main();
+
+		$blocks->render_reader_button( [], '', $block );
+		$shortcode->render_shortcode( [ 'post_id' => 42 ] );
+		Actions::enqueue_frontend_assets();
+
+		$this->assertCount( 1, $GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'] );
 	}
 
 	/**
