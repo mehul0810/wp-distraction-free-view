@@ -14,6 +14,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Templates {
 	/**
+	 * Registered template cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected static $registered_templates_cache = null;
+
+	/**
+	 * Template options cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected static $template_options_cache = null;
+
+	/**
 	 * Default modal template slug.
 	 *
 	 * @since 1.7.0
@@ -88,6 +106,10 @@ class Templates {
 	 * @return array
 	 */
 	public static function get_template_options() {
+		if ( null !== self::$template_options_cache ) {
+			return self::$template_options_cache;
+		}
+
 		$options = [];
 
 		foreach ( self::get_registered_templates() as $slug => $template ) {
@@ -98,7 +120,21 @@ class Templates {
 			];
 		}
 
-		return $options;
+		self::$template_options_cache = $options;
+
+		return self::$template_options_cache;
+	}
+
+	/**
+	 * Clear per-request modal template caches.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	public static function invalidate_request_cache() {
+		self::$registered_templates_cache = null;
+		self::$template_options_cache     = null;
 	}
 
 	/**
@@ -186,6 +222,10 @@ class Templates {
 	 * @return array
 	 */
 	public static function get_registered_templates() {
+		if ( null !== self::$registered_templates_cache ) {
+			return self::$registered_templates_cache;
+		}
+
 		$templates = [
 			self::DEFAULT_TEMPLATE => [
 				'label'       => __( 'Default Reader Mode layout', 'wp-distraction-free-view' ),
@@ -207,7 +247,9 @@ class Templates {
 		 */
 		$templates = apply_filters( 'wpdfv_modal_templates', $templates );
 
-		return self::normalize_templates( $templates );
+		self::$registered_templates_cache = self::normalize_templates( $templates );
+
+		return self::$registered_templates_cache;
 	}
 
 	/**

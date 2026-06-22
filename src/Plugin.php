@@ -32,8 +32,25 @@ final class Plugin {
 		// Register services used throughout the plugin.
 		add_action( 'plugins_loaded', [ $this, 'register_services' ] );
 
+		// Clear request-level caches when settings change outside the Settings API.
+		add_action( 'add_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+		add_action( 'update_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+		add_action( 'delete_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+
 		// Load text domain.
 		add_action( 'init', [ $this, 'load_plugin_textdomain' ] );
+	}
+
+	/**
+	 * Clears request-level caches affected by settings changes.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	public function invalidate_request_caches() {
+		Includes\Reader::invalidate_request_cache();
+		Includes\Templates::invalidate_request_cache();
 	}
 
 	/**
