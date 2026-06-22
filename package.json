@@ -6,6 +6,7 @@
 	"scripts": {
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
+		"test:browser": "playwright test",
 		"lint:js": "wp-scripts lint-js assets/src/js",
 		"lint:css": "wp-scripts lint-style assets/src/css",
 		"format": "wp-scripts format assets/src webpack.config.js",
@@ -26,6 +27,7 @@
 	},
 	"homepage": "https://github.com/mehul0810/wp-distraction-free-view#readme",
 	"devDependencies": {
+		"@playwright/test": "^1.60.0",
 		"@wordpress/api-fetch": "^7.45.0",
 		"@wordpress/block-editor": "^15.18.0",
 		"@wordpress/blocks": "^15.18.0",
