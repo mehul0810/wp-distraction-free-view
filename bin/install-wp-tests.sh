@@ -54,14 +54,28 @@ install_test_suite() {
 		branch="tags/${WP_VERSION}"
 	fi
 
-	if ! command -v svn >/dev/null 2>&1; then
-		echo "svn is required to install the full WordPress PHPUnit test suite." >&2
+	if command -v svn >/dev/null 2>&1; then
+		mkdir -p "$WP_TESTS_DIR"
+		svn export --quiet "https://develop.svn.wordpress.org/${branch}/tests/phpunit/includes" "${WP_TESTS_DIR}/includes"
+		svn export --quiet "https://develop.svn.wordpress.org/${branch}/tests/phpunit/data" "${WP_TESTS_DIR}/data"
+		return
+	fi
+
+	if [ "$WP_VERSION" != "latest" ]; then
+		echo "svn is required to install versioned WordPress PHPUnit test suites." >&2
 		exit 1
 	fi
 
+	local develop_dir="${TMPDIR}/wordpress-develop"
+	local archive="${TMPDIR}/wordpress-develop.tar.gz"
+
+	download https://github.com/WordPress/wordpress-develop/archive/refs/heads/trunk.tar.gz "$archive"
+	rm -rf "$develop_dir"
 	mkdir -p "$WP_TESTS_DIR"
-	svn export --quiet "https://develop.svn.wordpress.org/${branch}/tests/phpunit/includes" "${WP_TESTS_DIR}/includes"
-	svn export --quiet "https://develop.svn.wordpress.org/${branch}/tests/phpunit/data" "${WP_TESTS_DIR}/data"
+	mkdir -p "$develop_dir"
+	tar --strip-components=1 -xzf "$archive" -C "$develop_dir"
+	cp -R "${develop_dir}/tests/phpunit/includes" "${WP_TESTS_DIR}/includes"
+	cp -R "${develop_dir}/tests/phpunit/data" "${WP_TESTS_DIR}/data"
 }
 
 install_config() {
