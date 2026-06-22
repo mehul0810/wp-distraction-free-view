@@ -157,6 +157,41 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
+	test( 'keeps table of contents heading navigation keyboard accessible', async ( {
+		page,
+	} ) => {
+		await openReader( page );
+
+		const tocEnabled = await page.evaluate(
+			() => window.wpdfvReaderMode?.readerTocEnabled !== false
+		);
+		const toc = page.locator( '.wpdfv-reader-toc' );
+
+		if ( ! tocEnabled ) {
+			await expect( toc ).toHaveCount( 0 );
+			return;
+		}
+
+		await expect( toc ).toBeVisible();
+
+		const firstLink = toc.getByRole( 'link' ).first();
+		const href = await firstLink.getAttribute( 'href' );
+
+		expect( href ).toMatch( /^#/ );
+
+		await firstLink.focus();
+		await page.keyboard.press( 'Enter' );
+
+		await expect
+			.poll( () =>
+				page.evaluate(
+					( targetId ) => document.activeElement?.id === targetId,
+					href.slice( 1 )
+				)
+			)
+			.toBe( true );
+	} );
+
 	test( 'uses reader-friendly print media output', async ( { page } ) => {
 		await openReader( page );
 		await page.emulateMedia( { media: 'print' } );

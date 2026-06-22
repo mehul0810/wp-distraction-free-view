@@ -45,6 +45,7 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 'Exit Reader Mode', $defaults['exit_button_text'] );
 		$this->assertTrue( $defaults['reading_progress_enabled'] );
 		$this->assertTrue( $defaults['reading_time_enabled'] );
+		$this->assertFalse( $defaults['reader_toc_enabled'] );
 		$this->assertTrue( $defaults['preference_controls_enabled'] );
 		$this->assertSame( '', $defaults['custom_css'] );
 	}
@@ -65,6 +66,7 @@ class ReaderTest extends TestCase {
 				'modal_template'              => 'missing',
 				'reading_progress_enabled'    => 0,
 				'reading_time_enabled'        => 1,
+				'reader_toc_enabled'          => 1,
 				'preference_controls_enabled' => true,
 				'default_reader_theme'        => 'neon',
 				'default_content_width'       => 'wide',
@@ -82,6 +84,7 @@ class ReaderTest extends TestCase {
 		$this->assertSame( Templates::DEFAULT_TEMPLATE, $settings['modal_template'] );
 		$this->assertFalse( $settings['reading_progress_enabled'] );
 		$this->assertTrue( $settings['reading_time_enabled'] );
+		$this->assertTrue( $settings['reader_toc_enabled'] );
 		$this->assertSame( 'light', $settings['default_reader_theme'] );
 		$this->assertSame( 'wide', $settings['default_content_width'] );
 		$this->assertSame( 'large', $settings['default_font_size'] );
@@ -412,6 +415,63 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Reader Mode table of contents uses generated IDs for headings without IDs.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_adds_missing_heading_ids() {
+		$prepared = Reader::prepare_table_of_contents( '<article><h2>First Section</h2><p>Text</p><h3>Nested Topic</h3></article>' );
+
+		$this->assertSame(
+			[
+				[
+					'id'    => 'first-section',
+					'level' => 2,
+					'text'  => 'First Section',
+				],
+				[
+					'id'    => 'nested-topic',
+					'level' => 3,
+					'text'  => 'Nested Topic',
+				],
+			],
+			$prepared['items']
+		);
+		$this->assertStringContainsString( '<h2 id="first-section">First Section</h2>', $prepared['content'] );
+		$this->assertStringContainsString( '<h3 id="nested-topic">Nested Topic</h3>', $prepared['content'] );
+	}
+
+	/**
+	 * Duplicate heading IDs are made unique only in rendered Reader Mode output.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_handles_duplicate_heading_ids() {
+		$prepared = Reader::prepare_table_of_contents( '<h2 id="intro">Intro</h2><h2 id="intro">Intro again</h2><h2>Intro</h2>' );
+
+		$this->assertSame( 'intro', $prepared['items'][0]['id'] );
+		$this->assertSame( 'intro-2', $prepared['items'][1]['id'] );
+		$this->assertSame( 'intro-3', $prepared['items'][2]['id'] );
+		$this->assertStringContainsString( '<h2 id="intro">Intro</h2>', $prepared['content'] );
+		$this->assertStringContainsString( '<h2 id="intro-2">Intro again</h2>', $prepared['content'] );
+		$this->assertStringContainsString( '<h2 id="intro-3">Intro</h2>', $prepared['content'] );
+	}
+
+	/**
+	 * Empty headings are ignored so the navigation only contains useful labels.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_ignores_empty_headings() {
+		$prepared = Reader::prepare_table_of_contents( '<h2><span></span></h2><h2>Visible</h2>' );
+
+		$this->assertCount( 1, $prepared['items'] );
+		$this->assertSame( 'Visible', $prepared['items'][0]['text'] );
+		$this->assertStringContainsString( '<h2><span></span></h2>', $prepared['content'] );
+		$this->assertStringContainsString( '<h2 id="visible">Visible</h2>', $prepared['content'] );
+	}
+
+	/**
 	 * Developers can customize which full element blocks are removed.
 	 *
 	 * @return void
@@ -465,6 +525,7 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 1, $data['readingTime']['minutes'] );
 		$this->assertStringNotContainsString( 'window.option_df_3751', $data['content'] );
 		$this->assertArrayHasKey( 'scripts', $data );
+		$this->assertArrayHasKey( 'toc', $data );
 		$this->assertCount( 1, $data['scripts'] );
 		$this->assertStringContainsString( 'window.option_df_3751', $data['scripts'][0]['content'] );
 	}
