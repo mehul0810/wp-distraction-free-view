@@ -231,6 +231,12 @@ function get_the_title( $post = 0 ) {
 	return $post instanceof WP_Post ? 'Test title' : '';
 }
 
+function get_permalink( $post = 0 ) {
+	$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+	return $post instanceof WP_Post ? 'https://example.com/?p=' . $post->ID : false;
+}
+
 function get_block_wrapper_attributes( $attributes = [] ) {
 	$class_name = isset( $attributes['class'] ) ? $attributes['class'] : '';
 

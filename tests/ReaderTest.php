@@ -257,6 +257,7 @@ class ReaderTest extends TestCase {
 		$data     = $response->get_data();
 
 		$this->assertStringContainsString( 'Readable content.', $data['content'] );
+		$this->assertSame( 'https://example.com/?p=42', $data['permalink'] );
 		$this->assertStringNotContainsString( 'window.option_df_3751', $data['content'] );
 		$this->assertArrayHasKey( 'scripts', $data );
 		$this->assertCount( 1, $data['scripts'] );
