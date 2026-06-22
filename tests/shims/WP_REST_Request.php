@@ -27,6 +27,24 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		}
 
 		/**
+		 * Get JSON body parameters.
+		 *
+		 * @return array
+		 */
+		public function get_json_params() {
+			return $this->params;
+		}
+
+		/**
+		 * Get form body parameters.
+		 *
+		 * @return array
+		 */
+		public function get_body_params() {
+			return $this->params;
+		}
+
+		/**
 		 * Whether an offset exists.
 		 *
 		 * @param mixed $offset Offset.

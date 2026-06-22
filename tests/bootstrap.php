@@ -12,15 +12,17 @@ define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
 $GLOBALS['wpdfv_test_active_plugins'] = [];
 $GLOBALS['wpdfv_test_enqueued']       = [
-	'scripts' => [],
-	'styles'  => [],
-	'inline'  => [],
+	'scripts'       => [],
+	'styles'        => [],
+	'inline'        => [],
+	'inline_styles' => [],
 ];
 $GLOBALS['wpdfv_test_options']        = [];
 $GLOBALS['wpdfv_test_filters']        = [];
 $GLOBALS['wpdfv_test_plugins']        = [];
 $GLOBALS['wpdfv_test_posts']          = [];
 $GLOBALS['wpdfv_test_shortcodes']     = [];
+$GLOBALS['wpdfv_test_user_caps']      = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
@@ -61,15 +63,17 @@ require_once __DIR__ . '/shims/WP_REST_Response.php';
 function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_active_plugins'] = [];
 	$GLOBALS['wpdfv_test_enqueued']       = [
-		'scripts' => [],
-		'styles'  => [],
-		'inline'  => [],
+		'scripts'       => [],
+		'styles'        => [],
+		'inline'        => [],
+		'inline_styles' => [],
 	];
 	$GLOBALS['wpdfv_test_options']        = [];
 	$GLOBALS['wpdfv_test_filters']        = [];
 	$GLOBALS['wpdfv_test_plugins']        = [];
 	$GLOBALS['wpdfv_test_posts']          = [];
 	$GLOBALS['wpdfv_test_shortcodes']     = [];
+	$GLOBALS['wpdfv_test_user_caps']      = [];
 	$_GET                                 = [];
 
 	if ( class_exists( '\WPDFV\Includes\Actions' ) ) {
@@ -142,7 +146,7 @@ function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
 }
 
 function current_user_can( $capability, ...$args ) {
-	return true;
+	return array_key_exists( $capability, $GLOBALS['wpdfv_test_user_caps'] ) ? (bool) $GLOBALS['wpdfv_test_user_caps'][ $capability ] : true;
 }
 
 function is_multisite() {
@@ -175,6 +179,12 @@ function wp_set_script_translations( $handle, $domain = 'default', $path = '' ) 
 
 function wp_add_inline_script( $handle, $data, $position = 'after' ) {
 	$GLOBALS['wpdfv_test_enqueued']['inline'][ $handle ][] = $data;
+
+	return true;
+}
+
+function wp_add_inline_style( $handle, $data ) {
+	$GLOBALS['wpdfv_test_enqueued']['inline_styles'][ $handle ][] = $data;
 
 	return true;
 }
@@ -366,9 +376,18 @@ function number_format_i18n( $number ) {
 
 function get_post_types( $args = [], $output = 'names' ) {
 	$post_types = [
-		'post' => (object) [ 'name' => 'post' ],
-		'page' => (object) [ 'name' => 'page' ],
-		'book' => (object) [ 'name' => 'book' ],
+		'post' => (object) [
+			'name'   => 'post',
+			'labels' => (object) [ 'singular_name' => 'Post' ],
+		],
+		'page' => (object) [
+			'name'   => 'page',
+			'labels' => (object) [ 'singular_name' => 'Page' ],
+		],
+		'book' => (object) [
+			'name'   => 'book',
+			'labels' => (object) [ 'singular_name' => 'Book' ],
+		],
 	];
 
 	return 'objects' === $output ? $post_types : array_keys( $post_types );

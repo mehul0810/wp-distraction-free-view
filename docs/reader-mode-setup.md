@@ -60,6 +60,29 @@ Visitors can adjust font size, theme, and content width when preference controls
 
 WP Distraction Free View does not store Reader Mode preference choices on the server.
 
+## Custom CSS
+
+Users who can manage plugin settings and have the WordPress `edit_css` capability can add Reader Mode CSS from **Settings > Reader Mode > Configure > Custom CSS**.
+
+This CSS is an escape hatch for the Reader Mode output only. Keep selectors scoped to Reader Mode containers so the original theme page is unchanged:
+
+```css
+.wpdfv-reader-modal .wpdfv-reader-content {
+	font-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+	color: #1f2937;
+}
+
+.wpdfv-reader-modal {
+	--wpdfv-reader-accent-color: #3858e9;
+}
+```
+
+The plugin strips pasted `<style>` wrappers before saving and prints the saved CSS through the Reader Mode stylesheet handle only when Reader Mode assets are loaded.
+
 ## Shortcode and Embed Troubleshooting
 
 Version 1.7.1 strips complete `script`, `style`, and `noscript` blocks from Reader Mode content before final sanitization. This prevents common shortcode embed configuration from appearing as raw text inside the Reader Mode view.
@@ -79,4 +102,3 @@ Do not paste private embed keys, tokens, or account identifiers into public supp
 Use the [WordPress.org support forum](https://wordpress.org/support/plugin/wp-distraction-free-view/) for user support, setup questions, and compatibility reports.
 
 Use [GitHub issues](https://github.com/mehul0810/wp-distraction-free-view/issues) for reproducible development issues, release-train work, and code-level reports.
-

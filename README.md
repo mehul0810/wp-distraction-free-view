@@ -99,6 +99,7 @@ Available settings:
 - Default font size: small, default, or large.
 - Custom toggle label.
 - Custom exit label.
+- Reader Mode custom CSS for scoped modal styling.
 - Reader template.
 
 Automatic insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
@@ -126,6 +127,29 @@ For step-by-step placement guidance, URL activation, preference privacy notes, a
 The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
 
 Block themes and site-specific code can register additional Reader Mode templates with the `wpdfv_modal_templates` filter.
+
+## Reader Mode Custom CSS
+
+Administrators who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from **Settings > Reader Mode > Configure > Custom CSS**. The saved CSS is printed only with Reader Mode frontend assets and is attached to the plugin stylesheet handle.
+
+Keep selectors scoped to Reader Mode containers:
+
+```css
+.wpdfv-reader-modal .wpdfv-reader-content {
+	font-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+	color: #1f2937;
+}
+
+.wpdfv-reader-modal {
+	--wpdfv-reader-accent-color: #3858e9;
+}
+```
+
+Developers can filter the final CSS with `wpdfv_custom_css` or change the required editing capability with `wpdfv_custom_css_capability`.
 
 ## Upgrade Notes
 
