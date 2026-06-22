@@ -668,6 +668,23 @@ const ConfigurePanel = ( {
 							/>
 							<ToggleControl
 								label={ __(
+									'Show table of contents',
+									'wp-distraction-free-view'
+								) }
+								checked={ settings.reader_toc_enabled }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'reader_toc_enabled',
+										value
+									)
+								}
+								help={ __(
+									'Reader Mode shows navigation when the content has multiple headings.',
+									'wp-distraction-free-view'
+								) }
+							/>
+							<ToggleControl
+								label={ __(
 									'Show reader preference controls',
 									'wp-distraction-free-view'
 								) }

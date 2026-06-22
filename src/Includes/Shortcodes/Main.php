@@ -135,6 +135,7 @@ class Main {
 				'permalink'   => get_permalink( $post ),
 				'content'     => $prepared['content'],
 				'scripts'     => $prepared['scripts'],
+				'toc'         => $prepared['toc'],
 				'readingTime' => [
 					'minutes' => $minutes,
 					'label'   => Reader::format_reading_time_label( $minutes ),

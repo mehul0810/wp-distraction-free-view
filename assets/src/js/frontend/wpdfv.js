@@ -76,6 +76,14 @@ const printIcon = createHeroIcon( [
 	'M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Z',
 ] );
 const closeIcon = createHeroIcon( [ 'M6 18 18 6M6 6l12 12' ] );
+const tableOfContentsIcon = createHeroIcon( [
+	'M8.25 6.75h12',
+	'M8.25 12h12',
+	'M8.25 17.25h12',
+	'M3.75 6.75h.008v.008H3.75V6.75Z',
+	'M3.75 12h.008v.008H3.75V12Z',
+	'M3.75 17.25h.008v.008H3.75v-.008Z',
+] );
 const fullscreenIcon = createHeroIcon( [
 	'M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9',
 	'M20.25 3.75v4.5m0-4.5h-4.5m4.5 0L15 9',
@@ -417,6 +425,36 @@ const PreferenceControls = ( { preferences, onChange } ) => (
 	</div>
 );
 
+const ReaderTableOfContents = ( { items, onNavigate } ) => (
+	<nav
+		className="wpdfv-reader-toc"
+		aria-label={ __( 'Table of contents', 'wp-distraction-free-view' ) }
+	>
+		<div className="wpdfv-reader-toc__heading">
+			<span aria-hidden="true">{ tableOfContentsIcon }</span>
+			<h2>{ __( 'Contents', 'wp-distraction-free-view' ) }</h2>
+		</div>
+		<ol>
+			{ items.map( ( item ) => (
+				<li
+					key={ item.id }
+					className={ `wpdfv-reader-toc__item wpdfv-reader-toc__item--level-${ item.level }` }
+				>
+					<a
+						href={ `#${ item.id }` }
+						onClick={ ( event ) => {
+							event.preventDefault();
+							onNavigate( item.id );
+						} }
+					>
+						{ item.text }
+					</a>
+				</li>
+			) ) }
+		</ol>
+	</nav>
+);
+
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -427,6 +465,7 @@ const ReaderApp = () => {
 	const [ permalink, setPermalink ] = useState( '' );
 	const [ content, setContent ] = useState( '' );
 	const [ scripts, setScripts ] = useState( [] );
+	const [ tocItems, setTocItems ] = useState( [] );
 	const [ readingTime, setReadingTime ] = useState( null );
 	const [ progress, setProgress ] = useState( 0 );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
@@ -625,6 +664,7 @@ const ReaderApp = () => {
 		setIsFullscreen( false );
 		setError( '' );
 		setScripts( [] );
+		setTocItems( [] );
 	}, [] );
 
 	const openReader = ( postId ) => {
@@ -639,6 +679,7 @@ const ReaderApp = () => {
 		setPermalink( '' );
 		setContent( '' );
 		setScripts( [] );
+		setTocItems( [] );
 		setReadingTime( null );
 		setIsSettingsOpen( false );
 		setProgress( 0 );
@@ -650,6 +691,9 @@ const ReaderApp = () => {
 				setContent( response.content );
 				setScripts(
 					Array.isArray( response.scripts ) ? response.scripts : []
+				);
+				setTocItems(
+					Array.isArray( response.toc ) ? response.toc : []
 				);
 				setReadingTime( response.readingTime );
 			} )
@@ -681,11 +725,29 @@ const ReaderApp = () => {
 		window.print();
 	};
 
+	const navigateToHeading = ( headingId ) => {
+		const target =
+			contentRef.current?.ownerDocument.getElementById( headingId );
+
+		if ( ! target || ! contentRef.current?.contains( target ) ) {
+			return;
+		}
+
+		target.setAttribute( 'tabindex', '-1' );
+		target.focus( { preventScroll: true } );
+		target.scrollIntoView( { block: 'start', behavior: 'smooth' } );
+	};
+
 	const showReadingTime =
 		isEnabled( 'readingTimeEnabled' ) &&
 		! isLoading &&
 		! error &&
 		readingTime?.label;
+	const showTableOfContents =
+		isEnabled( 'readerTocEnabled' ) &&
+		! isLoading &&
+		! error &&
+		tocItems.length > 1;
 	const showPreferenceControls = isEnabled( 'preferenceControlsEnabled' );
 
 	return (
@@ -793,6 +855,13 @@ const ReaderApp = () => {
 							onChange={ updatePreference }
 						/>
 					</aside>
+				) }
+
+				{ showTableOfContents && (
+					<ReaderTableOfContents
+						items={ tocItems }
+						onNavigate={ navigateToHeading }
+					/>
 				) }
 
 				<div

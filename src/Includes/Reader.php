@@ -80,6 +80,7 @@ class Reader {
 			'modal_template'              => Templates::DEFAULT_TEMPLATE,
 			'reading_progress_enabled'    => true,
 			'reading_time_enabled'        => true,
+			'reader_toc_enabled'          => false,
 			'preference_controls_enabled' => true,
 			'default_reader_theme'        => 'light',
 			'default_content_width'       => 'default',
@@ -181,6 +182,7 @@ class Reader {
 			'modal_template'              => $modal_template,
 			'reading_progress_enabled'    => isset( $data['reading_progress_enabled'] ) ? (bool) $data['reading_progress_enabled'] : $defaults['reading_progress_enabled'],
 			'reading_time_enabled'        => isset( $data['reading_time_enabled'] ) ? (bool) $data['reading_time_enabled'] : $defaults['reading_time_enabled'],
+			'reader_toc_enabled'          => isset( $data['reader_toc_enabled'] ) ? (bool) $data['reader_toc_enabled'] : $defaults['reader_toc_enabled'],
 			'preference_controls_enabled' => isset( $data['preference_controls_enabled'] ) ? (bool) $data['preference_controls_enabled'] : $defaults['preference_controls_enabled'],
 			'default_reader_theme'        => in_array( $reader_theme, self::get_allowed_reader_themes(), true ) ? $reader_theme : $defaults['default_reader_theme'],
 			'default_content_width'       => in_array( $content_width, self::get_allowed_content_widths(), true ) ? $content_width : $defaults['default_content_width'],
@@ -645,15 +647,143 @@ class Reader {
 	 * @param string        $content Rendered modal template content.
 	 * @param \WP_Post|null $post    Optional post being rendered.
 	 *
-	 * @return array{content:string,scripts:array}
+	 * @return array{content:string,scripts:array,toc:array}
 	 */
 	public static function prepare_rendered_content( $content, ?\WP_Post $post = null ) {
 		$prepared = self::extract_rendered_scripts( (string) $content, $post );
+		$content  = self::sanitize_rendered_content( $prepared['content'], $post );
+		$toc      = self::prepare_table_of_contents( $content );
 
 		return [
-			'content' => self::sanitize_rendered_content( $prepared['content'], $post ),
+			'content' => $toc['content'],
 			'scripts' => $prepared['scripts'],
+			'toc'     => $toc['items'],
 		];
+	}
+
+	/**
+	 * Build Reader Mode table of contents items from rendered headings.
+	 *
+	 * Generated IDs are applied only to the REST-rendered Reader Mode markup.
+	 * Stored post content is never changed.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Sanitized rendered modal content.
+	 *
+	 * @return array{content:string,items:array}
+	 */
+	public static function prepare_table_of_contents( $content ) {
+		$content = (string) $content;
+		$items   = [];
+		$used    = [];
+
+		$content = (string) preg_replace_callback(
+			'#<h([1-6])\b([^>]*)>(.*?)</h\1>#is',
+			static function ( $matches ) use ( &$items, &$used ) {
+				$level      = absint( $matches[1] );
+				$attributes = (string) $matches[2];
+				$inner_html = (string) $matches[3];
+				$text       = trim( wp_strip_all_tags( html_entity_decode( $inner_html, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+
+				if ( '' === $text ) {
+					return $matches[0];
+				}
+
+				$existing_id = self::get_heading_attribute( $attributes, 'id' );
+				$base_id     = '' !== $existing_id ? sanitize_title( strtolower( $existing_id ) ) : sanitize_title( strtolower( $text ) );
+
+				if ( '' === $base_id ) {
+					$base_id = 'reader-heading';
+				}
+
+				$id = self::get_unique_heading_id( $base_id, $used );
+
+				$items[] = [
+					'id'    => $id,
+					'level' => $level,
+					'text'  => $text,
+				];
+
+				$attributes = self::set_heading_id_attribute( $attributes, $id );
+
+				return '<h' . $level . $attributes . '>' . $inner_html . '</h' . $level . '>';
+			},
+			$content
+		);
+
+		return [
+			'content' => $content,
+			'items'   => $items,
+		];
+	}
+
+	/**
+	 * Get a heading attribute value from raw heading attributes.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $attributes Raw attribute string.
+	 * @param string $name       Attribute name.
+	 *
+	 * @return string
+	 */
+	protected static function get_heading_attribute( $attributes, $name ) {
+		if ( ! preg_match( '/(?:^|\s)' . preg_quote( $name, '/' ) . '\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))/i', $attributes, $match ) ) {
+			return '';
+		}
+
+		foreach ( [ 1, 2, 3 ] as $index ) {
+			if ( isset( $match[ $index ] ) && '' !== $match[ $index ] ) {
+				return html_entity_decode( $match[ $index ], ENT_QUOTES, get_bloginfo( 'charset' ) );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Return an ID that is unique within the rendered Reader Mode document.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $base_id Base heading ID.
+	 * @param array  $used    Used IDs keyed by ID.
+	 *
+	 * @return string
+	 */
+	protected static function get_unique_heading_id( $base_id, array &$used ) {
+		$id     = $base_id;
+		$suffix = 2;
+
+		while ( isset( $used[ $id ] ) ) {
+			$id = $base_id . '-' . $suffix;
+			++$suffix;
+		}
+
+		$used[ $id ] = true;
+
+		return $id;
+	}
+
+	/**
+	 * Add or replace a heading ID attribute.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $attributes Raw attribute string.
+	 * @param string $id         Safe heading ID.
+	 *
+	 * @return string
+	 */
+	protected static function set_heading_id_attribute( $attributes, $id ) {
+		$id = esc_attr( $id );
+
+		if ( preg_match( '/(?:^|\s)id\s*=/i', $attributes ) ) {
+			return preg_replace( '/\s*id\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+)/i', ' id="' . $id . '"', $attributes, 1 );
+		}
+
+		return rtrim( $attributes ) . ' id="' . $id . '"';
 	}
 
 	/**

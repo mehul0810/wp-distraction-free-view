@@ -204,6 +204,7 @@ class Actions {
 			'exitButtonText'            => $settings['exit_button_text'],
 			'readingProgressEnabled'    => $settings['reading_progress_enabled'],
 			'readingTimeEnabled'        => $settings['reading_time_enabled'],
+			'readerTocEnabled'          => $settings['reader_toc_enabled'],
 			'preferenceControlsEnabled' => $settings['preference_controls_enabled'],
 			'defaultReaderTheme'        => $settings['default_reader_theme'],
 			'defaultContentWidth'       => $settings['default_content_width'],
