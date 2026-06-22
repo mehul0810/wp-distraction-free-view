@@ -297,6 +297,36 @@ class ReaderTest extends TestCase {
 	public function test_calculate_reading_time() {
 		$this->assertSame( 1, Reader::calculate_reading_time( '' ) );
 		$this->assertSame( 3, Reader::calculate_reading_time( str_repeat( 'word ', 401 ) ) );
+		$this->assertSame( 1, Reader::calculate_reading_time( 'Intro [gallery ids="1,2,3"] outro.' ) );
+		$this->assertSame( 1, Reader::calculate_reading_time( '<!-- wp:paragraph --><p>Rendered block text.</p><!-- /wp:paragraph -->' ) );
+		$this->assertSame( 3, Reader::calculate_reading_time( str_repeat( '読', 401 ) ) );
+	}
+
+	/**
+	 * Reading time filters remain backward compatible and can override counts.
+	 *
+	 * @return void
+	 */
+	public function test_calculate_reading_time_filters() {
+		\add_filter(
+			'wpdfv_reading_time_words_per_minute',
+			static function () {
+				return 100;
+			}
+		);
+
+		$this->assertSame( 3, Reader::calculate_reading_time( str_repeat( 'word ', 201 ) ) );
+
+		\add_filter(
+			'wpdfv_reading_time_word_count',
+			static function ( $words, $content ) {
+				return false !== strpos( $content, 'override' ) ? 450 : $words;
+			},
+			10,
+			2
+		);
+
+		$this->assertSame( 5, Reader::calculate_reading_time( 'override' ) );
 	}
 
 	/**
@@ -432,10 +462,42 @@ class ReaderTest extends TestCase {
 
 		$this->assertStringContainsString( 'Readable content.', $data['content'] );
 		$this->assertSame( 'https://example.com/?p=42', $data['permalink'] );
+		$this->assertSame( 1, $data['readingTime']['minutes'] );
 		$this->assertStringNotContainsString( 'window.option_df_3751', $data['content'] );
 		$this->assertArrayHasKey( 'scripts', $data );
 		$this->assertCount( 1, $data['scripts'] );
 		$this->assertStringContainsString( 'window.option_df_3751', $data['scripts'][0]['content'] );
+	}
+
+	/**
+	 * REST content reading time uses rendered Reader content without another render pass.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_response_uses_rendered_content_for_reading_time() {
+		\update_option( 'wpdfv_settings', Reader::get_default_settings(), false );
+
+		$post               = new \WP_Post();
+		$post->ID           = 43;
+		$post->post_type    = 'post';
+		$post->post_content = 'Short source.';
+
+		$GLOBALS['wpdfv_test_posts'][43] = $post;
+
+		\add_filter(
+			'wpdfv_modal_template_content',
+			static function () {
+				return '<article><p>' . str_repeat( 'rendered ', 401 ) . '</p></article>';
+			}
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'id', 43 );
+
+		$response = ( new Main() )->get_content_response( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 3, $data['readingTime']['minutes'] );
 	}
 
 	/**

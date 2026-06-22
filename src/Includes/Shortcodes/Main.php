@@ -126,7 +126,7 @@ class Main {
 		}
 
 		$prepared = Reader::prepare_rendered_content( Templates::render_modal_content( $post ), $post );
-		$minutes  = Reader::calculate_reading_time( $post->post_content );
+		$minutes  = Reader::calculate_reading_time( $prepared['content'] );
 
 		return rest_ensure_response(
 			[
