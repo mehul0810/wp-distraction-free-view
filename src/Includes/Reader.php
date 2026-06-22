@@ -506,7 +506,17 @@ class Reader {
 		$content = strip_shortcodes( (string) $content );
 		$content = function_exists( 'strip_blocks' ) ? strip_blocks( $content ) : preg_replace( '/<!--\s+\/?wp:.*?-->/s', ' ', $content );
 		$content = wp_strip_all_tags( html_entity_decode( $content, ENT_QUOTES, get_bloginfo( 'charset' ) ) );
-		$words   = str_word_count( $content );
+		$words   = self::count_reading_time_units( $content );
+
+		/**
+		 * Filter the content unit count used for Reader Mode estimates.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param int    $words   Counted readable content units.
+		 * @param string $content Plain text content used for the estimate.
+		 */
+		$words = absint( apply_filters( 'wpdfv_reading_time_word_count', $words, $content ) );
 
 		/**
 		 * Filter the words-per-minute value used for Reader Mode estimates.
@@ -519,6 +529,32 @@ class Reader {
 		$words_per_minute = $words_per_minute > 0 ? $words_per_minute : 200;
 
 		return max( 1, (int) ceil( $words / $words_per_minute ) );
+	}
+
+	/**
+	 * Count readable content units for reading-time estimates.
+	 *
+	 * Latin-like words are counted as words, while CJK characters are counted
+	 * individually so non-space-delimited content does not collapse to zero.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Plain text content.
+	 *
+	 * @return int
+	 */
+	protected static function count_reading_time_units( $content ) {
+		$content = trim( (string) $content );
+
+		if ( '' === $content ) {
+			return 0;
+		}
+
+		if ( preg_match_all( "/[\\p{Han}\\p{Hiragana}\\p{Katakana}\\p{Hangul}]|[\\p{L}\\p{N}]+(?:['’\\-][\\p{L}\\p{N}]+)*/u", $content, $matches ) ) {
+			return count( $matches[0] );
+		}
+
+		return str_word_count( $content );
 	}
 
 	/**
