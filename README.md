@@ -75,6 +75,16 @@ npm run lint:css
 npm run build
 ```
 
+Run the WordPress integration suite against the WordPress test library:
+
+```bash
+bash bin/install-wp-tests.sh wordpress_test root root localhost latest
+WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test:integration
+WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
+```
+
+The integration suite is intentionally separate from `composer test`. It boots real WordPress APIs for REST routing, block registration/rendering, options, migrations, and multisite activation coverage.
+
 ## Release Workflow
 
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
