@@ -46,6 +46,7 @@ class ReaderTest extends TestCase {
 		$this->assertTrue( $defaults['reading_progress_enabled'] );
 		$this->assertTrue( $defaults['reading_time_enabled'] );
 		$this->assertFalse( $defaults['reader_toc_enabled'] );
+		$this->assertFalse( $defaults['reader_resume_enabled'] );
 		$this->assertTrue( $defaults['preference_controls_enabled'] );
 		$this->assertSame( '', $defaults['custom_css'] );
 	}
@@ -67,6 +68,7 @@ class ReaderTest extends TestCase {
 				'reading_progress_enabled'    => 0,
 				'reading_time_enabled'        => 1,
 				'reader_toc_enabled'          => 1,
+				'reader_resume_enabled'       => 1,
 				'preference_controls_enabled' => true,
 				'default_reader_theme'        => 'neon',
 				'default_content_width'       => 'wide',
@@ -85,6 +87,7 @@ class ReaderTest extends TestCase {
 		$this->assertFalse( $settings['reading_progress_enabled'] );
 		$this->assertTrue( $settings['reading_time_enabled'] );
 		$this->assertTrue( $settings['reader_toc_enabled'] );
+		$this->assertTrue( $settings['reader_resume_enabled'] );
 		$this->assertSame( 'light', $settings['default_reader_theme'] );
 		$this->assertSame( 'wide', $settings['default_content_width'] );
 		$this->assertSame( 'large', $settings['default_font_size'] );
@@ -839,6 +842,33 @@ class ReaderTest extends TestCase {
 			'.wpdfv-reader-modal',
 			$GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'][0]
 		);
+	}
+
+	/**
+	 * Frontend settings expose only the resume feature flag and browser storage key.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_enqueue_adds_reader_resume_runtime_settings() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'reader_resume_enabled' => true,
+				]
+			),
+			false
+		);
+
+		Actions::enqueue_frontend_assets();
+
+		$inline_settings = $GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'][0];
+
+		$this->assertStringContainsString( '"readerResumeEnabled":true', $inline_settings );
+		$this->assertStringContainsString( '"positionsStorageKey":"wpdfv_reader_positions"', $inline_settings );
+		$this->assertStringNotContainsString( 'scrollTop', $inline_settings );
+		$this->assertStringNotContainsString( 'progress":', $inline_settings );
 	}
 
 	/**

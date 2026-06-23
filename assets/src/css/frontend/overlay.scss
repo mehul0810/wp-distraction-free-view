@@ -438,6 +438,35 @@ body.wpdfv-reader-mode-active {
 	border-left-color: #cc1818;
 }
 
+.wpdfv-reader-resume {
+	align-items: center;
+	background: var(--wpdfv-reader-surface);
+	border: 1px solid var(--wpdfv-reader-border);
+	box-sizing: border-box;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin: 24px auto 0;
+	max-width: 760px;
+	padding: 12px 16px;
+	width: calc(100% - 48px);
+
+	p {
+		color: var(--wpdfv-reader-text);
+		font-weight: 500;
+		line-height: 1.4;
+		margin: 0;
+	}
+}
+
+.wpdfv-reader-resume__actions {
+	display: flex;
+	flex: 0 0 auto;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
 @keyframes wpdfv-reader-spinner-rotate {
 
 	to {
@@ -456,6 +485,18 @@ body.wpdfv-reader-mode-active {
 		margin-top: 16px;
 		padding: 16px;
 		width: calc(100% - 32px);
+	}
+
+	.wpdfv-reader-resume {
+		align-items: flex-start;
+		flex-direction: column;
+		margin-top: 16px;
+		width: calc(100% - 32px);
+	}
+
+	.wpdfv-reader-resume__actions {
+		justify-content: flex-start;
+		width: 100%;
 	}
 
 	.wpdfv-reader-toc__item--level-3 {
@@ -533,6 +574,7 @@ body.wpdfv-reader-mode-active {
 	.wpdfv-reader-toolbar,
 	.wpdfv-reader-settings-panel,
 	.wpdfv-reader-toc,
+	.wpdfv-reader-resume,
 	.wpdfv-reading-progress,
 	.wpdfv-reader-loading,
 	.components-modal__header {

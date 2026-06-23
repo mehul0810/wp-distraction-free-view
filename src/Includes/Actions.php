@@ -205,11 +205,13 @@ class Actions {
 			'readingProgressEnabled'    => $settings['reading_progress_enabled'],
 			'readingTimeEnabled'        => $settings['reading_time_enabled'],
 			'readerTocEnabled'          => $settings['reader_toc_enabled'],
+			'readerResumeEnabled'       => $settings['reader_resume_enabled'],
 			'preferenceControlsEnabled' => $settings['preference_controls_enabled'],
 			'defaultReaderTheme'        => $settings['default_reader_theme'],
 			'defaultContentWidth'       => $settings['default_content_width'],
 			'defaultFontSize'           => $settings['default_font_size'],
 			'preferencesStorageKey'     => Reader::PREFERENCES_STORAGE_KEY,
+			'positionsStorageKey'       => Reader::POSITIONS_STORAGE_KEY,
 			'readerModeQueryParam'      => Reader::QUERY_PARAM,
 		];
 	}

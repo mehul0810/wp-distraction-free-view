@@ -64,6 +64,15 @@ class Reader {
 	const PREFERENCES_STORAGE_KEY = 'wpdfv_reader_preferences';
 
 	/**
+	 * Reader Mode reading position localStorage key.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var string
+	 */
+	const POSITIONS_STORAGE_KEY = 'wpdfv_reader_positions';
+
+	/**
 	 * Get normalized default settings.
 	 *
 	 * @since 1.7.0
@@ -81,6 +90,7 @@ class Reader {
 			'reading_progress_enabled'    => true,
 			'reading_time_enabled'        => true,
 			'reader_toc_enabled'          => false,
+			'reader_resume_enabled'       => false,
 			'preference_controls_enabled' => true,
 			'default_reader_theme'        => 'light',
 			'default_content_width'       => 'default',
@@ -183,6 +193,7 @@ class Reader {
 			'reading_progress_enabled'    => isset( $data['reading_progress_enabled'] ) ? (bool) $data['reading_progress_enabled'] : $defaults['reading_progress_enabled'],
 			'reading_time_enabled'        => isset( $data['reading_time_enabled'] ) ? (bool) $data['reading_time_enabled'] : $defaults['reading_time_enabled'],
 			'reader_toc_enabled'          => isset( $data['reader_toc_enabled'] ) ? (bool) $data['reader_toc_enabled'] : $defaults['reader_toc_enabled'],
+			'reader_resume_enabled'       => isset( $data['reader_resume_enabled'] ) ? (bool) $data['reader_resume_enabled'] : $defaults['reader_resume_enabled'],
 			'preference_controls_enabled' => isset( $data['preference_controls_enabled'] ) ? (bool) $data['preference_controls_enabled'] : $defaults['preference_controls_enabled'],
 			'default_reader_theme'        => in_array( $reader_theme, self::get_allowed_reader_themes(), true ) ? $reader_theme : $defaults['default_reader_theme'],
 			'default_content_width'       => in_array( $content_width, self::get_allowed_content_widths(), true ) ? $content_width : $defaults['default_content_width'],
