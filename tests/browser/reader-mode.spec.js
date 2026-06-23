@@ -309,6 +309,82 @@ test.describe( 'Reader Mode smoke', () => {
 		await page.emulateMedia( { media: 'screen' } );
 	} );
 
+	test( 'copies the generated Reader Mode link with in-modal feedback', async ( {
+		page,
+	} ) => {
+		await page.addInitScript( () => {
+			Object.defineProperty( window.navigator, 'clipboard', {
+				configurable: true,
+				value: undefined,
+			} );
+
+			document.execCommand = ( command ) => {
+				if ( 'copy' !== command ) {
+					return false;
+				}
+
+				window.__wpdfvCopiedText = document.activeElement?.value || '';
+
+				return true;
+			};
+		} );
+		await page.goto( readerUrl );
+		await openReader( page );
+		await waitForReaderContent( page );
+
+		const sourceUrl = await getReaderSourceUrl( page );
+		await page
+			.getByRole( 'button', { name: 'Copy Reader Mode link' } )
+			.click();
+
+		await expect(
+			page.getByText( 'Reader Mode link copied.' )
+		).toBeVisible();
+		await expect
+			.poll( () =>
+				page.evaluate( () => window.__wpdfvCopiedText || '' )
+			)
+			.toBe( withReaderModeQuery( sourceUrl ) );
+	} );
+
+	test( 'uses native sharing only when supported from the Reader action', async ( {
+		page,
+	} ) => {
+		await page.addInitScript( () => {
+			window.__wpdfvSharedData = null;
+
+			Object.defineProperty( window.navigator, 'canShare', {
+				configurable: true,
+				value: ( data ) => Boolean( data?.url ),
+			} );
+			Object.defineProperty( window.navigator, 'share', {
+				configurable: true,
+				value: ( data ) => {
+					window.__wpdfvSharedData = data;
+
+					return Promise.resolve();
+				},
+			} );
+		} );
+		await page.goto( readerUrl );
+		await openReader( page );
+		await waitForReaderContent( page );
+
+		const sourceUrl = await getReaderSourceUrl( page );
+		await page
+			.getByRole( 'button', { name: 'Share Reader Mode link' } )
+			.click();
+
+		await expect(
+			page.getByText( 'Reader Mode link shared.' )
+		).toBeVisible();
+		await expect
+			.poll( () =>
+				page.evaluate( () => window.__wpdfvSharedData?.url || '' )
+			)
+			.toBe( withReaderModeQuery( sourceUrl ) );
+	} );
+
 	test( 'saves Reader Mode position per content item locally', async ( {
 		page,
 	} ) => {
@@ -516,6 +592,17 @@ async function getReaderPostId( page ) {
 async function waitForReaderContent( page ) {
 	await expect( page.locator( '.wpdfv-reader-loading' ) ).toHaveCount( 0 );
 	await expect( page.locator( '.wpdfv-reader-content' ) ).not.toBeEmpty();
+}
+
+async function getReaderSourceUrl( page ) {
+	const sourceText = await page
+		.locator( '.wpdfv-reader-print-header p' )
+		.textContent();
+	const sourceUrl = sourceText?.replace( /^Source:\s*/, '' );
+
+	expect( sourceUrl ).toBeTruthy();
+
+	return sourceUrl;
 }
 
 async function scrollReaderTo( page, scrollTop ) {

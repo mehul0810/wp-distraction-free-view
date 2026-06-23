@@ -109,6 +109,13 @@ const settingsIcon = createHeroIcon( [
 const printIcon = createHeroIcon( [
 	'M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Z',
 ] );
+const copyIcon = createHeroIcon( [
+	'M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75',
+	'M8.25 3.75h10.875c.621 0 1.125.504 1.125 1.125v12.75c0 .621-.504 1.125-1.125 1.125H8.25a1.125 1.125 0 0 1-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125Z',
+] );
+const shareIcon = createHeroIcon( [
+	'M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z',
+] );
 const closeIcon = createHeroIcon( [ 'M6 18 18 6M6 6l12 12' ] );
 const tableOfContentsIcon = createHeroIcon( [
 	'M8.25 6.75h12',
@@ -133,6 +140,70 @@ const exitFullscreenIcon = createHeroIcon( [
 
 const isEnabled = ( key ) => READER_CONFIG[ key ] !== false;
 const isReaderResumeEnabled = () => READER_CONFIG.readerResumeEnabled === true;
+
+const createReaderModeUrl = ( permalink ) => {
+	if ( ! permalink ) {
+		return '';
+	}
+
+	try {
+		const url = new URL( permalink, window.location.href );
+		url.searchParams.set( 'reader-mode', '1' );
+
+		return url.toString();
+	} catch {
+		return '';
+	}
+};
+
+const copyTextFallback = ( text ) =>
+	new Promise( ( resolve, reject ) => {
+		const textarea = document.createElement( 'textarea' );
+		textarea.value = text;
+		textarea.setAttribute( 'readonly', '' );
+		textarea.style.position = 'fixed';
+		textarea.style.top = '-1000px';
+		textarea.style.opacity = '0';
+		document.body.appendChild( textarea );
+		textarea.select();
+
+		try {
+			if ( document.execCommand( 'copy' ) ) {
+				resolve();
+				return;
+			}
+
+			reject( new Error( 'Copy command was not available.' ) );
+		} catch ( error ) {
+			reject( error );
+		} finally {
+			textarea.remove();
+		}
+	} );
+
+const copyTextToClipboard = ( text ) => {
+	if ( navigator.clipboard?.writeText ) {
+		return navigator.clipboard.writeText( text );
+	}
+
+	return copyTextFallback( text );
+};
+
+const supportsNativeShare = ( shareData ) => {
+	if ( 'function' !== typeof navigator.share || ! shareData.url ) {
+		return false;
+	}
+
+	if ( 'function' !== typeof navigator.canShare ) {
+		return true;
+	}
+
+	try {
+		return navigator.canShare( shareData );
+	} catch {
+		return false;
+	}
+};
 
 const SCRIPT_BOOLEAN_ATTRIBUTES = [ 'async', 'defer', 'nomodule' ];
 
@@ -681,8 +752,22 @@ const ReaderApp = () => {
 	const [ currentPostId, setCurrentPostId ] = useState( '' );
 	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
+	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
+	const feedbackTimeoutRef = useRef( null );
+	const readerModeUrl = useMemo(
+		() => createReaderModeUrl( permalink ),
+		[ permalink ]
+	);
+	const shareData = useMemo(
+		() => ( {
+			title: title || __( 'Reader Mode', 'wp-distraction-free-view' ),
+			url: readerModeUrl,
+		} ),
+		[ readerModeUrl, title ]
+	);
+	const canNativeShare = supportsNativeShare( shareData );
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -754,6 +839,29 @@ const ReaderApp = () => {
 			document.body.classList.remove( 'wpdfv-reader-mode-active' );
 		};
 	}, [ isOpen ] );
+
+	useEffect( () => {
+		if ( feedbackTimeoutRef.current ) {
+			window.clearTimeout( feedbackTimeoutRef.current );
+			feedbackTimeoutRef.current = null;
+		}
+
+		if ( ! linkFeedback ) {
+			return undefined;
+		}
+
+		feedbackTimeoutRef.current = window.setTimeout( () => {
+			setLinkFeedback( null );
+			feedbackTimeoutRef.current = null;
+		}, 5000 );
+
+		return () => {
+			if ( feedbackTimeoutRef.current ) {
+				window.clearTimeout( feedbackTimeoutRef.current );
+				feedbackTimeoutRef.current = null;
+			}
+		};
+	}, [ linkFeedback ] );
 
 	useEffect( () => {
 		if ( ! isOpen ) {
@@ -906,6 +1014,7 @@ const ReaderApp = () => {
 		setScripts( [] );
 		setTocItems( [] );
 		setResumePosition( null );
+		setLinkFeedback( null );
 	}, [] );
 
 	const openReader = ( postId ) => {
@@ -926,6 +1035,7 @@ const ReaderApp = () => {
 		setResumePosition( null );
 		setIsSettingsOpen( false );
 		setProgress( 0 );
+		setLinkFeedback( null );
 
 		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
 			.then( ( response ) => {
@@ -989,6 +1099,70 @@ const ReaderApp = () => {
 		window.print();
 	};
 
+	const copyReaderModeLink = () => {
+		if ( ! readerModeUrl ) {
+			setLinkFeedback( {
+				status: 'error',
+				message: __(
+					'Reader Mode link is not available yet.',
+					'wp-distraction-free-view'
+				),
+			} );
+			return;
+		}
+
+		copyTextToClipboard( readerModeUrl )
+			.then( () => {
+				setLinkFeedback( {
+					status: 'success',
+					message: __(
+						'Reader Mode link copied.',
+						'wp-distraction-free-view'
+					),
+				} );
+			} )
+			.catch( () => {
+				setLinkFeedback( {
+					status: 'error',
+					message: __(
+						'Reader Mode link could not be copied.',
+						'wp-distraction-free-view'
+					),
+				} );
+			} );
+	};
+
+	const shareReaderModeLink = () => {
+		if ( ! canNativeShare || ! readerModeUrl ) {
+			return;
+		}
+
+		navigator
+			.share( shareData )
+			.then( () => {
+				setLinkFeedback( {
+					status: 'success',
+					message: __(
+						'Reader Mode link shared.',
+						'wp-distraction-free-view'
+					),
+				} );
+			} )
+			.catch( ( shareError ) => {
+				if ( 'AbortError' === shareError?.name ) {
+					return;
+				}
+
+				setLinkFeedback( {
+					status: 'error',
+					message: __(
+						'Reader Mode link could not be shared.',
+						'wp-distraction-free-view'
+					),
+				} );
+			} );
+	};
+
 	const navigateToHeading = ( headingId ) => {
 		const target =
 			contentRef.current?.ownerDocument.getElementById( headingId );
@@ -1048,6 +1222,28 @@ const ReaderApp = () => {
 						) }
 						<ReaderButton
 							variant="link"
+							icon={ copyIcon }
+							label={ __(
+								'Copy Reader Mode link',
+								'wp-distraction-free-view'
+							) }
+							onClick={ copyReaderModeLink }
+							disabled={ isLoading || ! readerModeUrl }
+						/>
+						{ canNativeShare && (
+							<ReaderButton
+								variant="link"
+								icon={ shareIcon }
+								label={ __(
+									'Share Reader Mode link',
+									'wp-distraction-free-view'
+								) }
+								onClick={ shareReaderModeLink }
+								disabled={ isLoading || ! readerModeUrl }
+							/>
+						) }
+						<ReaderButton
+							variant="link"
 							icon={ printIcon }
 							label={ __( 'Print', 'wp-distraction-free-view' ) }
 							onClick={ printReader }
@@ -1085,6 +1281,12 @@ const ReaderApp = () => {
 					<div className="wpdfv-reading-progress" aria-hidden="true">
 						<span style={ { width: `${ progress }%` } } />
 					</div>
+				) }
+
+				{ linkFeedback && (
+					<ReaderNotice status={ linkFeedback.status }>
+						{ linkFeedback.message }
+					</ReaderNotice>
 				) }
 
 				{ resumePosition && (

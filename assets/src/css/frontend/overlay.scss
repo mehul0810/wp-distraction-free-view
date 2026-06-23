@@ -438,6 +438,10 @@ body.wpdfv-reader-mode-active {
 	border-left-color: #cc1818;
 }
 
+.wpdfv-reader-notice--success {
+	border-left-color: #008a20;
+}
+
 .wpdfv-reader-resume {
 	align-items: center;
 	background: var(--wpdfv-reader-surface);
@@ -526,6 +530,11 @@ body.wpdfv-reader-mode-active {
 
 	.wpdfv-reader-header-actions {
 		gap: 4px;
+	}
+
+	.wpdfv-reader-header-actions .components-button.has-icon {
+		min-width: 32px;
+		padding-inline: 6px;
 	}
 
 	.wpdfv-reader-settings-panel {
