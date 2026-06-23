@@ -18,6 +18,12 @@ import { Path, SVG } from '@wordpress/primitives';
 const CONTENT_PATH = '/wp-distraction-free-view/v1/content/';
 const READER_CONFIG = window.wpdfvReaderMode || {};
 const DEFAULT_STORAGE_KEY = 'wpdfv_reader_preferences';
+const DEFAULT_POSITIONS_STORAGE_KEY = 'wpdfv_reader_positions';
+const MAX_POSITION_ENTRIES = 50;
+const POSITION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+const MIN_RESUME_SCROLL_TOP = 120;
+const CLEAR_PROGRESS_THRESHOLD = 3;
+const COMPLETE_PROGRESS_THRESHOLD = 98;
 const FOCUSABLE_SELECTOR = [
 	'a[href]',
 	'button:not([disabled])',
@@ -126,6 +132,7 @@ const exitFullscreenIcon = createHeroIcon( [
 ] );
 
 const isEnabled = ( key ) => READER_CONFIG[ key ] !== false;
+const isReaderResumeEnabled = () => READER_CONFIG.readerResumeEnabled === true;
 
 const SCRIPT_BOOLEAN_ATTRIBUTES = [ 'async', 'defer', 'nomodule' ];
 
@@ -243,6 +250,129 @@ const getStoredPreferences = () => {
 	}
 };
 
+const getPositionsStorageKey = () =>
+	READER_CONFIG.positionsStorageKey || DEFAULT_POSITIONS_STORAGE_KEY;
+
+const getEmptyPositionStore = () => ( {
+	entries: {},
+} );
+
+const normalizePositionStore = ( value ) => {
+	if ( ! value || 'object' !== typeof value || ! value.entries ) {
+		return getEmptyPositionStore();
+	}
+
+	return {
+		entries:
+			value.entries && 'object' === typeof value.entries
+				? value.entries
+				: {},
+	};
+};
+
+const prunePositionStore = ( store, now = Date.now() ) => {
+	const entries = Object.entries( store.entries || {} )
+		.filter( ( [ postId, entry ] ) => {
+			const updatedAt = Number( entry?.updatedAt );
+			const scrollTop = Number( entry?.scrollTop );
+			const progress = Number( entry?.progress );
+
+			return (
+				postId &&
+				Number.isFinite( updatedAt ) &&
+				now - updatedAt <= POSITION_MAX_AGE &&
+				Number.isFinite( scrollTop ) &&
+				scrollTop >= MIN_RESUME_SCROLL_TOP &&
+				Number.isFinite( progress ) &&
+				progress > CLEAR_PROGRESS_THRESHOLD &&
+				progress < COMPLETE_PROGRESS_THRESHOLD
+			);
+		} )
+		.sort(
+			( a, b ) => Number( b[ 1 ].updatedAt ) - Number( a[ 1 ].updatedAt )
+		)
+		.slice( 0, MAX_POSITION_ENTRIES );
+
+	return {
+		entries: Object.fromEntries( entries ),
+	};
+};
+
+const readPositionStore = () => {
+	try {
+		const stored = window.localStorage.getItem( getPositionsStorageKey() );
+		const parsed = stored ? JSON.parse( stored ) : {};
+
+		return prunePositionStore( normalizePositionStore( parsed ) );
+	} catch {
+		return getEmptyPositionStore();
+	}
+};
+
+const writePositionStore = ( store ) => {
+	try {
+		window.localStorage.setItem(
+			getPositionsStorageKey(),
+			JSON.stringify( prunePositionStore( store ) )
+		);
+	} catch {
+		// localStorage may be unavailable or full. Reader Mode continues without resume.
+	}
+};
+
+const getStoredReaderPosition = ( postId ) => {
+	if ( ! isReaderResumeEnabled() || ! postId ) {
+		return null;
+	}
+
+	const store = readPositionStore();
+	const entry = store.entries[ String( postId ) ];
+
+	return entry
+		? {
+				scrollTop: Number( entry.scrollTop ),
+				progress: Number( entry.progress ),
+		  }
+		: null;
+};
+
+const saveReaderPosition = ( postId, scrollTop, progress ) => {
+	if ( ! isReaderResumeEnabled() || ! postId ) {
+		return;
+	}
+
+	const store = readPositionStore();
+	const key = String( postId );
+
+	if (
+		scrollTop < MIN_RESUME_SCROLL_TOP ||
+		progress <= CLEAR_PROGRESS_THRESHOLD ||
+		progress >= COMPLETE_PROGRESS_THRESHOLD
+	) {
+		delete store.entries[ key ];
+		writePositionStore( store );
+		return;
+	}
+
+	store.entries[ key ] = {
+		scrollTop: Math.round( scrollTop ),
+		progress: Math.round( progress ),
+		updatedAt: Date.now(),
+	};
+
+	writePositionStore( store );
+};
+
+const clearReaderPosition = ( postId ) => {
+	if ( ! isReaderResumeEnabled() || ! postId ) {
+		return;
+	}
+
+	const store = readPositionStore();
+	delete store.entries[ String( postId ) ];
+	writePositionStore( store );
+};
+
 const getFocusableElements = ( container ) =>
 	Array.from( container.querySelectorAll( FOCUSABLE_SELECTOR ) ).filter(
 		( element ) => {
@@ -316,6 +446,26 @@ const ReaderNotice = ( { children, status = 'info' } ) => (
 		role={ 'error' === status ? 'alert' : 'status' }
 	>
 		{ children }
+	</div>
+);
+
+const ReaderResumePrompt = ( { progress, onResume, onDismiss } ) => (
+	<div className="wpdfv-reader-resume" role="status">
+		<p>
+			{ sprintf(
+				/* translators: %d: Saved Reader Mode progress percentage. */
+				__( 'Resume from %d%%?', 'wp-distraction-free-view' ),
+				Math.round( progress )
+			) }
+		</p>
+		<div className="wpdfv-reader-resume__actions">
+			<ReaderButton variant="primary" onClick={ onResume }>
+				{ __( 'Resume reading', 'wp-distraction-free-view' ) }
+			</ReaderButton>
+			<ReaderButton variant="secondary" onClick={ onDismiss }>
+				{ __( 'Start over', 'wp-distraction-free-view' ) }
+			</ReaderButton>
+		</div>
 	</div>
 );
 
@@ -528,6 +678,8 @@ const ReaderApp = () => {
 	const [ tocItems, setTocItems ] = useState( [] );
 	const [ readingTime, setReadingTime ] = useState( null );
 	const [ progress, setProgress ] = useState( 0 );
+	const [ currentPostId, setCurrentPostId ] = useState( '' );
+	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
 	const contentRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
@@ -628,7 +780,7 @@ const ReaderApp = () => {
 	}, [ isOpen ] );
 
 	useEffect( () => {
-		if ( ! isOpen || ! isEnabled( 'readingProgressEnabled' ) ) {
+		if ( ! isOpen ) {
 			setProgress( 0 );
 			return undefined;
 		}
@@ -641,28 +793,54 @@ const ReaderApp = () => {
 			return undefined;
 		}
 
-		const updateProgress = () => {
+		const updateProgress = ( shouldPersist = false ) => {
 			const scrollable =
 				scrollContainer.scrollHeight - scrollContainer.clientHeight;
 			const nextProgress =
 				scrollable > 0
 					? ( scrollContainer.scrollTop / scrollable ) * 100
 					: 100;
+			const normalizedProgress = Math.min(
+				100,
+				Math.max( 0, nextProgress )
+			);
 
-			setProgress( Math.min( 100, Math.max( 0, nextProgress ) ) );
+			setProgress( normalizedProgress );
+
+			if ( shouldPersist ) {
+				saveReaderPosition(
+					currentPostId,
+					scrollContainer.scrollTop,
+					normalizedProgress
+				);
+			}
 		};
 
 		updateProgress();
-		scrollContainer.addEventListener( 'scroll', updateProgress, {
+		const handleScroll = () => updateProgress( true );
+		const handleResize = () => updateProgress();
+
+		scrollContainer.addEventListener( 'scroll', handleScroll, {
 			passive: true,
 		} );
-		window.addEventListener( 'resize', updateProgress );
+		window.addEventListener( 'resize', handleResize );
 
 		return () => {
-			scrollContainer.removeEventListener( 'scroll', updateProgress );
-			window.removeEventListener( 'resize', updateProgress );
+			scrollContainer.removeEventListener( 'scroll', handleScroll );
+			window.removeEventListener( 'resize', handleResize );
 		};
-	}, [ isOpen, content ] );
+	}, [ isOpen, content, currentPostId ] );
+
+	useEffect( () => {
+		if ( ! isOpen || isLoading || error || ! content || ! currentPostId ) {
+			setResumePosition( null );
+			return undefined;
+		}
+
+		setResumePosition( getStoredReaderPosition( currentPostId ) );
+
+		return undefined;
+	}, [ isOpen, isLoading, error, content, currentPostId ] );
 
 	useEffect( () => {
 		if ( ! isOpen ) {
@@ -727,6 +905,7 @@ const ReaderApp = () => {
 		setError( '' );
 		setScripts( [] );
 		setTocItems( [] );
+		setResumePosition( null );
 	}, [] );
 
 	const openReader = ( postId ) => {
@@ -743,6 +922,8 @@ const ReaderApp = () => {
 		setScripts( [] );
 		setTocItems( [] );
 		setReadingTime( null );
+		setCurrentPostId( String( postId ) );
+		setResumePosition( null );
 		setIsSettingsOpen( false );
 		setProgress( 0 );
 
@@ -768,6 +949,27 @@ const ReaderApp = () => {
 				);
 			} )
 			.finally( () => setIsLoading( false ) );
+	};
+
+	const resumeReading = () => {
+		const scrollContainer = document.querySelector(
+			'.wpdfv-reader-modal .components-modal__content'
+		);
+
+		if ( ! scrollContainer || ! resumePosition ) {
+			return;
+		}
+
+		scrollContainer.scrollTo( {
+			top: resumePosition.scrollTop,
+			behavior: 'smooth',
+		} );
+		setResumePosition( null );
+	};
+
+	const dismissResume = () => {
+		clearReaderPosition( currentPostId );
+		setResumePosition( null );
 	};
 
 	const toggleFullscreen = () => {
@@ -883,6 +1085,14 @@ const ReaderApp = () => {
 					<div className="wpdfv-reading-progress" aria-hidden="true">
 						<span style={ { width: `${ progress }%` } } />
 					</div>
+				) }
+
+				{ resumePosition && (
+					<ReaderResumePrompt
+						progress={ resumePosition.progress }
+						onResume={ resumeReading }
+						onDismiss={ dismissResume }
+					/>
 				) }
 
 				{ showPreferenceControls && isSettingsOpen && (

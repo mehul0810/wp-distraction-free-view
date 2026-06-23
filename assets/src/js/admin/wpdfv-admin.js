@@ -685,6 +685,23 @@ const ConfigurePanel = ( {
 							/>
 							<ToggleControl
 								label={ __(
+									'Offer resume reading',
+									'wp-distraction-free-view'
+								) }
+								checked={ settings.reader_resume_enabled }
+								onChange={ ( value ) =>
+									onUpdateSetting(
+										'reader_resume_enabled',
+										value
+									)
+								}
+								help={ __(
+									'When enabled, Reader Mode can save each visitor position in their browser only.',
+									'wp-distraction-free-view'
+								) }
+							/>
+							<ToggleControl
+								label={ __(
 									'Show reader preference controls',
 									'wp-distraction-free-view'
 								) }
