@@ -196,6 +196,8 @@ msgstr ""
 #: assets/dist/js/wpdfv.js:1
 #: assets/src/js/frontend/wpdfv.js:29
 #: assets/src/js/frontend/wpdfv.js:42
+#: assets/src/js/frontend/wpdfv.js:53
+#: assets/src/js/frontend/wpdfv.js:67
 msgid "Default"
 msgstr ""
 
@@ -215,6 +217,18 @@ msgstr ""
 #: assets/dist/js/wpdfv.js:1
 #: assets/src/js/frontend/wpdfv.js:32
 msgid "Large"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:57
+#: assets/src/js/frontend/wpdfv.js:71
+msgid "Relaxed"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:61
+#: assets/src/js/frontend/wpdfv.js:75
+msgid "Spacious"
 msgstr ""
 
 #. translators: %s: Reading time in minutes.
@@ -682,6 +696,16 @@ msgstr ""
 #: assets/dist/js/wpdfv.js:1
 #: assets/src/js/frontend/wpdfv.js:178
 msgid "Content width"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:474
+msgid "Line height"
+msgstr ""
+
+#: assets/dist/js/wpdfv.js:1
+#: assets/src/js/frontend/wpdfv.js:480
+msgid "Paragraph spacing"
 msgstr ""
 
 #: assets/dist/js/wpdfv.js:1

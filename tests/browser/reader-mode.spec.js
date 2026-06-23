@@ -52,7 +52,7 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
-	test( 'persists font size, theme, and width preferences', async ( {
+	test( 'persists reader typography preferences', async ( {
 		page,
 	} ) => {
 		await page.addInitScript(
@@ -75,6 +75,16 @@ test.describe( 'Reader Mode smoke', () => {
 			.locator( '.wpdfv-reader-settings-panel' )
 			.getByRole( 'button', { name: 'Wide' } )
 			.click();
+		await page
+			.locator( '.wpdfv-reader-settings-panel' )
+			.getByRole( 'group', { name: 'Line height' } )
+			.getByRole( 'button', { name: 'Spacious' } )
+			.click();
+		await page
+			.locator( '.wpdfv-reader-settings-panel' )
+			.getByRole( 'group', { name: 'Paragraph spacing' } )
+			.getByRole( 'button', { name: 'Relaxed' } )
+			.click();
 
 		await expect( page.locator( modalSelector ) ).toHaveClass(
 			/wpdfv-reader-modal--font-large/
@@ -84,6 +94,12 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 		await expect( page.locator( modalSelector ) ).toHaveClass(
 			/wpdfv-reader-modal--width-wide/
+		);
+		await expect( page.locator( modalSelector ) ).toHaveClass(
+			/wpdfv-reader-modal--line-height-spacious/
+		);
+		await expect( page.locator( modalSelector ) ).toHaveClass(
+			/wpdfv-reader-modal--paragraph-spacing-relaxed/
 		);
 
 		await expect
@@ -97,6 +113,8 @@ test.describe( 'Reader Mode smoke', () => {
 				fontSize: 'large',
 				theme: 'dark',
 				width: 'wide',
+				lineHeight: 'spacious',
+				paragraphSpacing: 'relaxed',
 			} );
 
 		await page.reload();
@@ -111,6 +129,83 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( modalSelector ) ).toHaveClass(
 			/wpdfv-reader-modal--width-wide/
 		);
+		await expect( page.locator( modalSelector ) ).toHaveClass(
+			/wpdfv-reader-modal--line-height-spacious/
+		);
+		await expect( page.locator( modalSelector ) ).toHaveClass(
+			/wpdfv-reader-modal--paragraph-spacing-relaxed/
+		);
+	} );
+
+	test( 'keeps expanded typography readable in a narrow viewport', async ( {
+		page,
+	} ) => {
+		await page.setViewportSize( { width: 390, height: 844 } );
+		await page.addInitScript(
+			( key ) => window.localStorage.removeItem( key ),
+			storageKey
+		);
+		await page.goto( readerUrl );
+		await openReader( page );
+
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await page
+			.locator( '.wpdfv-reader-settings-panel' )
+			.getByRole( 'group', { name: 'Line height' } )
+			.getByRole( 'button', { name: 'Spacious' } )
+			.click();
+		await page
+			.locator( '.wpdfv-reader-settings-panel' )
+			.getByRole( 'group', { name: 'Paragraph spacing' } )
+			.getByRole( 'button', { name: 'Spacious' } )
+			.click();
+
+		const settingsPanel = page.locator( '.wpdfv-reader-settings-panel' );
+		await expect( settingsPanel ).toBeVisible();
+
+		const panelBox = await settingsPanel.boundingBox();
+		expect( panelBox ).not.toBeNull();
+		expect( panelBox.x ).toBeGreaterThanOrEqual( 0 );
+		expect( panelBox.width ).toBeLessThanOrEqual( 390 );
+
+		await page
+			.getByRole( 'button', { name: /close reader settings/i } )
+			.click();
+
+		const layout = await page.evaluate( () => {
+			const scrollContainer = document.querySelector(
+				'.wpdfv-reader-modal .components-modal__content'
+			);
+			const content = document.querySelector( '.wpdfv-reader-content' );
+			const paragraph = content?.querySelector( 'p' );
+			const scrollBox = scrollContainer?.getBoundingClientRect();
+			const paragraphBox = paragraph?.getBoundingClientRect();
+			const contentStyle = content
+				? window.getComputedStyle( content )
+				: null;
+			const paragraphStyle = paragraph
+				? window.getComputedStyle( paragraph )
+				: null;
+
+			return {
+				contentLineHeight: contentStyle?.lineHeight,
+				paragraphMarginBottom: paragraphStyle?.marginBottom,
+				paragraphInsideModal:
+					Boolean( scrollBox && paragraphBox ) &&
+					paragraphBox.left >= scrollBox.left &&
+					paragraphBox.right <= scrollBox.right + 1,
+				scrollsForExpandedSpacing:
+					Boolean( scrollContainer ) &&
+					scrollContainer.scrollHeight >= scrollContainer.clientHeight,
+			};
+		} );
+
+		expect( parseFloat( layout.contentLineHeight ) ).toBeGreaterThan( 30 );
+		expect( parseFloat( layout.paragraphMarginBottom ) ).toBeGreaterThan(
+			30
+		);
+		expect( layout.paragraphInsideModal ).toBe( true );
+		expect( layout.scrollsForExpandedSpacing ).toBe( true );
 	} );
 
 	test( 'shows reading progress only when enabled by frontend settings', async ( {

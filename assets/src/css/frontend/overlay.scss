@@ -205,13 +205,22 @@ body.wpdfv-reader-mode-active {
 }
 
 .wpdfv-reader-content {
+	--wpdfv-reader-line-height: 1.7;
+	--wpdfv-reader-paragraph-spacing: 1.25em;
+
 	box-sizing: border-box;
 	font-size: 18px;
-	line-height: 1.7;
+	line-height: var(--wpdfv-reader-line-height);
 	margin-inline: 0;
 	max-width: none;
+	overflow-wrap: anywhere;
 	padding: 32px 24px 48px;
 	width: 100%;
+
+	p {
+		line-height: inherit;
+		margin-block-end: var(--wpdfv-reader-paragraph-spacing);
+	}
 }
 
 .wpdfv-reader-toc {
@@ -284,6 +293,22 @@ body.wpdfv-reader-mode-active {
 
 .wpdfv-reader-modal--font-large .wpdfv-reader-content {
 	font-size: 20px;
+}
+
+.wpdfv-reader-modal--line-height-relaxed .wpdfv-reader-content {
+	--wpdfv-reader-line-height: 1.85;
+}
+
+.wpdfv-reader-modal--line-height-spacious .wpdfv-reader-content {
+	--wpdfv-reader-line-height: 2;
+}
+
+.wpdfv-reader-modal--paragraph-spacing-relaxed .wpdfv-reader-content {
+	--wpdfv-reader-paragraph-spacing: 1.65em;
+}
+
+.wpdfv-reader-modal--paragraph-spacing-spacious .wpdfv-reader-content {
+	--wpdfv-reader-paragraph-spacing: 2em;
 }
 
 .wpdfv-modal-template {
