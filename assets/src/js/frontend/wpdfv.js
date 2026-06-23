@@ -48,6 +48,34 @@ const PREFERENCE_OPTIONS = {
 		},
 		{ label: __( 'Wide', 'wp-distraction-free-view' ), value: 'wide' },
 	],
+	lineHeight: [
+		{
+			label: __( 'Default', 'wp-distraction-free-view' ),
+			value: 'default',
+		},
+		{
+			label: __( 'Relaxed', 'wp-distraction-free-view' ),
+			value: 'relaxed',
+		},
+		{
+			label: __( 'Spacious', 'wp-distraction-free-view' ),
+			value: 'spacious',
+		},
+	],
+	paragraphSpacing: [
+		{
+			label: __( 'Default', 'wp-distraction-free-view' ),
+			value: 'default',
+		},
+		{
+			label: __( 'Relaxed', 'wp-distraction-free-view' ),
+			value: 'relaxed',
+		},
+		{
+			label: __( 'Spacious', 'wp-distraction-free-view' ),
+			value: 'spacious',
+		},
+	],
 };
 const createHeroIcon = ( paths ) =>
 	createElement(
@@ -165,6 +193,16 @@ const getDefaultPreferences = () => ( {
 		READER_CONFIG.defaultContentWidth,
 		'default'
 	),
+	lineHeight: normalizePreference(
+		'lineHeight',
+		READER_CONFIG.defaultLineHeight,
+		'default'
+	),
+	paragraphSpacing: normalizePreference(
+		'paragraphSpacing',
+		READER_CONFIG.defaultParagraphSpacing,
+		'default'
+	),
 } );
 
 const getStoredPreferences = () => {
@@ -189,6 +227,16 @@ const getStoredPreferences = () => {
 			),
 			theme: normalizePreference( 'theme', parsed.theme, defaults.theme ),
 			width: normalizePreference( 'width', parsed.width, defaults.width ),
+			lineHeight: normalizePreference(
+				'lineHeight',
+				parsed.lineHeight,
+				defaults.lineHeight
+			),
+			paragraphSpacing: normalizePreference(
+				'paragraphSpacing',
+				parsed.paragraphSpacing,
+				defaults.paragraphSpacing
+			),
 		};
 	} catch {
 		return defaults;
@@ -422,6 +470,18 @@ const PreferenceControls = ( { preferences, onChange } ) => (
 			value={ preferences.width }
 			onChange={ ( value ) => onChange( 'width', value ) }
 		/>
+		<PreferenceGroup
+			label={ __( 'Line height', 'wp-distraction-free-view' ) }
+			options={ PREFERENCE_OPTIONS.lineHeight }
+			value={ preferences.lineHeight }
+			onChange={ ( value ) => onChange( 'lineHeight', value ) }
+		/>
+		<PreferenceGroup
+			label={ __( 'Paragraph spacing', 'wp-distraction-free-view' ) }
+			options={ PREFERENCE_OPTIONS.paragraphSpacing }
+			value={ preferences.paragraphSpacing }
+			onChange={ ( value ) => onChange( 'paragraphSpacing', value ) }
+		/>
 	</div>
 );
 
@@ -478,6 +538,8 @@ const ReaderApp = () => {
 				`wpdfv-reader-modal--font-${ preferences.fontSize }`,
 				`wpdfv-reader-modal--theme-${ preferences.theme }`,
 				`wpdfv-reader-modal--width-${ preferences.width }`,
+				`wpdfv-reader-modal--line-height-${ preferences.lineHeight }`,
+				`wpdfv-reader-modal--paragraph-spacing-${ preferences.paragraphSpacing }`,
 			].join( ' ' ),
 		[ preferences ]
 	);
