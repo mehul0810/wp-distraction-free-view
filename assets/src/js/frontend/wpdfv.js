@@ -470,6 +470,7 @@ const ReaderButton = forwardRef( function ReaderButton(
 		isPressed,
 		label,
 		onClick,
+		showTooltip = true,
 		variant = 'secondary',
 		...props
 	},
@@ -493,7 +494,7 @@ const ReaderButton = forwardRef( function ReaderButton(
 			disabled={ disabled }
 			aria-label={ accessibleLabel }
 			aria-pressed={ isPressed }
-			title={ accessibleLabel }
+			title={ showTooltip ? accessibleLabel : undefined }
 			onClick={ onClick }
 			{ ...props }
 		>
@@ -640,6 +641,7 @@ const ReaderDialog = ( {
 						variant="link"
 						icon={ closeIcon }
 						label={ closeButtonLabel }
+						showTooltip={ false }
 						onClick={ onRequestClose }
 					/>
 				</div>

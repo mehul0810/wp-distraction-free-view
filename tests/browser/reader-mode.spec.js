@@ -42,6 +42,24 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
+	test( 'keeps the modal close target clickable without a hover tooltip layer', async ( {
+		page,
+	} ) => {
+		await openReader( page );
+		const closeButton = page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.first();
+
+		await expect( closeButton ).toHaveAttribute( 'aria-label', /.+/ );
+		await expect( closeButton ).not.toHaveAttribute( 'title', /.+/ );
+
+		await closeButton.hover();
+		await closeButton.focus();
+		await closeButton.click();
+
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
 	test( 'auto-opens when reader-mode query parameter is enabled', async ( {
 		page,
 	} ) => {
