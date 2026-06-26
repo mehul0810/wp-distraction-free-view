@@ -308,6 +308,40 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
+	test( 'renders complete Reader REST content on desktop and mobile viewports', async ( {
+		page,
+	} ) => {
+		const content =
+			'<div class="wp-block-post-content">' +
+			'<p>First reliable reader paragraph.</p>' +
+			'<p>Final reliable reader paragraph.</p>' +
+			'</div>';
+
+		await mockReaderContentResponse( page, content );
+		await openReader( page );
+
+		await expect(
+			page.locator( `${ modalSelector } .wpdfv-reader-content` )
+		).toContainText( 'First reliable reader paragraph.' );
+		await expect(
+			page.locator( `${ modalSelector } .wpdfv-reader-content` )
+		).toContainText( 'Final reliable reader paragraph.' );
+
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.click();
+		await page.setViewportSize( { width: 390, height: 844 } );
+		await mockReaderContentResponse( page, content );
+		await openReader( page );
+
+		await expect(
+			page.locator( `${ modalSelector } .wpdfv-reader-content` )
+		).toContainText( 'First reliable reader paragraph.' );
+		await expect(
+			page.locator( `${ modalSelector } .wpdfv-reader-content` )
+		).toContainText( 'Final reliable reader paragraph.' );
+	} );
+
 	test( 'keeps table of contents heading navigation keyboard accessible', async ( {
 		page,
 	} ) => {
@@ -647,6 +681,31 @@ async function getReaderPostId( page ) {
 async function waitForReaderContent( page ) {
 	await expect( page.locator( '.wpdfv-reader-loading' ) ).toHaveCount( 0 );
 	await expect( page.locator( '.wpdfv-reader-content' ) ).not.toBeEmpty();
+}
+
+async function mockReaderContentResponse( page, content ) {
+	await page.route(
+		'**/wp-json/wp-distraction-free-view/v1/content/**',
+		async ( route ) => {
+			await route.fulfill( {
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					id: 1,
+					title: 'Reliable Reader Fixture',
+					permalink:
+						'https://example.com/reliable-reader-fixture/',
+					content,
+					scripts: [],
+					toc: [],
+					readingTime: {
+						minutes: 1,
+						label: '1 min read',
+					},
+				} ),
+			} );
+		}
+	);
 }
 
 async function getReaderSourceUrl( page ) {
