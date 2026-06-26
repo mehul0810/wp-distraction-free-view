@@ -92,6 +92,7 @@ class Actions {
 
 		wp_enqueue_style( 'wpdfv-core' );
 		wp_enqueue_script( 'wpdfv-core' );
+		self::enqueue_reader_interactivity_modules();
 		self::add_custom_css();
 
 		if ( self::$frontend_settings_added ) {
@@ -117,6 +118,28 @@ class Actions {
 		}
 
 		wp_add_inline_style( 'wpdfv-core', $custom_css );
+	}
+
+	/**
+	 * Enqueue core script modules needed by interactive blocks in Reader Mode.
+	 *
+	 * Reader Mode content is mounted into the modal after the page has loaded,
+	 * so blocks using the Interactivity API need their view modules available
+	 * before the frontend app hydrates inserted modal markup.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected static function enqueue_reader_interactivity_modules() {
+		if ( ! function_exists( 'wp_enqueue_script_module' ) ) {
+			return;
+		}
+
+		call_user_func(
+			'wp_enqueue_script_module',
+			'@wordpress/block-library/accordion/view'
+		);
 	}
 
 	/**
