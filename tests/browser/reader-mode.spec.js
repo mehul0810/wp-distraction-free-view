@@ -163,11 +163,11 @@ test.describe( 'Reader Mode smoke', () => {
 	test( 'persists reader typography preferences', async ( {
 		page,
 	} ) => {
-		await page.addInitScript(
+		await page.goto( readerUrl );
+		await page.evaluate(
 			( key ) => window.localStorage.removeItem( key ),
 			storageKey
 		);
-		await page.goto( readerUrl );
 		await openReader( page );
 
 		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
@@ -249,11 +249,12 @@ test.describe( 'Reader Mode smoke', () => {
 		page,
 	} ) => {
 		await page.setViewportSize( { width: 390, height: 844 } );
-		await page.addInitScript(
+		await mockReaderContentResponse( page, getTallReaderContent() );
+		await page.goto( readerUrl );
+		await page.evaluate(
 			( key ) => window.localStorage.removeItem( key ),
 			storageKey
 		);
-		await page.goto( readerUrl );
 		await openReader( page );
 
 		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
@@ -530,6 +531,7 @@ test.describe( 'Reader Mode smoke', () => {
 		page,
 	} ) => {
 		await enableReaderResume( page );
+		await mockReaderContentResponse( page, getTallReaderContent() );
 		const postId = await getReaderPostId( page );
 
 		await page.evaluate(
@@ -559,6 +561,7 @@ test.describe( 'Reader Mode smoke', () => {
 		page,
 	} ) => {
 		await enableReaderResume( page );
+		await mockReaderContentResponse( page, getTallReaderContent() );
 		const postId = await getReaderPostId( page );
 
 		await page.evaluate(
@@ -685,7 +688,7 @@ async function openReader( page ) {
 	await page.locator( toggleSelector ).first().click();
 	await expect( page.locator( modalSelector ) ).toBeVisible();
 	await expect(
-		page.locator( '.wpdfv-reader-loading, .wpdfv-reader-content' )
+		page.locator( `${ modalSelector } .wpdfv-reader-content` )
 	).toBeVisible();
 }
 
