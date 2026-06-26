@@ -398,6 +398,22 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Reader content wrappers with mixed article text should not be stripped.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_preserves_mixed_reader_content_wrappers() {
+		$content = '<div class="wp-block-post-content"><p>First readable paragraph.</p>window.option_df_3751 = {"outline":[],"autoEnableOutline":"false"};<p>Second readable paragraph.</p></div>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '<div class="wp-block-post-content">', $result );
+		$this->assertStringContainsString( '<p>First readable paragraph.</p>', $result );
+		$this->assertStringContainsString( '<p>Second readable paragraph.</p>', $result );
+		$this->assertStringNotContainsString( 'window.option_df_3751', $result );
+		$this->assertStringNotContainsString( 'autoEnableOutline', $result );
+	}
+
+	/**
 	 * Prepared Reader Mode content returns shortcode scripts separately.
 	 *
 	 * @return void

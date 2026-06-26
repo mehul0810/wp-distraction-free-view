@@ -1147,7 +1147,8 @@ class Reader {
 		}
 
 		$content = self::strip_script_text_residue_elements( $content, '#<(p|span)\b[^>]*>.*?</\1>#is', $patterns );
-		$content = self::strip_script_text_residue_elements( $content, '#<div\b[^>]*>(?:(?!</?div\b).)*</div>#is', $patterns );
+		$content = self::strip_script_text_residue_elements( $content, '#<div\b[^>]*>(?:(?!</?div\b).)*</div>#is', $patterns, 'div' );
+		$content = self::strip_script_text_residue_text_nodes( $content, $patterns );
 
 		return (string) preg_replace_callback(
 			'~(^|[\r\n])([^\r\n]*(?:window\.option_df_|window\.DFLIP|DFLIP\.parseBooks)[^\r\n]*)(?=[\r\n]|$)~i',
@@ -1168,16 +1169,62 @@ class Reader {
 	 * @since 1.7.1
 	 *
 	 * @param string   $content  Rendered modal template content.
-	 * @param string   $pattern  Element-matching regular expression.
+	 * @param string      $pattern      Element-matching regular expression.
+	 * @param string[]    $patterns     Regular expressions used to identify script residue.
+	 * @param string|null $element_name Matched element name, when the pattern does not capture it.
+	 *
+	 * @return string
+	 */
+	protected static function strip_script_text_residue_elements( $content, $pattern, array $patterns, $element_name = null ) {
+		return (string) preg_replace_callback(
+			$pattern,
+			static function ( $matches ) use ( $patterns, $element_name ) {
+				$tag_name = null !== $element_name ? (string) $element_name : strtolower( (string) ( $matches[1] ?? '' ) );
+
+				if ( 'div' === $tag_name && self::contains_reader_content_blocks( $matches[0] ) ) {
+					return $matches[0];
+				}
+
+				return self::looks_like_script_text_residue( $matches[0], $patterns ) ? '' : $matches[0];
+			},
+			$content
+		);
+	}
+
+	/**
+	 * Determine whether a wrapper contains normal reader content blocks.
+	 *
+	 * A rendered post-content div can also contain escaped embed setup text.
+	 * That residue should be removed, but the wrapper itself must remain.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Content fragment.
+	 *
+	 * @return bool
+	 */
+	protected static function contains_reader_content_blocks( $content ) {
+		return (bool) preg_match(
+			'#<(p|h[1-6]|blockquote|figure|figcaption|ul|ol|li|table|thead|tbody|tfoot|tr|td|th|hr|pre|code|article|section)\b#i',
+			(string) $content
+		);
+	}
+
+	/**
+	 * Strip standalone script residue that appears as text between elements.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string   $content  Rendered modal template content.
 	 * @param string[] $patterns Regular expressions used to identify script residue.
 	 *
 	 * @return string
 	 */
-	protected static function strip_script_text_residue_elements( $content, $pattern, array $patterns ) {
+	protected static function strip_script_text_residue_text_nodes( $content, array $patterns ) {
 		return (string) preg_replace_callback(
-			$pattern,
+			'~(^|>)([^<>]*(?:window\.option_df_|window\.DFLIP|DFLIP\.parseBooks)[^<>]*)(?=<|$)~i',
 			static function ( $matches ) use ( $patterns ) {
-				return self::looks_like_script_text_residue( $matches[0], $patterns ) ? '' : $matches[0];
+				return self::looks_like_script_text_residue( $matches[2], $patterns ) ? $matches[1] : $matches[0];
 			},
 			$content
 		);
