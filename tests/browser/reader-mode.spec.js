@@ -60,6 +60,43 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( modalSelector ) ).toBeHidden();
 	} );
 
+	test( 'hydrates core accordion interactions inside the modal', async ( {
+		page,
+	} ) => {
+		await openReader( page );
+		await waitForReaderContent( page );
+
+		const accordion = page
+			.locator( `${ modalSelector } .wp-block-accordion` )
+			.first();
+
+		if ( 0 === ( await accordion.count() ) ) {
+			test.skip(
+				true,
+				'Configured smoke page does not contain a core Accordion block.'
+			);
+		}
+
+		const toggle = accordion
+			.locator( '.wp-block-accordion-heading__toggle' )
+			.first();
+		await expect( toggle ).toBeVisible();
+
+		const initialExpanded = await toggle.getAttribute( 'aria-expanded' );
+		await toggle.click();
+
+		await expect( toggle ).not.toHaveAttribute(
+			'aria-expanded',
+			initialExpanded || ''
+		);
+		await expect( page.locator( modalSelector ) ).toBeVisible();
+
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.click();
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
 	test( 'auto-opens when reader-mode query parameter is enabled', async ( {
 		page,
 	} ) => {

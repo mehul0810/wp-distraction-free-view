@@ -247,6 +247,70 @@ const createReaderScriptElement = ( script ) => {
 	return element.src || element.text ? element : null;
 };
 
+const getInteractiveRootElements = ( container ) =>
+	Array.from( container.querySelectorAll( '[data-wp-interactive]' ) ).filter(
+		( element ) => {
+			const parentRoot = element.parentElement?.closest(
+				'[data-wp-interactive]'
+			);
+
+			return ! parentRoot || ! container.contains( parentRoot );
+		}
+	);
+
+const hasInteractivityImportMap = () => {
+	const importMap = document.getElementById( 'wp-importmap' );
+
+	if ( ! importMap?.textContent ) {
+		return false;
+	}
+
+	try {
+		const parsed = JSON.parse( importMap.textContent );
+
+		return Boolean( parsed?.imports?.[ '@wordpress/interactivity' ] );
+	} catch {
+		return false;
+	}
+};
+
+const hydrateReaderInteractivity = ( container ) => {
+	if (
+		! container ||
+		! getInteractiveRootElements( container ).length ||
+		! hasInteractivityImportMap()
+	) {
+		return null;
+	}
+
+	const module = document.createElement( 'script' );
+	module.type = 'module';
+	module.text = `
+		import { privateApis } from '@wordpress/interactivity';
+
+		const lock = 'I acknowledge that using private APIs means my theme or plugin will inevitably break in the next version of WordPress.';
+		const { getRegionRootFragment, render, toVdom } = privateApis( lock );
+		const container = document.querySelector( '.wpdfv-reader-modal .wpdfv-reader-content' );
+
+		if ( container ) {
+			Array.from( container.querySelectorAll( '[data-wp-interactive]' ) )
+				.filter( ( element ) => {
+					const parentRoot = element.parentElement?.closest( '[data-wp-interactive]' );
+					return ! parentRoot || ! container.contains( parentRoot );
+				} )
+				.forEach( ( element ) => {
+					try {
+						render( toVdom( element ), getRegionRootFragment( element ) );
+					} catch {}
+				} );
+		}
+	`;
+
+	document.body.appendChild( module );
+
+	return module;
+};
+
 const normalizePreference = ( type, value, fallback ) => {
 	const allowed = PREFERENCE_OPTIONS[ type ].map(
 		( option ) => option.value
@@ -1000,6 +1064,24 @@ const ReaderApp = () => {
 			);
 		};
 	}, [ isOpen, isLoading, error, content, scripts ] );
+
+	useEffect( () => {
+		if (
+			! isOpen ||
+			isLoading ||
+			error ||
+			! content ||
+			! contentRef.current
+		) {
+			return undefined;
+		}
+
+		const hydrationModule = hydrateReaderInteractivity(
+			contentRef.current
+		);
+
+		return () => hydrationModule?.remove();
+	}, [ isOpen, isLoading, error, content ] );
 
 	const updatePreference = ( key, value ) => {
 		setPreferences( ( current ) => ( {
