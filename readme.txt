@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.7.1
+Stable tag: 1.8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -144,6 +144,14 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Changelog ==
 
+= 1.8.0 =
+- Added: Scoped Reader Mode custom CSS controls for administrators with the WordPress CSS editing capability.
+- Added: Reader Mode copy/share actions, local resume reading, table of contents navigation, reader-friendly print output, and expanded accessibility-focused typography controls.
+- Improved: Reader Mode content reliability for shortcode embeds and complex block output, including support-driven partial or empty content cases.
+- Improved: Reader Mode modal compatibility with WordPress core Accordion blocks and Interactivity API script modules.
+- Fixed: Reader Mode modal close button, initial keyboard focus, Escape close behavior, page-key scrolling, and tab order reliability.
+- Changed: Expanded browser smoke coverage for close behavior, focus, content completeness, accordion interaction, print, sharing, resume reading, and localStorage fallback handling.
+
 = 1.7.1 =
 - Fixed: Reader Mode content now strips complete script, style, and noscript blocks before final sanitization so shortcode embed configuration is not displayed as raw text.
 - Fixed: Updated the Reader Mode Toggle block metadata to Block API version 3 for current editor compatibility.
@@ -227,6 +235,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Improves Reader Mode reliability, keyboard handling, core Accordion compatibility, content rendering, and browser validation while preserving WordPress 7.0 compatibility.
 
 = 1.7.1 =
 Improves Reader Mode compatibility with shortcode embeds that output inline scripts and hardens release/package validation.
