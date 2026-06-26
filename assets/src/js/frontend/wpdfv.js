@@ -615,6 +615,7 @@ const ReaderDialog = ( {
 	title,
 } ) => {
 	const dialogRef = useRef( null );
+	const contentRef = useRef( null );
 	const titleId = 'wpdfv-reader-modal-title';
 	const closeRef = useRef( null );
 	const previouslyFocusedRef = useRef( null );
@@ -624,7 +625,9 @@ const ReaderDialog = ( {
 
 		previouslyFocusedRef.current = ownerDocument.activeElement;
 		ownerDocument.body.classList.add( bodyOpenClassName );
-		closeRef.current?.focus();
+		( contentRef.current || dialogRef.current )?.focus( {
+			preventScroll: true,
+		} );
 
 		return () => {
 			ownerDocument.body.classList.remove( bodyOpenClassName );
@@ -661,14 +664,21 @@ const ReaderDialog = ( {
 
 			const first = focusable[ 0 ];
 			const last = focusable[ focusable.length - 1 ];
+			const activeElement = ownerDocument.activeElement;
 
-			if ( event.shiftKey && ownerDocument.activeElement === first ) {
+			if ( ! focusable.includes( activeElement ) ) {
+				event.preventDefault();
+				( event.shiftKey ? last : first ).focus();
+				return;
+			}
+
+			if ( event.shiftKey && activeElement === first ) {
 				event.preventDefault();
 				last.focus();
 				return;
 			}
 
-			if ( ! event.shiftKey && ownerDocument.activeElement === last ) {
+			if ( ! event.shiftKey && activeElement === last ) {
 				event.preventDefault();
 				first.focus();
 			}
@@ -709,7 +719,13 @@ const ReaderDialog = ( {
 						onClick={ onRequestClose }
 					/>
 				</div>
-				<div className="components-modal__content">{ children }</div>
+				<div
+					ref={ contentRef }
+					className="components-modal__content"
+					tabIndex="-1"
+				>
+					{ children }
+				</div>
 			</div>
 		</div>
 	);

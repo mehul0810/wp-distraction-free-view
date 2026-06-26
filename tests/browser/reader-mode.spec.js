@@ -60,6 +60,58 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( modalSelector ) ).toBeHidden();
 	} );
 
+	test( 'focuses Reader content immediately so Escape closes without a click', async ( {
+		page,
+	} ) => {
+		await openReader( page );
+
+		await expect
+			.poll( () => getActiveElementSignature( page ) )
+			.toMatchObject( {
+				isReaderScrollContainer: true,
+			} );
+
+		await page.keyboard.press( 'Escape' );
+
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
+	test( 'keeps page-key scrolling and tab order available from initial focus', async ( {
+		page,
+		browserName,
+	} ) => {
+		await mockReaderContentResponse( page, getTallReaderContent() );
+		await openReader( page );
+		await waitForReaderContent( page );
+
+		const initialFocus = await getActiveElementSignature( page );
+		expect( initialFocus.isReaderScrollContainer ).toBe( true );
+
+		await page.keyboard.press( 'PageDown' );
+
+		if ( 'webkit' === browserName ) {
+			test.skip(
+				0 === ( await getReaderScrollTop( page ) ),
+				'WebKit did not dispatch PageDown scrolling for the focused modal pane.'
+			);
+		}
+
+		await expect.poll( () => getReaderScrollTop( page ) ).toBeGreaterThan(
+			0
+		);
+
+		await page.keyboard.press( 'Home' );
+		await expect.poll( () => getReaderScrollTop( page ) ).toBe( 0 );
+
+		await page.keyboard.press( 'Tab' );
+
+		await expect
+			.poll( () => getActiveElementSignature( page ) )
+			.toMatchObject( {
+				isHeaderControl: true,
+			} );
+	} );
+
 	test( 'hydrates core accordion interactions inside the modal', async ( {
 		page,
 	} ) => {
@@ -683,6 +735,18 @@ async function waitForReaderContent( page ) {
 	await expect( page.locator( '.wpdfv-reader-content' ) ).not.toBeEmpty();
 }
 
+function getTallReaderContent() {
+	return (
+		'<div class="wp-block-post-content">' +
+		Array.from(
+			{ length: 80 },
+			( _, index ) =>
+				`<p>Keyboard focus reader paragraph ${ index + 1 }.</p>`
+		).join( '' ) +
+		'</div>'
+	);
+}
+
 async function mockReaderContentResponse( page, content ) {
 	await page.route(
 		'**/wp-json/wp-distraction-free-view/v1/content/**',
@@ -706,6 +770,27 @@ async function mockReaderContentResponse( page, content ) {
 			} );
 		}
 	);
+}
+
+async function getActiveElementSignature( page ) {
+	return page.evaluate( () => {
+		const activeElement = document.activeElement;
+		const scrollContainer = document.querySelector(
+			'.wpdfv-reader-modal .components-modal__content'
+		);
+		const header = document.querySelector(
+			'.wpdfv-reader-modal .components-modal__header'
+		);
+
+		return {
+			isHeaderControl:
+				Boolean( activeElement ) &&
+				Boolean( header?.contains( activeElement ) ) &&
+				'BUTTON' === activeElement.tagName,
+			isReaderScrollContainer: activeElement === scrollContainer,
+			tagName: activeElement?.tagName || '',
+		};
+	} );
 }
 
 async function getReaderSourceUrl( page ) {
