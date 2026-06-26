@@ -136,7 +136,10 @@ class Actions {
 			return;
 		}
 
-		wp_enqueue_script_module( '@wordpress/block-library/accordion/view' );
+		call_user_func(
+			'wp_enqueue_script_module',
+			'@wordpress/block-library/accordion/view'
+		);
 	}
 
 	/**
