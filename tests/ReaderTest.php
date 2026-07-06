@@ -414,6 +414,21 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Reader Mode strips its own launch control markup from rendered content.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_strips_reader_toggle_markup() {
+		$content = '<article><p>Before.</p><div class="wpdfv-fullscreen-container"><button type="button" class="wpdfv-fullscreen-btn wpdfv-reader-toggle" data-post-id="7" aria-haspopup="dialog" aria-label="Read in Reader Mode">Read in Reader Mode</button></div><p>After.</p></article>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( '<p>Before.</p>', $result );
+		$this->assertStringContainsString( '<p>After.</p>', $result );
+		$this->assertStringNotContainsString( 'wpdfv-reader-toggle', $result );
+		$this->assertStringNotContainsString( 'Read in Reader Mode', $result );
+	}
+
+	/**
 	 * Prepared Reader Mode content returns shortcode scripts separately.
 	 *
 	 * @return void
@@ -431,6 +446,28 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 'application/javascript', $prepared['scripts'][0]['attributes']['type'] );
 		$this->assertSame( '3751', $prepared['scripts'][0]['attributes']['data-book'] );
 		$this->assertStringContainsString( 'window.wpdfvScriptRan = true;', $prepared['scripts'][0]['content'] );
+	}
+
+	/**
+	 * RTL and Unicode-heavy content remains intact after Reader Mode preparation.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_preserves_rtl_unicode_blocks() {
+		$content  = '<article><h2>«حالت مطالعه» برای WPDFV 1.8.0</h2><p dir="rtl" lang="fa">می‌خواهیم اعداد ۱۲۳۴۵۶۷۸۹۰، اعداد عربی ١٢٣٤٥٦٧٨٩٠، و ایموجی 👩‍💻 را ببینیم.</p><p dir="rtl" lang="fa">عبارت دارای اِعراب: السَّلَامُ عَلَيْكُمْ.</p><p dir="auto">Mixed LTR/RTL with https://development.wp.local/?reader-mode=1 and <code>wpdfv_reader_preferences</code>.</p><figure class="wp-block-table"><table><tbody><tr><td>۱</td><td>۱۲٬۳۴۵</td></tr></tbody></table></figure><figure class="wp-block-image"><img src="https://example.com/wp-content/plugins/wp-distraction-free-view/assets/dist/images/wpdfv-icon.png" alt="WPDFV fixture icon" /></figure><div class="wp-caption"><img src="https://example.com/wp-content/plugins/wp-distraction-free-view/assets/dist/images/wpdfv-icon.png" alt="نماد Reader Mode" /><p class="wp-caption-text">نماد Reader Mode با caption فارسی</p></div></article>';
+		$prepared = Reader::prepare_rendered_content( $content );
+
+		$this->assertStringContainsString( 'می‌خواهیم', $prepared['content'] );
+		$this->assertStringContainsString( '۱۲۳۴۵۶۷۸۹۰', $prepared['content'] );
+		$this->assertStringContainsString( '١٢٣٤٥٦٧٨٩٠', $prepared['content'] );
+		$this->assertStringContainsString( '👩‍💻', $prepared['content'] );
+		$this->assertStringContainsString( 'السَّلَامُ عَلَيْكُمْ', $prepared['content'] );
+		$this->assertStringContainsString( 'https://development.wp.local/?reader-mode=1', $prepared['content'] );
+		$this->assertStringContainsString( 'wp-caption-text', $prepared['content'] );
+		$this->assertStringContainsString( '<table>', $prepared['content'] );
+		$this->assertStringContainsString( '<img src="https://example.com/wp-content/plugins/wp-distraction-free-view/assets/dist/images/wpdfv-icon.png"', $prepared['content'] );
+		$this->assertNotEmpty( $prepared['toc'] );
+		$this->assertSame( '«حالت مطالعه» برای WPDFV 1.8.0', $prepared['toc'][0]['text'] );
 	}
 
 	/**
