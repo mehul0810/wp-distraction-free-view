@@ -617,6 +617,7 @@ class Reader {
 			$content = preg_replace( '#<(' . implode( '|', array_map( 'preg_quote', $tags ) ) . ')\b[^>]*>.*?</\1>#is', '', $content );
 		}
 
+		$content           = self::strip_reader_toggle_markup( $content );
 		$protected_samples = [];
 		$content           = self::protect_visible_code_samples( $content, $protected_samples );
 		$content           = self::strip_escaped_executable_blocks( $content, $tags );
@@ -644,6 +645,27 @@ class Reader {
 		 * @param \WP_Post|null $post Current post, when available.
 		 */
 		return (string) apply_filters( 'wpdfv_modal_content_after_kses', $content, $post );
+	}
+
+	/**
+	 * Remove WPDFV Reader Mode launch controls from rendered modal content.
+	 *
+	 * Manual shortcode and block placement should remain on the source page,
+	 * but the modal should never render another Reader Mode launch control
+	 * inside the reading surface.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Rendered modal template content.
+	 *
+	 * @return string
+	 */
+	protected static function strip_reader_toggle_markup( $content ) {
+		return (string) preg_replace(
+			'#<div\b[^>]*class=(["\'])[^"\']*\bwpdfv-fullscreen-container\b[^"\']*\1[^>]*>\s*<button\b[^>]*class=(["\'])[^"\']*\bwpdfv-reader-toggle\b[^"\']*\2[^>]*>.*?</button>\s*</div>#is',
+			'',
+			(string) $content
+		);
 	}
 
 	/**
