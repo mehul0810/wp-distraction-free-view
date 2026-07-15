@@ -14,6 +14,7 @@ $GLOBALS['wpdfv_test_active_plugins']       = [];
 $GLOBALS['wpdfv_test_enqueued']             = [
 	'scripts'       => [],
 	'styles'        => [],
+	'style_data'    => [],
 	'inline'        => [],
 	'inline_styles' => [],
 ];
@@ -67,6 +68,7 @@ function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_enqueued']             = [
 		'scripts'       => [],
 		'styles'        => [],
+		'style_data'    => [],
 		'inline'        => [],
 		'inline_styles' => [],
 	];
@@ -175,6 +177,12 @@ function wp_enqueue_style( $handle, $src = '', $deps = [], $ver = false, $media 
 	return true;
 }
 
+function wp_style_add_data( $handle, $key, $value ) {
+	$GLOBALS['wpdfv_test_enqueued']['style_data'][ $handle ][ $key ] = $value;
+
+	return true;
+}
+
 function wp_register_script( $handle, $src = '', $deps = [], $ver = false, $args = [] ) {
 	return true;
 }
@@ -199,6 +207,10 @@ function wp_add_inline_style( $handle, $data ) {
 	$GLOBALS['wpdfv_test_enqueued']['inline_styles'][ $handle ][] = $data;
 
 	return true;
+}
+
+function wp_enqueue_code_editor( $settings ) {
+	return [];
 }
 
 function wp_json_encode( $value, $flags = 0, $depth = 512 ) {
@@ -415,6 +427,7 @@ require_once dirname( __DIR__ ) . '/src/Includes/Reader.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Helpers.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Actions.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Blocks.php';
+require_once dirname( __DIR__ ) . '/src/Admin/Actions.php';
 require_once dirname( __DIR__ ) . '/src/Admin/Upgrades.php';
 require_once dirname( __DIR__ ) . '/src/Admin/SettingsApi.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Shortcodes/Main.php';

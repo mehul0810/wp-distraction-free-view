@@ -53,6 +53,7 @@ class Actions {
 			[ 'wp-components' ],
 			$asset['version']
 		);
+		wp_style_add_data( 'wpdfv-admin', 'rtl', 'replace' );
 
 		wp_enqueue_script(
 			'wpdfv-admin',

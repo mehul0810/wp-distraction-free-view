@@ -68,6 +68,7 @@ class Actions {
 			[],
 			$asset['version']
 		);
+		wp_style_add_data( 'wpdfv-core', 'rtl', 'replace' );
 
 		wp_register_script(
 			'wpdfv-core',
