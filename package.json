@@ -1,6 +1,6 @@
 {
 	"name": "wp-distraction-free-view",
-	"version": "1.8.0",
+	"version": "1.8.1",
 	"description": "Frontend Reader Mode and focused reading experience for WordPress content.",
 	"private": true,
 	"scripts": {

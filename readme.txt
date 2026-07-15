@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,7 +70,7 @@ Reader Mode can also open from the URL on enabled single content:
 
 Setup and troubleshooting guide:
 
-https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.0/docs/reader-mode-setup.md
+https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.1/docs/reader-mode-setup.md
 
 = Template Customization =
 
@@ -143,6 +143,10 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
+
+= 1.8.1 =
+- Fixed: Reader Mode launch controls no longer leak into rendered modal content when manual toggles are present. [#99](https://github.com/mehul0810/wp-distraction-free-view/pull/99)
+- Fixed: RTL locales now load the generated frontend and admin RTL stylesheets through WordPress's standard RTL replacement behavior. [#105](https://github.com/mehul0810/wp-distraction-free-view/pull/105)
 
 = 1.8.0 =
 - Added: Scoped Reader Mode custom CSS controls for administrators with the WordPress CSS editing capability.
@@ -235,6 +239,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.1 =
+Prevents Reader Mode toggles from leaking into modal content and ensures frontend and admin RTL stylesheets load for RTL locales.
 
 = 1.8.0 =
 Improves Reader Mode reliability, keyboard handling, core Accordion compatibility, content rendering, and browser validation while preserving WordPress 7.0 compatibility.
