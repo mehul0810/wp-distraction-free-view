@@ -27,7 +27,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Requirements
 
 - WordPress 6.0 or later
-- Tested up to WordPress 7.0
+- Tested up to WordPress 7.1
 - PHP 8.2 or later
 - Node.js 24.15.0
 - npm 11 or later
