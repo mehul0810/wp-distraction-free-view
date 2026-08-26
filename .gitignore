@@ -39,11 +39,13 @@ dwsync.xml
 .hg
 .svn
 .CVS
+build
 intermediate
 .idea
 cache
 node_modules
-assets/dist/
+release
+*.zip
 
 # Composer
 vendor

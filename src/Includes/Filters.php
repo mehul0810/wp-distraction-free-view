@@ -25,6 +25,7 @@ class Filters {
 	 */
 	public function __construct() {
 		add_filter( 'the_content', [ $this, 'filter_content' ] );
+		add_filter( 'body_class', [ $this, 'add_body_classes' ] );
 	}
 
 	/**
@@ -40,11 +41,16 @@ class Filters {
 	public function filter_content( $content ) {
 		global $post;
 
-		// Get data about where to display.
-		$where_to_display = Helpers::where_to_display();
+		if ( Helpers::is_button_injection_suspended() || ! $post instanceof \WP_Post ) {
+			return $content;
+		}
+
+		if ( ! Helpers::is_automatic_button_enabled() ) {
+			return $content;
+		}
 
 		// Bailout, if not to show on specific post type.
-		if ( ! in_array( $post->post_type, $where_to_display, true ) ) {
+		if ( ! Reader::is_post_type_enabled( $post->post_type ) ) {
 			return $content;
 		}
 
@@ -53,7 +59,7 @@ class Filters {
 		$button_html    = Helpers::display_read_mode_button( $post->ID );
 
 		// Bailout, if the display button at setting is disabled.
-		if ( 'disable' === $display_btn_at ) {
+		if ( 'manual_only' === $display_btn_at || 'floating' === $display_btn_at ) {
 			return $content;
 		} elseif ( 'before_content' === $display_btn_at ) {
 			$new_content .= $button_html;
@@ -61,8 +67,27 @@ class Filters {
 		} elseif ( 'after_content' === $display_btn_at ) {
 			$new_content .= $content;
 			$new_content .= $button_html;
+		} else {
+			return $content;
 		}
 
 		return $new_content;
+	}
+
+	/**
+	 * Add body classes when Reader Mode is requested through the URL.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $classes Body classes.
+	 *
+	 * @return array
+	 */
+	public function add_body_classes( $classes ) {
+		if ( Reader::is_reader_mode_request() ) {
+			$classes[] = 'wpdfv-reader-mode-requested';
+		}
+
+		return $classes;
 	}
 }

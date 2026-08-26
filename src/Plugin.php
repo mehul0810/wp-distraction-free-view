@@ -1,8 +1,8 @@
 <?php
 namespace WPDFV;
 
-use WPDFV\Admin as Admin;
-use WPDFV\Includes as Includes;
+use WPDFV\Admin;
+use WPDFV\Includes;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,8 +32,25 @@ final class Plugin {
 		// Register services used throughout the plugin.
 		add_action( 'plugins_loaded', [ $this, 'register_services' ] );
 
+		// Clear request-level caches when settings change outside the Settings API.
+		add_action( 'add_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+		add_action( 'update_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+		add_action( 'delete_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+
 		// Load text domain.
 		add_action( 'init', [ $this, 'load_plugin_textdomain' ] );
+	}
+
+	/**
+	 * Clears request-level caches affected by settings changes.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	public function invalidate_request_caches() {
+		Includes\Reader::invalidate_request_cache();
+		Includes\Templates::invalidate_request_cache();
 	}
 
 	/**
@@ -49,10 +66,13 @@ final class Plugin {
 		new Admin\Actions();
 		new Admin\Filters();
 		new Admin\Settings();
+		new Admin\Upgrades();
 
 		// Load Frontend Files.
 		new Includes\Actions();
+		new Includes\Blocks();
 		new Includes\Filters();
+		new Includes\Templates();
 		new Includes\Shortcodes\Main();
 	}
 
@@ -66,7 +86,7 @@ final class Plugin {
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain(
-			'wpdfv',
+			'wp-distraction-free-view',
 			false,
 			dirname( plugin_basename( WPDFV_PLUGIN_FILE ) ) . '/languages/'
 		);
@@ -83,7 +103,69 @@ final class Plugin {
 	 *
 	 * @return void
 	 */
-	public function activate( $network_wide = false ) {}
+	public function activate( $network_wide = false ) {
+		if ( is_multisite() && $network_wide ) {
+			$this->activate_network();
+			return;
+		}
+
+		$this->activate_site();
+	}
+
+	/**
+	 * Initialize options for a single site.
+	 *
+	 * Existing installs must not be marked as current during activation before
+	 * the upgrade runner has a chance to migrate legacy option data on init.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	private function activate_site() {
+		$has_settings        = false !== get_option( 'wpdfv_settings', false );
+		$has_legacy_settings = false !== get_option( 'wpdfv_general', false );
+
+		if ( ! $has_settings && ! $has_legacy_settings ) {
+			update_option( 'wpdfv_settings', Includes\Reader::get_default_settings(), false );
+			update_option( 'wpdfv_version', WPDFV_VERSION, false );
+			return;
+		}
+
+		if ( false === get_option( 'wpdfv_version', false ) ) {
+			update_option( 'wpdfv_version', '1.0.0', false );
+		}
+	}
+
+	/**
+	 * Initialize options across a multisite network in bounded batches.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return void
+	 */
+	private function activate_network() {
+		$number = 100;
+		$offset = 0;
+
+		do {
+			$site_ids = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => $number,
+					'offset' => $offset,
+				]
+			);
+
+			foreach ( $site_ids as $site_id ) {
+				switch_to_blog( $site_id );
+				$this->activate_site();
+				restore_current_blog();
+			}
+
+			$offset += $number;
+		} while ( count( $site_ids ) === $number );
+	}
 
 	/**
 	 * Handles deactivation procedures.

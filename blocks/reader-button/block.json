@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wpdfv/reader-button",
+	"title": "Reader Mode Toggle",
+	"category": "wpdfv",
+	"icon": "fullscreen-alt",
+	"description": "Adds a button that opens the current post in frontend Reader Mode.",
+	"textdomain": "wp-distraction-free-view",
+	"usesContext": [ "postId", "postType" ],
+	"attributes": {
+		"buttonText": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"align": true,
+		"color": {
+			"background": true,
+			"text": true
+		},
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "file:../../assets/dist/js/wpdfv-block.js",
+	"style": "wpdfv-core"
+}
