@@ -4,12 +4,12 @@
 	"description": "Frontend Reader Mode and focused reading experience for WordPress content.",
 	"private": true,
 	"scripts": {
-		"build": "wp-scripts build",
-		"start": "wp-scripts start",
+		"build": "wp-scripts build wpdfv=assets/src/js/frontend/wpdfv.js wpdfv-admin=assets/src/js/admin/wpdfv-admin.js wpdfv-block=assets/src/js/block/reader-button.js --output-path=assets/dist --output-filename=js/[name].js",
+		"start": "wp-scripts start wpdfv=assets/src/js/frontend/wpdfv.js wpdfv-admin=assets/src/js/admin/wpdfv-admin.js wpdfv-block=assets/src/js/block/reader-button.js --output-path=assets/dist --output-filename=js/[name].js",
 		"test:browser": "playwright test",
 		"lint:js": "wp-scripts lint-js assets/src/js",
 		"lint:css": "wp-scripts lint-style assets/src/css",
-		"format": "wp-scripts format assets/src webpack.config.js",
+		"format": "wp-scripts format assets/src",
 		"packages-update": "wp-scripts packages-update"
 	},
 	"repository": {
