@@ -852,6 +852,31 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Frontend and admin bundles must use the JSX runtime available to the plugin minimum.
+	 *
+	 * @return void
+	 */
+	public function test_reader_bundles_use_wordpress_6_0_compatible_jsx_runtime() {
+		foreach ( [ 'wpdfv', 'wpdfv-admin' ] as $handle ) {
+			$asset_file  = WPDFV_PLUGIN_DIR . "assets/dist/js/{$handle}.asset.php";
+			$bundle_file = WPDFV_PLUGIN_DIR . "assets/dist/js/{$handle}.js";
+
+			$this->assertFileExists( $asset_file );
+			$this->assertFileExists( $bundle_file );
+
+			$asset  = require $asset_file;
+			$bundle = file_get_contents( $bundle_file );
+
+			$this->assertIsArray( $asset );
+			$this->assertArrayHasKey( 'dependencies', $asset );
+			$this->assertNotContains( 'react-jsx-runtime', $asset['dependencies'] );
+			$this->assertIsString( $bundle );
+			$this->assertStringNotContainsString( 'ReactJSXRuntime', $bundle );
+			$this->assertStringContainsString( 'createElement', $bundle );
+		}
+	}
+
+	/**
 	 * Visitor enqueue keeps wp-components styles off frontend pages.
 	 *
 	 * @return void
