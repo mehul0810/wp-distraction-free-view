@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.8.2
+Stable tag: 1.8.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -144,6 +144,10 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Changelog ==
 
+= 1.8.3 =
+- Fixed: Direct-access guard in the upgrades handler now matches the rest of the plugin instead of exposing a hardcoded string. [#126](https://github.com/mehul0810/wp-distraction-free-view/pull/126)
+- Fixed: Uninstall now also removes the legacy `wpdfv_general` option left behind by pre-1.6.0 installs, and cleans up every site on a multisite network instead of only the current one. [#126](https://github.com/mehul0810/wp-distraction-free-view/pull/126)
+
 = 1.8.2 =
 - Tested: Validated installation, activation, Reader Mode content REST responses, shortcode registration, editor block registration, and RTL/unicode content handling against WordPress 7.1. [#125](https://github.com/mehul0810/wp-distraction-free-view/issues/125)
 
@@ -242,6 +246,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.3 =
+Hardens the direct-access guard in the upgrades handler and completes uninstall cleanup, including multisite networks.
 
 = 1.8.2 =
 Validated compatibility with WordPress 7.1, including the packaged plugin runtime, Reader Mode content endpoint, settings route registration, shortcode, editor block, and RTL/unicode content handling.
