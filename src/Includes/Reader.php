@@ -725,7 +725,7 @@ class Reader {
 	 * @return string
 	 */
 	public static function filter_supported_embed_html( $html, $url ) {
-		if ( ! is_string( $html ) || false === stripos( $html, '<iframe' ) ) {
+		if ( ! is_string( $html ) ) {
 			return $html;
 		}
 
@@ -736,6 +736,10 @@ class Reader {
 		}
 
 		if ( self::is_interactive_provider( $provider ) ) {
+			if ( false === stripos( $html, '<iframe' ) ) {
+				return self::get_provider_fallback_markup( $url, $provider );
+			}
+
 			if ( preg_match( '#<iframe\b([^>]*)>(?:.*?</iframe\s*>)?#is', $html, $matches ) ) {
 				$iframe_attributes = (string) $matches[1];
 				$iframe_src        = self::get_heading_attribute( $iframe_attributes, 'src' );
