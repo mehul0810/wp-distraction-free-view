@@ -145,6 +145,8 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 == Changelog ==
 
 = 1.8.3 =
+- Fixed: Direct-access guard in the upgrades handler now matches the rest of the plugin instead of exposing a hardcoded string. [#126](https://github.com/mehul0810/wp-distraction-free-view/pull/126)
+- Fixed: Uninstall now also removes the legacy `wpdfv_general` option left behind by pre-1.6.0 installs, and cleans up every site on a multisite network instead of only the current one. [#126](https://github.com/mehul0810/wp-distraction-free-view/pull/126)
 - Fixed: Reader Mode now preserves and renders trusted YouTube and Spotify embeds with a safe iframe allowlist while keeping arbitrary iframe, script, style, and event-handler content blocked. [#137](https://github.com/mehul0810/wp-distraction-free-view/issues/137)
 
 = 1.8.2 =
@@ -247,6 +249,7 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 == Upgrade Notice ==
 
 = 1.8.3 =
+Hardens the direct-access guard in the upgrades handler and completes uninstall cleanup, including multisite networks.
 Preserves supported YouTube and Spotify embeds inside Reader Mode while keeping untrusted embed markup blocked.
 
 = 1.8.2 =
