@@ -27,7 +27,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Requirements
 
 - WordPress 6.0 or later
-- Tested up to WordPress 7.0
+- Tested up to WordPress 7.1
 - PHP 8.2 or later
 - Node.js 24.15.0
 - npm 11 or later
@@ -75,6 +75,16 @@ npm run lint:css
 npm run build
 ```
 
+Run the WordPress integration suite against the WordPress test library:
+
+```bash
+bash bin/install-wp-tests.sh wordpress_test root root localhost latest
+WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test:integration
+WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
+```
+
+The integration suite is intentionally separate from `composer test`. It boots real WordPress APIs for REST routing, block registration/rendering, options, migrations, and multisite activation coverage.
+
 ## Release Workflow
 
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
@@ -99,6 +109,7 @@ Available settings:
 - Default font size: small, default, or large.
 - Custom toggle label.
 - Custom exit label.
+- Reader Mode custom CSS for scoped modal styling.
 - Reader template.
 
 Automatic insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
@@ -117,11 +128,38 @@ Use the **WP Distraction Free View / Reader Mode Toggle** block in posts, pages,
 
 The block is dynamic and uses the current post context, so it opens the correct post when placed in single templates or inside Query Loop templates.
 
+## Setup and Troubleshooting
+
+For step-by-step placement guidance, URL activation, preference privacy notes, and shortcode/embed troubleshooting, see [Reader Mode Setup and Troubleshooting](docs/reader-mode-setup.md).
+
 ## Modal Templates
 
 The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
 
 Block themes and site-specific code can register additional Reader Mode templates with the `wpdfv_modal_templates` filter.
+
+## Reader Mode Custom CSS
+
+Administrators who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from **Settings > Reader Mode > Configure > Custom CSS**. The saved CSS is printed only with Reader Mode frontend assets and is attached to the plugin stylesheet handle.
+
+Keep selectors scoped to Reader Mode containers:
+
+```css
+.wpdfv-reader-modal .wpdfv-reader-content {
+	font-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+	color: #1f2937;
+}
+
+.wpdfv-reader-modal {
+	--wpdfv-reader-accent-color: #3858e9;
+}
+```
+
+Developers can filter the final CSS with `wpdfv_custom_css` or change the required editing capability with `wpdfv_custom_css_capability`.
 
 ## Upgrade Notes
 
@@ -168,6 +206,7 @@ This repository is for development. For user support, use the [WordPress.org sup
 
 ## Development Notes
 
+- Product UI and asset decisions should follow the lightweight design contract in [DESIGN.md](DESIGN.md).
 - Commit `package-lock.json` whenever npm dependency metadata changes.
 - Built assets are generated into `assets/dist`.
 - Runtime plugin code uses Composer's PSR-4 autoloader. Production packages include the no-dev Composer autoload files generated from `composer.json`.
