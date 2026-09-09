@@ -58,16 +58,17 @@ class Actions {
 	public static function register_frontend_assets() {
 		$asset_path = WPDFV_PLUGIN_DIR . 'assets/dist/js/wpdfv.asset.php';
 		$asset      = is_readable( $asset_path ) ? require $asset_path : [
-			'dependencies' => [ 'wp-api-fetch', 'wp-components', 'wp-element', 'wp-i18n' ],
+			'dependencies' => [ 'wp-api-fetch', 'wp-element', 'wp-i18n', 'wp-primitives' ],
 			'version'      => WPDFV_VERSION,
 		];
 
 		wp_register_style(
 			'wpdfv-core',
 			WPDFV_PLUGIN_URL . 'assets/dist/wpdfv.css',
-			[ 'wp-components' ],
+			[],
 			$asset['version']
 		);
+		wp_style_add_data( 'wpdfv-core', 'rtl', 'replace' );
 
 		wp_register_script(
 			'wpdfv-core',
@@ -90,9 +91,10 @@ class Actions {
 	public static function enqueue_frontend_assets() {
 		self::register_frontend_assets();
 
-		wp_enqueue_style( 'wp-components' );
 		wp_enqueue_style( 'wpdfv-core' );
 		wp_enqueue_script( 'wpdfv-core' );
+		self::enqueue_reader_interactivity_modules();
+		self::add_custom_css();
 
 		if ( self::$frontend_settings_added ) {
 			return;
@@ -100,6 +102,45 @@ class Actions {
 
 		wp_add_inline_script( 'wpdfv-core', 'window.wpdfvReaderMode = ' . wp_json_encode( self::get_frontend_settings() ) . ';', 'before' );
 		self::$frontend_settings_added = true;
+	}
+
+	/**
+	 * Attach Reader Mode custom CSS to the frontend stylesheet handle.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected static function add_custom_css() {
+		$custom_css = Reader::get_custom_css();
+
+		if ( '' === $custom_css ) {
+			return;
+		}
+
+		wp_add_inline_style( 'wpdfv-core', $custom_css );
+	}
+
+	/**
+	 * Enqueue core script modules needed by interactive blocks in Reader Mode.
+	 *
+	 * Reader Mode content is mounted into the modal after the page has loaded,
+	 * so blocks using the Interactivity API need their view modules available
+	 * before the frontend app hydrates inserted modal markup.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected static function enqueue_reader_interactivity_modules() {
+		if ( ! function_exists( 'wp_enqueue_script_module' ) ) {
+			return;
+		}
+
+		call_user_func(
+			'wp_enqueue_script_module',
+			'@wordpress/block-library/accordion/view'
+		);
 	}
 
 	/**
@@ -187,11 +228,14 @@ class Actions {
 			'exitButtonText'            => $settings['exit_button_text'],
 			'readingProgressEnabled'    => $settings['reading_progress_enabled'],
 			'readingTimeEnabled'        => $settings['reading_time_enabled'],
+			'readerTocEnabled'          => $settings['reader_toc_enabled'],
+			'readerResumeEnabled'       => $settings['reader_resume_enabled'],
 			'preferenceControlsEnabled' => $settings['preference_controls_enabled'],
 			'defaultReaderTheme'        => $settings['default_reader_theme'],
 			'defaultContentWidth'       => $settings['default_content_width'],
 			'defaultFontSize'           => $settings['default_font_size'],
 			'preferencesStorageKey'     => Reader::PREFERENCES_STORAGE_KEY,
+			'positionsStorageKey'       => Reader::POSITIONS_STORAGE_KEY,
 			'readerModeQueryParam'      => Reader::QUERY_PARAM,
 		];
 	}
