@@ -831,6 +831,7 @@ class Reader {
 				'height' => '315',
 			];
 		$title    = self::get_heading_attribute( (string) $attributes, 'title' );
+		/* translators: %s: embed provider name. */
 		$title    = '' !== $title ? self::sanitize_iframe_text_attribute( $title ) : sprintf( __( '%s embed', 'wp-distraction-free-view' ), $provider );
 		$width    = self::sanitize_iframe_dimension( self::get_heading_attribute( (string) $attributes, 'width' ), $defaults['width'] );
 		$height   = self::sanitize_iframe_dimension( self::get_heading_attribute( (string) $attributes, 'height' ), $defaults['height'] );
