@@ -181,11 +181,11 @@ class ReaderIntegrationTest extends TestCase {
 	}
 
 	/**
-	 * Real WordPress KSES keeps supported provider embeds represented in REST output.
+	 * Real WordPress KSES keeps trusted provider embeds interactive in REST output.
 	 *
 	 * @return void
 	 */
-	public function test_rest_content_preserves_provider_fallbacks_after_kses() {
+	public function test_rest_content_preserves_provider_iframes_after_kses() {
 		$source_content = '<p>Embedded content.</p><figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123"></iframe></div></figure><figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="https://open.spotify.com/embed/playlist/playlist-123"></iframe></div></figure>';
 		$previous_user  = get_current_user_id();
 
@@ -206,9 +206,9 @@ class ReaderIntegrationTest extends TestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringContainsString( 'Open YouTube content', $data['content'] );
-		$this->assertStringContainsString( 'Open Spotify content', $data['content'] );
-		$this->assertStringNotContainsString( '<iframe', $data['content'] );
+		$this->assertSame( 2, substr_count( $data['content'], '<iframe ' ) );
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/video-123"', $data['content'] );
+		$this->assertStringContainsString( 'src="https://open.spotify.com/embed/playlist/playlist-123"', $data['content'] );
 		$this->assertSame( [], $data['scripts'] );
 		$this->assertSame( $source_content, get_post( $post_id )->post_content );
 	}
