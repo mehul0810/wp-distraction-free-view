@@ -214,6 +214,64 @@ class ReaderIntegrationTest extends TestCase {
 	}
 
 	/**
+	 * Registered non-YouTube/Spotify providers use the core oEmbed registry.
+	 *
+	 * @return void
+	 */
+	public function test_rest_content_preserves_registered_oembed_provider_fallback() {
+		$source_content = '<p>https://vimeo.com/22439234</p>';
+		$previous_user  = get_current_user_id();
+		$oembed_filter  = static function ( $result, $url ) {
+			if ( 'https://vimeo.com/22439234' !== $url ) {
+				return $result;
+			}
+
+			return '<iframe src="https://player.vimeo.com/video/22439234"></iframe>';
+		};
+
+		add_filter( 'pre_oembed_result', $oembed_filter, 10, 2 );
+
+		wp_set_current_user( 1 );
+
+		try {
+			$post_id = $this->create_post(
+				[
+					'post_content' => $source_content,
+					'post_status'  => 'publish',
+				]
+			);
+
+			$response = $this->dispatch_content_request( $post_id );
+		} finally {
+			remove_filter( 'pre_oembed_result', $oembed_filter, 10 );
+			wp_set_current_user( $previous_user );
+		}
+
+		$data = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Open Vimeo content', $data['content'] );
+		$this->assertStringNotContainsString( '<iframe', $data['content'] );
+		$this->assertSame( $source_content, get_post( $post_id )->post_content );
+	}
+
+	/**
+	 * Provider aliases and protocol-relative URLs use the registered provider list.
+	 *
+	 * @return void
+	 */
+	public function test_registered_provider_aliases_use_safe_fallbacks() {
+		$result = Reader::filter_supported_embed_html(
+			'<iframe src="//flic.kr/p/abc123"></iframe>',
+			'//flic.kr/p/abc123'
+		);
+
+		$this->assertStringContainsString( 'Open Flickr content', $result );
+		$this->assertStringContainsString( 'href="//flic.kr/p/abc123"', $result );
+		$this->assertStringNotContainsString( '<iframe', $result );
+	}
+
+	/**
 	 * The reader button block registers from block.json and renders from post context.
 	 *
 	 * @return void

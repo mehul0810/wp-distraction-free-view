@@ -454,6 +454,20 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * oEmbed HTML filters preserve iframe providers without loading their markup.
+	 *
+	 * @return void
+	 */
+	public function test_filter_supported_embed_html_preserves_iframe_provider_fallback() {
+		$html = '<iframe src="https://www.youtube.com/embed/video-123"></iframe>';
+
+		$result = Reader::filter_supported_embed_html( $html, 'https://www.youtube.com/watch?v=video-123' );
+
+		$this->assertStringContainsString( 'Open YouTube content', $result );
+		$this->assertStringNotContainsString( '<iframe', $result );
+	}
+
+	/**
 	 * Prepared Reader Mode content returns shortcode scripts separately.
 	 *
 	 * @return void

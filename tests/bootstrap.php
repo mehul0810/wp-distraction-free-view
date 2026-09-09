@@ -142,6 +142,25 @@ function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 )
 	return true;
 }
 
+function remove_filter( $hook_name, $callback, $priority = 10 ) {
+	if ( empty( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] ) ) {
+		return false;
+	}
+
+	$removed = false;
+
+	foreach ( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] as $index => $registered ) {
+		if ( $registered['callback'] === $callback ) {
+			unset( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ][ $index ] );
+			$removed = true;
+		}
+	}
+
+	$GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] = array_values( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] );
+
+	return $removed;
+}
+
 function add_shortcode( $tag, $callback ) {
 	$GLOBALS['wpdfv_test_shortcodes'][ $tag ] = $callback;
 
