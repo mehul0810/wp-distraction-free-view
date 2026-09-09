@@ -3,9 +3,9 @@ Contributors: mehul0810
 Tags: reader mode, reading mode, distraction free, focused reading, accessibility
 Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.7.1
+Stable tag: 1.8.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,8 +31,9 @@ Use it to offer focused reading for posts, pages, and selected public custom pos
 8. Optional reading progress indicator.
 9. Optional estimated reading time.
 10. Block-based Reader Mode templates for full site editing themes.
-11. WordPress-components settings screen.
-12. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
+11. Scoped Reader Mode custom CSS for administrators with the WordPress CSS editing capability.
+12. WordPress-components settings screen.
+13. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
 
 = Settings Overview =
 
@@ -50,6 +51,7 @@ The settings screen is organized into **About**, **Configure**, and **More Plugi
 * Default font size: small, default, or large.
 * Custom toggle label.
 * Custom exit label.
+* Reader Mode custom CSS.
 * Reader template.
 
 Automatic toggle insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
@@ -65,6 +67,10 @@ Use the shortcode:
 Reader Mode can also open from the URL on enabled single content:
 
 `https://example.com/my-post/?reader-mode=1`
+
+Setup and troubleshooting guide:
+
+https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.3/docs/reader-mode-setup.md
 
 = Template Customization =
 
@@ -105,6 +111,27 @@ Yes. Reader Mode includes icon-only print and fullscreen controls in the modal h
 
 Yes. The plugin registers a default block-based Reader Mode template and a WP Distraction Free View pattern category. Themes and site-specific code can add more templates with the `wpdfv_modal_templates` filter.
 
+= Can I customize Reader Mode styles? =
+
+Yes. Users who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from Settings > Reader Mode > Configure > Custom CSS.
+
+Scope selectors to Reader Mode containers, for example:
+
+`
+.wpdfv-reader-modal .wpdfv-reader-content {
+	font-family: Georgia, serif;
+}
+
+.wpdfv-reader-modal .wpdfv-reader-content h1,
+.wpdfv-reader-modal .wpdfv-reader-content h2 {
+	color: #1f2937;
+}
+
+.wpdfv-reader-modal {
+	--wpdfv-reader-accent-color: #3858e9;
+}
+`
+
 = Will old settings keep working? =
 
 Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdfv_general` values are migrated during upgrade. The supported shortcode remains `[wpdfv]`.
@@ -116,6 +143,24 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
+
+= 1.8.3 =
+- Fixed: Reader Mode now preserves and renders trusted YouTube and Spotify embeds with a safe iframe allowlist while keeping arbitrary iframe, script, style, and event-handler content blocked. [#137](https://github.com/mehul0810/wp-distraction-free-view/issues/137)
+
+= 1.8.2 =
+- Tested: Validated installation, activation, Reader Mode content REST responses, shortcode registration, editor block registration, and RTL/unicode content handling against WordPress 7.1. [#125](https://github.com/mehul0810/wp-distraction-free-view/issues/125)
+
+= 1.8.1 =
+- Fixed: Reader Mode launch controls no longer leak into rendered modal content when manual toggles are present. [#99](https://github.com/mehul0810/wp-distraction-free-view/pull/99)
+- Fixed: RTL locales now load the generated frontend and admin RTL stylesheets through WordPress's standard RTL replacement behavior. [#105](https://github.com/mehul0810/wp-distraction-free-view/pull/105)
+
+= 1.8.0 =
+- Added: Scoped Reader Mode custom CSS controls for administrators with the WordPress CSS editing capability.
+- Added: Reader Mode copy/share actions, local resume reading, table of contents navigation, reader-friendly print output, and expanded accessibility-focused typography controls.
+- Improved: Reader Mode content reliability for shortcode embeds and complex block output, including support-driven partial or empty content cases.
+- Improved: Reader Mode modal compatibility with WordPress core Accordion blocks and Interactivity API script modules.
+- Fixed: Reader Mode modal close button, initial keyboard focus, Escape close behavior, page-key scrolling, and tab order reliability.
+- Changed: Expanded browser smoke coverage for close behavior, focus, content completeness, accordion interaction, print, sharing, resume reading, and localStorage fallback handling.
 
 = 1.7.1 =
 - Fixed: Reader Mode content now strips complete script, style, and noscript blocks before final sanitization so shortcode embed configuration is not displayed as raw text.
@@ -200,6 +245,18 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.3 =
+Preserves supported YouTube and Spotify embeds inside Reader Mode while keeping untrusted embed markup blocked.
+
+= 1.8.2 =
+Validated compatibility with WordPress 7.1, including the packaged plugin runtime, Reader Mode content endpoint, settings route registration, shortcode, editor block, and RTL/unicode content handling.
+
+= 1.8.1 =
+Prevents Reader Mode toggles from leaking into modal content and ensures frontend and admin RTL stylesheets load for RTL locales.
+
+= 1.8.0 =
+Improves Reader Mode reliability, keyboard handling, core Accordion compatibility, content rendering, and browser validation while preserving WordPress 7.0 compatibility.
 
 = 1.7.1 =
 Improves Reader Mode compatibility with shortcode embeds that output inline scripts and hardens release/package validation.
