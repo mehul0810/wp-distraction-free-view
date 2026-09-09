@@ -221,6 +221,27 @@ body.wpdfv-reader-mode-active {
 		line-height: inherit;
 		margin-block-end: var(--wpdfv-reader-paragraph-spacing);
 	}
+
+	iframe.wpdfv-reader-provider-embed {
+		border: 0;
+		display: block;
+		margin: 1.5em auto;
+		max-width: 100%;
+	}
+
+	iframe.wpdfv-reader-provider-embed--youtube {
+		aspect-ratio: 16 / 9;
+		height: auto;
+		max-width: 560px;
+		width: 100%;
+	}
+
+	iframe.wpdfv-reader-provider-embed--spotify {
+		aspect-ratio: 730 / 352;
+		height: auto;
+		max-width: 730px;
+		width: 100%;
+	}
 }
 
 .wpdfv-reader-toc {

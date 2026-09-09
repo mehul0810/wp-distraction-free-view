@@ -429,41 +429,74 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
-	 * Supported provider iframes remain represented without allowing iframe markup.
+	 * Trusted provider iframes remain interactive while unsafe iframe markup is blocked.
 	 *
 	 * @return void
 	 */
-	public function test_sanitize_rendered_content_preserves_supported_provider_fallback_links() {
-		$content = '<figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123" title="YouTube video"></iframe></div></figure>' .
-			'<figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="https://open.spotify.com/embed/playlist/playlist-123" title="Spotify playlist"></iframe></div></figure>' .
+	public function test_sanitize_rendered_content_preserves_trusted_provider_iframes() {
+		$content = '<figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123" title="YouTube video" width="560" height="315" style="display:none" onload="alert(1)" data-private="no"></iframe></div></figure>' .
+			'<figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="//open.spotify.com/embed/playlist/playlist-123" title="Spotify playlist" width="100%" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen=""></iframe></div></figure>' .
 			'<iframe src="https://player.example.com/embed/ignored"></iframe>' .
 			'<iframe src="javascript://www.youtube.com/embed/ignored"></iframe>';
 		$result  = Reader::sanitize_rendered_content( $content );
 
-		$this->assertStringContainsString( 'class="wpdfv-provider-embed-fallback"', $result );
-		$this->assertStringContainsString( 'href="https://www.youtube.com/embed/video-123"', $result );
-		$this->assertStringContainsString( 'Open YouTube content', $result );
-		$this->assertStringContainsString( 'href="https://open.spotify.com/embed/playlist/playlist-123"', $result );
-		$this->assertStringContainsString( 'Open Spotify content', $result );
-		$this->assertStringContainsString( 'target="_blank"', $result );
-		$this->assertStringContainsString( 'rel="noopener noreferrer"', $result );
-		$this->assertStringContainsString( 'aria-label="Open YouTube content"', $result );
-		$this->assertStringNotContainsString( '<iframe', $result );
+		$this->assertSame( 2, substr_count( $result, '<iframe ' ) );
+		$this->assertStringContainsString( 'class="wpdfv-reader-provider-embed wpdfv-reader-provider-embed--youtube"', $result );
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/video-123"', $result );
+		$this->assertStringContainsString( 'title="YouTube video"', $result );
+		$this->assertStringContainsString( 'src="https://open.spotify.com/embed/playlist/playlist-123"', $result );
+		$this->assertStringContainsString( 'title="Spotify playlist"', $result );
+		$this->assertStringContainsString( 'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"', $result );
+		$this->assertStringContainsString( 'allowfullscreen=""', $result );
+		$this->assertStringNotContainsString( 'style=', $result );
+		$this->assertStringNotContainsString( 'onload=', $result );
+		$this->assertStringNotContainsString( 'data-private=', $result );
 		$this->assertStringNotContainsString( 'player.example.com', $result );
 		$this->assertStringNotContainsString( 'javascript://www.youtube.com', $result );
 	}
 
 	/**
-	 * oEmbed HTML filters preserve iframe providers without loading their markup.
+	 * oEmbed HTML filters preserve trusted provider frames without loading scripts.
 	 *
 	 * @return void
 	 */
-	public function test_filter_supported_embed_html_preserves_iframe_provider_fallback() {
-		$html = '<iframe src="https://www.youtube.com/embed/video-123"></iframe>';
+	public function test_filter_supported_embed_html_preserves_trusted_provider_iframe() {
+		$html = '<iframe src="https://www.youtube.com/embed/video-123"></iframe><script>window.bad = true;</script>';
 
 		$result = Reader::filter_supported_embed_html( $html, 'https://www.youtube.com/watch?v=video-123' );
 
+		$this->assertStringContainsString( '<iframe ', $result );
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/video-123"', $result );
+		$this->assertStringNotContainsString( '<script', $result );
+	}
+
+	/**
+	 * Unknown iframe providers remain unchanged for the final KSES decision.
+	 *
+	 * @return void
+	 */
+	public function test_filter_supported_embed_html_leaves_unknown_provider_unchanged() {
+		$result = Reader::filter_supported_embed_html(
+			'<iframe src="https://player.example.com/video/22439234"></iframe>',
+			'https://example.com/22439234'
+		);
+
+		$this->assertSame( '<iframe src="https://player.example.com/video/22439234"></iframe>', $result );
+	}
+
+	/**
+	 * A trusted oEmbed URL cannot authorize a mismatched iframe host.
+	 *
+	 * @return void
+	 */
+	public function test_filter_supported_embed_html_falls_back_for_mismatched_iframe_host() {
+		$result = Reader::filter_supported_embed_html(
+			'<iframe src="https://evil.example.com/embed/22439234"></iframe>',
+			'https://www.youtube.com/watch?v=22439234'
+		);
+
 		$this->assertStringContainsString( 'Open YouTube content', $result );
+		$this->assertStringNotContainsString( 'evil.example.com', $result );
 		$this->assertStringNotContainsString( '<iframe', $result );
 	}
 
@@ -626,11 +659,11 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
-	 * REST responses expose accessible provider fallbacks for supported embeds.
+	 * REST responses expose interactive trusted provider embeds.
 	 *
 	 * @return void
 	 */
-	public function test_reader_content_response_preserves_provider_fallback_contract() {
+	public function test_reader_content_response_preserves_provider_embed_contract() {
 		\update_option( 'wpdfv_settings', Reader::get_default_settings(), false );
 
 		$post               = new \WP_Post();
@@ -653,11 +686,9 @@ class ReaderTest extends TestCase {
 		$response = ( new Main() )->get_content_response( $request );
 		$data     = $response->get_data();
 
-		$this->assertStringContainsString( 'Open YouTube content', $data['content'] );
-		$this->assertStringContainsString( 'Open Spotify content', $data['content'] );
-		$this->assertStringContainsString( 'href="https://www.youtube.com/embed/video-123"', $data['content'] );
-		$this->assertStringContainsString( 'href="https://open.spotify.com/embed/album/album-123"', $data['content'] );
-		$this->assertStringNotContainsString( '<iframe', $data['content'] );
+		$this->assertSame( 2, substr_count( $data['content'], '<iframe ' ) );
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/video-123"', $data['content'] );
+		$this->assertStringContainsString( 'src="https://open.spotify.com/embed/album/album-123"', $data['content'] );
 		$this->assertSame( [], $data['scripts'] );
 		$this->assertSame( 'Source content.', $post->post_content );
 	}
