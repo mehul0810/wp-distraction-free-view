@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.8.2
+Stable tag: 1.8.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,7 +70,7 @@ Reader Mode can also open from the URL on enabled single content:
 
 Setup and troubleshooting guide:
 
-https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.2/docs/reader-mode-setup.md
+https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.3/docs/reader-mode-setup.md
 
 = Template Customization =
 
@@ -143,6 +143,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
+
+= 1.8.3 =
+- Fixed: Reader Mode now preserves and renders trusted YouTube and Spotify embeds with a safe iframe allowlist while keeping arbitrary iframe, script, style, and event-handler content blocked. [#137](https://github.com/mehul0810/wp-distraction-free-view/issues/137)
 
 = 1.8.2 =
 - Tested: Validated installation, activation, Reader Mode content REST responses, shortcode registration, editor block registration, and RTL/unicode content handling against WordPress 7.1. [#125](https://github.com/mehul0810/wp-distraction-free-view/issues/125)
@@ -242,6 +245,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.3 =
+Preserves supported YouTube and Spotify embeds inside Reader Mode while keeping untrusted embed markup blocked.
 
 = 1.8.2 =
 Validated compatibility with WordPress 7.1, including the packaged plugin runtime, Reader Mode content endpoint, settings route registration, shortcode, editor block, and RTL/unicode content handling.
