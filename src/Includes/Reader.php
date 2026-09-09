@@ -816,6 +816,7 @@ class Reader {
 			'dailymotion.com'      => 'Dailymotion',
 			'flic.kr'              => 'Flickr',
 			'flickr.com'           => 'Flickr',
+			/* phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Provider hostname, not a remote asset. */
 			'imgur.com'            => 'Imgur',
 			'issuu.com'            => 'Issuu',
 			'kck.st'               => 'Kickstarter',
