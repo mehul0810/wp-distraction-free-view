@@ -36,6 +36,24 @@ class SettingsApi {
 	public $prefix = 'wpdfv';
 
 	/**
+	 * Public post type options cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected $public_post_types_cache = null;
+
+	/**
+	 * Installed plugins cache for the current request.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @var array|null
+	 */
+	protected $installed_plugins_cache = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -138,10 +156,16 @@ class SettingsApi {
 	 */
 	public function get_settings_response() {
 		$more_plugins = $this->get_more_plugins();
+		$can_edit_css = current_user_can( Reader::get_custom_css_capability() );
+		$settings     = $this->get_prepared_settings();
+
+		if ( ! $can_edit_css ) {
+			$settings['custom_css'] = '';
+		}
 
 		return rest_ensure_response(
 			[
-				'settings'           => $this->get_prepared_settings(),
+				'settings'           => $settings,
 				'defaults'           => $this->get_default_settings(),
 				'postTypes'          => array_values( $this->get_public_post_types() ),
 				'displayLocations'   => $this->get_display_locations(),
@@ -156,6 +180,7 @@ class SettingsApi {
 				'minimumPhp'         => '8.2',
 				'pluginVersion'      => WPDFV_VERSION,
 				'brandIconUrl'       => WPDFV_PLUGIN_URL . 'assets/dist/images/wpdfv-icon.png',
+				'canEditCustomCss'   => $can_edit_css,
 			]
 		);
 	}
@@ -233,9 +258,15 @@ class SettingsApi {
 			$data = $request->get_body_params();
 		}
 
-		$settings = $this->sanitize_settings_data( $data );
+		$settings          = $this->sanitize_settings_data( $data );
+		$existing_settings = $this->get_prepared_settings();
+
+		if ( ! current_user_can( Reader::get_custom_css_capability() ) ) {
+			$settings['custom_css'] = isset( $existing_settings['custom_css'] ) ? $existing_settings['custom_css'] : '';
+		}
 
 		update_option( $this->get_settings_key(), $settings, false );
+		$this->invalidate_settings_request_cache();
 
 		return $this->get_settings_response();
 	}
@@ -287,6 +318,10 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_public_post_types() {
+		if ( null !== $this->public_post_types_cache ) {
+			return $this->public_post_types_cache;
+		}
+
 		$post_types = get_post_types( [ 'public' => true ], 'objects' );
 		$options    = [];
 
@@ -297,7 +332,9 @@ class SettingsApi {
 			];
 		}
 
-		return $options;
+		$this->public_post_types_cache = $options;
+
+		return $this->public_post_types_cache;
 	}
 
 	/**
@@ -518,6 +555,8 @@ class SettingsApi {
 			);
 		}
 
+		$this->invalidate_plugin_request_cache();
+
 		return true;
 	}
 
@@ -556,6 +595,8 @@ class SettingsApi {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+
+		$this->invalidate_plugin_request_cache();
 
 		return true;
 	}
@@ -612,13 +653,45 @@ class SettingsApi {
 	 * @return array
 	 */
 	protected function get_installed_plugins() {
+		if ( null !== $this->installed_plugins_cache ) {
+			return $this->installed_plugins_cache;
+		}
+
 		$this->load_plugin_admin_functions();
 
 		if ( ! function_exists( 'get_plugins' ) ) {
-			return [];
+			$this->installed_plugins_cache = [];
+
+			return $this->installed_plugins_cache;
 		}
 
-		return get_plugins();
+		$this->installed_plugins_cache = get_plugins();
+
+		return $this->installed_plugins_cache;
+	}
+
+	/**
+	 * Clear per-request settings caches after settings are saved.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected function invalidate_settings_request_cache() {
+		$this->public_post_types_cache = null;
+		Reader::invalidate_request_cache();
+		Templates::invalidate_request_cache();
+	}
+
+	/**
+	 * Clear per-request plugin status caches after plugin actions.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return void
+	 */
+	protected function invalidate_plugin_request_cache() {
+		$this->installed_plugins_cache = null;
 	}
 
 	/**

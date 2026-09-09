@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin version in SemVer format.
 if ( ! defined( 'WPDFV_VERSION' ) ) {
-	define( 'WPDFV_VERSION', '1.7.1' );
+	define( 'WPDFV_VERSION', '1.8.3' );
 }
 
 // Define plugin text domain.
