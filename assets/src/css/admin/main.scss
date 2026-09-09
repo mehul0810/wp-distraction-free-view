@@ -418,6 +418,51 @@
 	max-width: 720px;
 }
 
+.wpdfv-custom-css {
+	display: grid;
+	gap: 12px;
+	max-width: 920px;
+}
+
+.wpdfv-custom-css__label {
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.wpdfv-custom-css__textarea {
+	box-sizing: border-box;
+	font-family: Consolas, Monaco, monospace;
+	min-height: 240px;
+	width: 100%;
+}
+
+.wpdfv-custom-css__examples {
+	background: var(--wpdfv-admin-soft);
+	border: 1px solid #edf0f2;
+	border-radius: 4px;
+	padding: 14px;
+
+	h4 {
+		font-size: 13px;
+		line-height: 1.4;
+		margin: 0 0 10px;
+	}
+
+	pre {
+		background: #fff;
+		border: 1px solid var(--wpdfv-admin-border);
+		border-radius: 4px;
+		margin: 0;
+		overflow: auto;
+		padding: 12px;
+		white-space: pre-wrap;
+	}
+
+	code {
+		font-size: 13px;
+	}
+}
+
 .wpdfv-settings-actions {
 	border-top: 1px solid var(--wpdfv-admin-border);
 	margin-top: 4px;
