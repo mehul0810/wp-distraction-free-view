@@ -429,6 +429,45 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Supported provider iframes remain represented without allowing iframe markup.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_rendered_content_preserves_supported_provider_fallback_links() {
+		$content = '<figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123" title="YouTube video"></iframe></div></figure>' .
+			'<figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="https://open.spotify.com/embed/playlist/playlist-123" title="Spotify playlist"></iframe></div></figure>' .
+			'<iframe src="https://player.example.com/embed/ignored"></iframe>' .
+			'<iframe src="javascript://www.youtube.com/embed/ignored"></iframe>';
+		$result  = Reader::sanitize_rendered_content( $content );
+
+		$this->assertStringContainsString( 'class="wpdfv-provider-embed-fallback"', $result );
+		$this->assertStringContainsString( 'href="https://www.youtube.com/embed/video-123"', $result );
+		$this->assertStringContainsString( 'Open YouTube content', $result );
+		$this->assertStringContainsString( 'href="https://open.spotify.com/embed/playlist/playlist-123"', $result );
+		$this->assertStringContainsString( 'Open Spotify content', $result );
+		$this->assertStringContainsString( 'target="_blank"', $result );
+		$this->assertStringContainsString( 'rel="noopener noreferrer"', $result );
+		$this->assertStringContainsString( 'aria-label="Open YouTube content"', $result );
+		$this->assertStringNotContainsString( '<iframe', $result );
+		$this->assertStringNotContainsString( 'player.example.com', $result );
+		$this->assertStringNotContainsString( 'javascript://www.youtube.com', $result );
+	}
+
+	/**
+	 * oEmbed HTML filters preserve iframe providers without loading their markup.
+	 *
+	 * @return void
+	 */
+	public function test_filter_supported_embed_html_preserves_iframe_provider_fallback() {
+		$html = '<iframe src="https://www.youtube.com/embed/video-123"></iframe>';
+
+		$result = Reader::filter_supported_embed_html( $html, 'https://www.youtube.com/watch?v=video-123' );
+
+		$this->assertStringContainsString( 'Open YouTube content', $result );
+		$this->assertStringNotContainsString( '<iframe', $result );
+	}
+
+	/**
 	 * Prepared Reader Mode content returns shortcode scripts separately.
 	 *
 	 * @return void
@@ -584,6 +623,43 @@ class ReaderTest extends TestCase {
 		$this->assertArrayHasKey( 'toc', $data );
 		$this->assertCount( 1, $data['scripts'] );
 		$this->assertStringContainsString( 'window.option_df_3751', $data['scripts'][0]['content'] );
+	}
+
+	/**
+	 * REST responses expose accessible provider fallbacks for supported embeds.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_response_preserves_provider_fallback_contract() {
+		\update_option( 'wpdfv_settings', Reader::get_default_settings(), false );
+
+		$post               = new \WP_Post();
+		$post->ID           = 44;
+		$post->post_type    = 'post';
+		$post->post_content = 'Source content.';
+
+		$GLOBALS['wpdfv_test_posts'][44] = $post;
+
+		\add_filter(
+			'wpdfv_modal_template_content',
+			static function () {
+				return '<article><p>Source content.</p><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123"></iframe><iframe src="https://open.spotify.com/embed/album/album-123"></iframe></div></article>';
+			}
+		);
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'id', 44 );
+
+		$response = ( new Main() )->get_content_response( $request );
+		$data     = $response->get_data();
+
+		$this->assertStringContainsString( 'Open YouTube content', $data['content'] );
+		$this->assertStringContainsString( 'Open Spotify content', $data['content'] );
+		$this->assertStringContainsString( 'href="https://www.youtube.com/embed/video-123"', $data['content'] );
+		$this->assertStringContainsString( 'href="https://open.spotify.com/embed/album/album-123"', $data['content'] );
+		$this->assertStringNotContainsString( '<iframe', $data['content'] );
+		$this->assertSame( [], $data['scripts'] );
+		$this->assertSame( 'Source content.', $post->post_content );
 	}
 
 	/**
