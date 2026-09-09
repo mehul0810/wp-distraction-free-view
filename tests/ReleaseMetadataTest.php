@@ -43,7 +43,7 @@ class ReleaseMetadataTest extends TestCase {
 			'pot'           => $pot_match[1] ?? null,
 		];
 
-		$this->assertSame( '1.8.2', $versions['plugin header'] );
+		$this->assertSame( '1.8.3', $versions['plugin header'] );
 		$this->assertSame( 1, count( array_unique( $versions ) ), print_r( $versions, true ) );
 	}
 
