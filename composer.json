@@ -16,7 +16,8 @@
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
 		"phpunit/phpunit": "^11.5",
 		"squizlabs/php_codesniffer": "^3.13",
-		"wp-coding-standards/wpcs": "^3.2"
+		"wp-coding-standards/wpcs": "^3.2",
+		"yoast/phpunit-polyfills": "^4.0"
 	},
 	"config": {
 		"allow-plugins": {
@@ -26,7 +27,8 @@
 	"scripts": {
 		"lint": "phpcs --standard=phpcs.ruleset.xml --extensions=php .",
 		"format": "phpcbf --standard=phpcs.ruleset.xml --extensions=php .",
-		"test": "phpunit"
+		"test": "phpunit",
+		"test:integration": "phpunit -c phpunit.integration.xml.dist"
 	},
 	"autoload": {
 		"psr-4": {

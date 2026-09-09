@@ -10,17 +10,22 @@
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
-$GLOBALS['wpdfv_test_active_plugins'] = [];
-$GLOBALS['wpdfv_test_enqueued']       = [
-	'scripts' => [],
-	'styles'  => [],
-	'inline'  => [],
+$GLOBALS['wpdfv_test_active_plugins']       = [];
+$GLOBALS['wpdfv_test_enqueued']             = [
+	'scripts'       => [],
+	'styles'        => [],
+	'style_data'    => [],
+	'inline'        => [],
+	'inline_styles' => [],
 ];
-$GLOBALS['wpdfv_test_options']        = [];
-$GLOBALS['wpdfv_test_filters']        = [];
-$GLOBALS['wpdfv_test_plugins']        = [];
-$GLOBALS['wpdfv_test_posts']          = [];
-$GLOBALS['wpdfv_test_shortcodes']     = [];
+$GLOBALS['wpdfv_test_options']              = [];
+$GLOBALS['wpdfv_test_filters']              = [];
+$GLOBALS['wpdfv_test_get_plugins_calls']    = 0;
+$GLOBALS['wpdfv_test_get_post_types_calls'] = 0;
+$GLOBALS['wpdfv_test_plugins']              = [];
+$GLOBALS['wpdfv_test_posts']                = [];
+$GLOBALS['wpdfv_test_shortcodes']           = [];
+$GLOBALS['wpdfv_test_user_caps']            = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
@@ -59,18 +64,37 @@ require_once __DIR__ . '/shims/WP_REST_Request.php';
 require_once __DIR__ . '/shims/WP_REST_Response.php';
 
 function wpdfv_tests_reset_state() {
-	$GLOBALS['wpdfv_test_active_plugins'] = [];
-	$GLOBALS['wpdfv_test_enqueued']       = [
-		'scripts' => [],
-		'styles'  => [],
-		'inline'  => [],
+	$GLOBALS['wpdfv_test_active_plugins']       = [];
+	$GLOBALS['wpdfv_test_enqueued']             = [
+		'scripts'       => [],
+		'styles'        => [],
+		'style_data'    => [],
+		'inline'        => [],
+		'inline_styles' => [],
 	];
-	$GLOBALS['wpdfv_test_options']        = [];
-	$GLOBALS['wpdfv_test_filters']        = [];
-	$GLOBALS['wpdfv_test_plugins']        = [];
-	$GLOBALS['wpdfv_test_posts']          = [];
-	$GLOBALS['wpdfv_test_shortcodes']     = [];
-	$_GET                                 = [];
+	$GLOBALS['wpdfv_test_options']              = [];
+	$GLOBALS['wpdfv_test_filters']              = [];
+	$GLOBALS['wpdfv_test_get_plugins_calls']    = 0;
+	$GLOBALS['wpdfv_test_get_post_types_calls'] = 0;
+	$GLOBALS['wpdfv_test_plugins']              = [];
+	$GLOBALS['wpdfv_test_posts']                = [];
+	$GLOBALS['wpdfv_test_shortcodes']           = [];
+	$GLOBALS['wpdfv_test_user_caps']            = [];
+	$_GET                                       = [];
+
+	if ( class_exists( '\WPDFV\Includes\Actions' ) ) {
+		$frontend_settings_added = new ReflectionProperty( '\WPDFV\Includes\Actions', 'frontend_settings_added' );
+		$frontend_settings_added->setAccessible( true );
+		$frontend_settings_added->setValue( null, false );
+	}
+
+	if ( class_exists( '\WPDFV\Includes\Reader' ) ) {
+		\WPDFV\Includes\Reader::invalidate_request_cache();
+	}
+
+	if ( class_exists( '\WPDFV\Includes\Templates' ) ) {
+		\WPDFV\Includes\Templates::invalidate_request_cache();
+	}
 }
 
 function plugin_basename( $file ) {
@@ -118,6 +142,25 @@ function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 )
 	return true;
 }
 
+function remove_filter( $hook_name, $callback, $priority = 10 ) {
+	if ( empty( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] ) ) {
+		return false;
+	}
+
+	$removed = false;
+
+	foreach ( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] as $index => $registered ) {
+		if ( $registered['callback'] === $callback ) {
+			unset( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ][ $index ] );
+			$removed = true;
+		}
+	}
+
+	$GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] = array_values( $GLOBALS['wpdfv_test_filters'][ $hook_name ][ $priority ] );
+
+	return $removed;
+}
+
 function add_shortcode( $tag, $callback ) {
 	$GLOBALS['wpdfv_test_shortcodes'][ $tag ] = $callback;
 
@@ -136,7 +179,7 @@ function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
 }
 
 function current_user_can( $capability, ...$args ) {
-	return true;
+	return array_key_exists( $capability, $GLOBALS['wpdfv_test_user_caps'] ) ? (bool) $GLOBALS['wpdfv_test_user_caps'][ $capability ] : true;
 }
 
 function is_multisite() {
@@ -149,6 +192,12 @@ function wp_register_style( $handle, $src = '', $deps = [], $ver = false, $media
 
 function wp_enqueue_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
 	$GLOBALS['wpdfv_test_enqueued']['styles'][] = $handle;
+
+	return true;
+}
+
+function wp_style_add_data( $handle, $key, $value ) {
+	$GLOBALS['wpdfv_test_enqueued']['style_data'][ $handle ][ $key ] = $value;
 
 	return true;
 }
@@ -173,11 +222,23 @@ function wp_add_inline_script( $handle, $data, $position = 'after' ) {
 	return true;
 }
 
+function wp_add_inline_style( $handle, $data ) {
+	$GLOBALS['wpdfv_test_enqueued']['inline_styles'][ $handle ][] = $data;
+
+	return true;
+}
+
+function wp_enqueue_code_editor( $settings ) {
+	return [];
+}
+
 function wp_json_encode( $value, $flags = 0, $depth = 512 ) {
 	return json_encode( $value, $flags, $depth );
 }
 
 function get_plugins() {
+	++$GLOBALS['wpdfv_test_get_plugins_calls'];
+
 	return $GLOBALS['wpdfv_test_plugins'];
 }
 
@@ -223,6 +284,12 @@ function get_the_title( $post = 0 ) {
 	$post = $post instanceof WP_Post ? $post : get_post( $post );
 
 	return $post instanceof WP_Post ? 'Test title' : '';
+}
+
+function get_permalink( $post = 0 ) {
+	$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+	return $post instanceof WP_Post ? 'https://example.com/?p=' . $post->ID : false;
 }
 
 function get_block_wrapper_attributes( $attributes = [] ) {
@@ -275,6 +342,10 @@ function esc_url_raw( $url ) {
 	return filter_var( (string) $url, FILTER_SANITIZE_URL );
 }
 
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( (string) $url, $component );
+}
+
 function sanitize_key( $key ) {
 	return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', (string) $key ) );
 }
@@ -298,6 +369,8 @@ function wp_strip_all_tags( $text ) {
 }
 
 function wp_kses_post( $content ) {
+	$content = preg_replace( '#<iframe\b[^>]*>.*?</iframe\s*>#is', '', (string) $content );
+
 	return preg_replace( '#</?(script|style|noscript)\b[^>]*>#i', '', (string) $content );
 }
 
@@ -353,10 +426,21 @@ function number_format_i18n( $number ) {
 }
 
 function get_post_types( $args = [], $output = 'names' ) {
+	++$GLOBALS['wpdfv_test_get_post_types_calls'];
+
 	$post_types = [
-		'post' => (object) [ 'name' => 'post' ],
-		'page' => (object) [ 'name' => 'page' ],
-		'book' => (object) [ 'name' => 'book' ],
+		'post' => (object) [
+			'name'   => 'post',
+			'labels' => (object) [ 'singular_name' => 'Post' ],
+		],
+		'page' => (object) [
+			'name'   => 'page',
+			'labels' => (object) [ 'singular_name' => 'Page' ],
+		],
+		'book' => (object) [
+			'name'   => 'book',
+			'labels' => (object) [ 'singular_name' => 'Book' ],
+		],
 	];
 
 	return 'objects' === $output ? $post_types : array_keys( $post_types );
@@ -368,6 +452,7 @@ require_once dirname( __DIR__ ) . '/src/Includes/Reader.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Helpers.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Actions.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Blocks.php';
+require_once dirname( __DIR__ ) . '/src/Admin/Actions.php';
 require_once dirname( __DIR__ ) . '/src/Admin/Upgrades.php';
 require_once dirname( __DIR__ ) . '/src/Admin/SettingsApi.php';
 require_once dirname( __DIR__ ) . '/src/Includes/Shortcodes/Main.php';

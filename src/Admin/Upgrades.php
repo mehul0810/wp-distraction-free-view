@@ -14,7 +14,7 @@ use WPDFV\Includes\Templates;
 
 // Bailout, if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
-	wp_die( 'Cheating huh?' );
+	exit;
 }
 
 class Upgrades {
