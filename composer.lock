@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bef222bcc20771bf6e55ccd625a7d09b",
+    "content-hash": "2d802f1152422db9a57e219dc19d5fb7",
     "packages": [],
     "packages-dev": [
         {
@@ -2172,16 +2172,16 @@
         },
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "3.13.5",
+            "version": "3.13.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "0ca86845ce43291e8f5692c7356fccf3bcf02bf4"
+                "reference": "4c378e1a528ea066890fc2397cbdd2f94eb2fc91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/0ca86845ce43291e8f5692c7356fccf3bcf02bf4",
-                "reference": "0ca86845ce43291e8f5692c7356fccf3bcf02bf4",
+                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/4c378e1a528ea066890fc2397cbdd2f94eb2fc91",
+                "reference": "4c378e1a528ea066890fc2397cbdd2f94eb2fc91",
                 "shasum": ""
             },
             "require": {
@@ -2247,7 +2247,7 @@
                     "type": "thanks_dev"
                 }
             ],
-            "time": "2025-11-04T16:30:35+00:00"
+            "time": "2026-08-06T00:17:32+00:00"
         },
         {
             "name": "staabm/side-effects-detector",
@@ -2416,6 +2416,69 @@
                 }
             ],
             "time": "2025-11-25T12:08:04+00:00"
+        },
+        {
+            "name": "yoast/phpunit-polyfills",
+            "version": "4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Yoast/PHPUnit-Polyfills.git",
+                "reference": "134921bfca9b02d8f374c48381451da1d98402f9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Yoast/PHPUnit-Polyfills/zipball/134921bfca9b02d8f374c48381451da1d98402f9",
+                "reference": "134921bfca9b02d8f374c48381451da1d98402f9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1",
+                "phpunit/phpunit": "^7.5 || ^8.0 || ^9.0 || ^11.0 || ^12.0"
+            },
+            "require-dev": {
+                "php-parallel-lint/php-console-highlighter": "^1.0.0",
+                "php-parallel-lint/php-parallel-lint": "^1.4.0",
+                "yoast/yoastcs": "^3.1.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "4.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "phpunitpolyfills-autoload.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Team Yoast",
+                    "email": "support@yoast.com",
+                    "homepage": "https://yoast.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/Yoast/PHPUnit-Polyfills/graphs/contributors"
+                }
+            ],
+            "description": "Set of polyfills for changed PHPUnit functionality to allow for creating PHPUnit cross-version compatible tests",
+            "homepage": "https://github.com/Yoast/PHPUnit-Polyfills",
+            "keywords": [
+                "phpunit",
+                "polyfill",
+                "testing"
+            ],
+            "support": {
+                "issues": "https://github.com/Yoast/PHPUnit-Polyfills/issues",
+                "security": "https://github.com/Yoast/PHPUnit-Polyfills/security/policy",
+                "source": "https://github.com/Yoast/PHPUnit-Polyfills"
+            },
+            "time": "2025-02-09T18:58:54+00:00"
         }
     ],
     "aliases": [],

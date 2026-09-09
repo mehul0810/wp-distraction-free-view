@@ -1,14 +1,15 @@
 {
 	"name": "wp-distraction-free-view",
-	"version": "1.7.1",
+	"version": "1.8.3",
 	"description": "Frontend Reader Mode and focused reading experience for WordPress content.",
 	"private": true,
 	"scripts": {
-		"build": "wp-scripts build",
-		"start": "wp-scripts start",
+		"build": "wp-scripts build wpdfv=assets/src/js/frontend/wpdfv.js wpdfv-admin=assets/src/js/admin/wpdfv-admin.js wpdfv-block=assets/src/js/block/reader-button.js --output-path=assets/dist --output-filename=js/[name].js",
+		"start": "wp-scripts start wpdfv=assets/src/js/frontend/wpdfv.js wpdfv-admin=assets/src/js/admin/wpdfv-admin.js wpdfv-block=assets/src/js/block/reader-button.js --output-path=assets/dist --output-filename=js/[name].js",
+		"test:browser": "playwright test",
 		"lint:js": "wp-scripts lint-js assets/src/js",
 		"lint:css": "wp-scripts lint-style assets/src/css",
-		"format": "wp-scripts format assets/src webpack.config.js",
+		"format": "wp-scripts format assets/src",
 		"packages-update": "wp-scripts packages-update"
 	},
 	"repository": {
@@ -26,6 +27,7 @@
 	},
 	"homepage": "https://github.com/mehul0810/wp-distraction-free-view#readme",
 	"devDependencies": {
+		"@playwright/test": "^1.60.0",
 		"@wordpress/api-fetch": "^7.45.0",
 		"@wordpress/block-editor": "^15.18.0",
 		"@wordpress/blocks": "^15.18.0",
@@ -35,5 +37,13 @@
 		"@wordpress/notices": "^5.45.0",
 		"@wordpress/primitives": "^4.45.0",
 		"@wordpress/scripts": "^32.1.0"
+	},
+	"overrides": {
+		"@babel/core": "7.29.7",
+		"form-data": "4.0.6",
+		"js-yaml": "4.2.0",
+		"qs": "6.15.2",
+		"shell-quote": "1.8.4",
+		"ws": "8.21.0"
 	}
 }
