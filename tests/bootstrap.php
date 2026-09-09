@@ -346,6 +346,8 @@ function wp_strip_all_tags( $text ) {
 }
 
 function wp_kses_post( $content ) {
+	$content = preg_replace( '#<iframe\b[^>]*>.*?</iframe\s*>#is', '', (string) $content );
+
 	return preg_replace( '#</?(script|style|noscript)\b[^>]*>#i', '', (string) $content );
 }
 

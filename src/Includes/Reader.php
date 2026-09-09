@@ -623,6 +623,7 @@ class Reader {
 		$content           = self::strip_escaped_executable_blocks( $content, $tags );
 		$content           = self::strip_script_text_residue( $content, $post );
 		$content           = self::restore_protected_samples( $content, $protected_samples );
+		$content           = self::replace_supported_provider_iframes( $content );
 
 		/**
 		 * Filter rendered Reader Mode content before final KSES sanitization.
@@ -645,6 +646,71 @@ class Reader {
 		 * @param \WP_Post|null $post Current post, when available.
 		 */
 		return (string) apply_filters( 'wpdfv_modal_content_after_kses', $content, $post );
+	}
+
+	/**
+	 * Preserve supported provider embeds as safe, accessible links.
+	 *
+	 * Reader Mode deliberately does not allow arbitrary iframe markup through
+	 * KSES. Replacing known provider frames before that pass keeps the content
+	 * discoverable without loading third-party code or changing source output.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $content Rendered modal template content.
+	 *
+	 * @return string
+	 */
+	protected static function replace_supported_provider_iframes( $content ) {
+		return (string) preg_replace_callback(
+			'#<iframe\b([^>]*)>(?:.*?</iframe\s*>)?#is',
+			static function ( $matches ) {
+				$src      = self::get_heading_attribute( (string) $matches[1], 'src' );
+				$provider = self::get_provider_from_embed_url( $src );
+
+				if ( '' === $provider ) {
+					return $matches[0];
+				}
+
+				/* translators: %s: embed provider name. */
+				$label = sprintf( __( 'Open %s content', 'wp-distraction-free-view' ), $provider );
+
+				return '<p class="wpdfv-provider-embed-fallback"><a href="' . esc_attr( esc_url_raw( $src ) ) . '" target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr( $label ) . '">' . esc_html( $label ) . '</a></p>';
+			},
+			(string) $content
+		);
+	}
+
+	/**
+	 * Get the supported provider name for an embed URL.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $url Embed URL.
+	 *
+	 * @return string
+	 */
+	protected static function get_provider_from_embed_url( $url ) {
+		$url     = esc_url_raw( (string) $url );
+		$parts   = parse_url( $url );
+		$scheme  = is_array( $parts ) && isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
+		$host    = is_array( $parts ) && isset( $parts['host'] ) ? strtolower( rtrim( (string) $parts['host'], '.' ) ) : '';
+		$youtube = [ 'youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be' ];
+		$spotify = [ 'open.spotify.com' ];
+
+		if ( ! in_array( $scheme, [ '', 'http', 'https' ], true ) || ( '' === $scheme && ! str_starts_with( $url, '//' ) ) ) {
+			return '';
+		}
+
+		if ( in_array( $host, $youtube, true ) ) {
+			return 'YouTube';
+		}
+
+		if ( in_array( $host, $spotify, true ) ) {
+			return 'Spotify';
+		}
+
+		return '';
 	}
 
 	/**
