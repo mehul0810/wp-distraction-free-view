@@ -12,6 +12,7 @@
 /release
 
 /tests
+/bin
 /node_modules
 /assets/src
 /vendor/bin
@@ -50,8 +51,10 @@ package.json
 package-lock.json
 phpunit.xml
 phpunit.xml.dist
+phpunit.integration.xml.dist
 CHANGELOG.md
 README.md
+DESIGN.md
 readme.md
 phpcs.ruleset.xml
 phpcs.xml.dist
