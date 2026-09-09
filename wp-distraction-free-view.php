@@ -3,7 +3,7 @@
  * Plugin Name: WP Distraction Free View
  * Plugin URI: https://github.com/mehul0810/wp-distraction-free-view
  * Description: Adds a clean frontend Reader Mode to WordPress so visitors can focus on posts, pages, and selected public post types.
- * Version: 1.8.2
+ * Version: 1.8.3
  * Requires at least: 6.0
  * Requires PHP: 8.2
  * Author: Mehul Gohil

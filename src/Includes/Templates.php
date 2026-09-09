@@ -156,12 +156,18 @@ class Templates {
 		setup_postdata( $post );
 
 		try {
+			$embed_filter = [ Reader::class, 'filter_supported_embed_html' ];
+			add_filter( 'embed_oembed_html', $embed_filter, 10, 4 );
+			add_filter( 'embed_handler_html', $embed_filter, 10, 3 );
+
 			$content = Helpers::without_button_injection(
 				static function () use ( $template ) {
 					return do_blocks( $template['content'] );
 				}
 			);
 		} finally {
+			remove_filter( 'embed_oembed_html', $embed_filter, 10 );
+			remove_filter( 'embed_handler_html', $embed_filter, 10 );
 			wp_reset_postdata();
 
 			if ( $previous_post instanceof \WP_Post ) {

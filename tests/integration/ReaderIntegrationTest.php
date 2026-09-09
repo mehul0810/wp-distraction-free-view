@@ -181,6 +181,141 @@ class ReaderIntegrationTest extends TestCase {
 	}
 
 	/**
+	 * Real WordPress KSES keeps trusted provider embeds interactive in REST output.
+	 *
+	 * @return void
+	 */
+	public function test_rest_content_preserves_provider_iframes_after_kses() {
+		$source_content = '<p>Embedded content.</p><figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123"></iframe></div></figure><figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="https://open.spotify.com/embed/playlist/playlist-123"></iframe></div></figure>';
+		$previous_user  = get_current_user_id();
+
+		wp_set_current_user( 1 );
+
+		try {
+			$post_id = $this->create_post(
+				[
+					'post_content' => $source_content,
+					'post_status'  => 'publish',
+				]
+			);
+		} finally {
+			wp_set_current_user( $previous_user );
+		}
+
+		$response = $this->dispatch_content_request( $post_id );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( 2, substr_count( $data['content'], '<iframe ' ) );
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/video-123"', $data['content'] );
+		$this->assertStringContainsString( 'src="https://open.spotify.com/embed/playlist/playlist-123"', $data['content'] );
+		$this->assertSame( [], $data['scripts'] );
+		$this->assertSame( $source_content, get_post( $post_id )->post_content );
+	}
+
+	/**
+	 * Registered non-YouTube/Spotify providers use the core oEmbed registry.
+	 *
+	 * @return void
+	 */
+	public function test_rest_content_preserves_registered_oembed_provider_fallback() {
+		$source_content = '<p>https://vimeo.com/22439234</p>';
+		$previous_user  = get_current_user_id();
+		$oembed_filter  = static function ( $result, $url ) {
+			if ( 'https://vimeo.com/22439234' !== $url ) {
+				return $result;
+			}
+
+			return '<iframe src="https://player.vimeo.com/video/22439234"></iframe>';
+		};
+
+		add_filter( 'pre_oembed_result', $oembed_filter, 10, 2 );
+
+		wp_set_current_user( 1 );
+
+		try {
+			$post_id = $this->create_post(
+				[
+					'post_content' => $source_content,
+					'post_status'  => 'publish',
+				]
+			);
+
+			$response = $this->dispatch_content_request( $post_id );
+		} finally {
+			remove_filter( 'pre_oembed_result', $oembed_filter, 10 );
+			wp_set_current_user( $previous_user );
+		}
+
+		$data = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Open Vimeo content', $data['content'] );
+		$this->assertStringNotContainsString( '<iframe', $data['content'] );
+		$this->assertSame( $source_content, get_post( $post_id )->post_content );
+	}
+
+	/**
+	 * Registered non-interactive providers with script-based oEmbed output use the fallback.
+	 *
+	 * @return void
+	 */
+	public function test_rest_content_rejects_registered_oembed_provider_scripts() {
+		$source_content = '<p>https://vimeo.com/22439234</p>';
+		$previous_user  = get_current_user_id();
+		$oembed_filter  = static function ( $result, $url ) {
+			if ( 'https://vimeo.com/22439234' !== $url ) {
+				return $result;
+			}
+
+			return '<blockquote class="vimeo-embed">Vimeo content</blockquote><script async src="https://player.vimeo.com/api/player.js"></script>';
+		};
+
+		add_filter( 'pre_oembed_result', $oembed_filter, 10, 2 );
+
+		wp_set_current_user( 1 );
+
+		try {
+			$post_id = $this->create_post(
+				[
+					'post_content' => $source_content,
+					'post_status'  => 'publish',
+				]
+			);
+
+			$response = $this->dispatch_content_request( $post_id );
+		} finally {
+			remove_filter( 'pre_oembed_result', $oembed_filter, 10 );
+			wp_set_current_user( $previous_user );
+		}
+
+		$data = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Open Vimeo content', $data['content'] );
+		$this->assertStringNotContainsString( 'vimeo-embed', $data['content'] );
+		$this->assertStringNotContainsString( '<script', $data['content'] );
+		$this->assertSame( [], $data['scripts'] );
+		$this->assertSame( $source_content, get_post( $post_id )->post_content );
+	}
+
+	/**
+	 * Provider aliases and protocol-relative URLs use the registered provider list.
+	 *
+	 * @return void
+	 */
+	public function test_registered_provider_aliases_use_safe_fallbacks() {
+		$result = Reader::filter_supported_embed_html(
+			'<iframe src="//flic.kr/p/abc123"></iframe>',
+			'//flic.kr/p/abc123'
+		);
+
+		$this->assertStringContainsString( 'Open Flickr content', $result );
+		$this->assertStringContainsString( 'href="//flic.kr/p/abc123"', $result );
+		$this->assertStringNotContainsString( '<iframe', $result );
+	}
+
+	/**
 	 * The reader button block registers from block.json and renders from post context.
 	 *
 	 * @return void

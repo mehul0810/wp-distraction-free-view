@@ -622,6 +622,8 @@ class Reader {
 		$content           = self::protect_visible_code_samples( $content, $protected_samples );
 		$content           = self::strip_escaped_executable_blocks( $content, $tags );
 		$content           = self::strip_script_text_residue( $content, $post );
+		$protected_iframes = [];
+		$content           = self::protect_supported_provider_iframes( $content, $protected_iframes );
 		$content           = self::restore_protected_samples( $content, $protected_samples );
 
 		/**
@@ -635,6 +637,7 @@ class Reader {
 		$content = (string) apply_filters( 'wpdfv_modal_content_before_kses', $content, $post );
 
 		$content = wp_kses_post( $content );
+		$content = self::restore_supported_provider_iframes( $content, $protected_iframes );
 
 		/**
 		 * Filter sanitized Reader Mode content before it is returned by REST.
@@ -645,6 +648,470 @@ class Reader {
 		 * @param \WP_Post|null $post Current post, when available.
 		 */
 		return (string) apply_filters( 'wpdfv_modal_content_after_kses', $content, $post );
+	}
+
+	/**
+	 * Preserve supported provider embeds through the final KSES pass.
+	 *
+	 * Reader Mode deliberately does not allow arbitrary iframe markup through
+	 * KSES. Trusted provider frames are replaced with inert comment tokens,
+	 * sanitized independently, and restored after KSES. Other registered
+	 * providers use the accessible fallback link instead.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $content   Rendered modal template content.
+	 * @param array  $iframes   Protected iframe markup keyed by token.
+	 *
+	 * @return string
+	 */
+	protected static function protect_supported_provider_iframes( $content, array &$iframes ) {
+		return (string) preg_replace_callback(
+			'#<iframe\b([^>]*)>(?:.*?</iframe\s*>)?#is',
+			static function ( $matches ) use ( &$iframes ) {
+				$attributes = (string) $matches[1];
+				$src        = self::get_heading_attribute( $attributes, 'src' );
+				$provider   = self::get_provider_from_embed_url( $src );
+
+				if ( '' === $provider ) {
+					return $matches[0];
+				}
+
+				if ( ! self::is_interactive_provider( $provider ) ) {
+					return self::get_provider_fallback_markup( $src, $provider );
+				}
+
+				$iframe = self::get_safe_provider_iframe_markup( $attributes, $src, $provider );
+
+				if ( '' === $iframe ) {
+					return self::get_provider_fallback_markup( $src, $provider );
+				}
+
+				$token             = '<!--wpdfv-provider-iframe-' . count( $iframes ) . '-->';
+				$iframes[ $token ] = $iframe;
+
+				return $token;
+			},
+			(string) $content
+		);
+	}
+
+	/**
+	 * Restore provider iframes after the final KSES pass.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $content Rendered modal template content.
+	 * @param array  $iframes Protected iframe markup keyed by token.
+	 *
+	 * @return string
+	 */
+	protected static function restore_supported_provider_iframes( $content, array $iframes ) {
+		return (string) strtr( (string) $content, $iframes );
+	}
+
+	/**
+	 * Prepare WordPress oEmbed HTML for Reader Mode.
+	 *
+	 * YouTube and Spotify output is reduced to a safe iframe so provider scripts
+	 * never enter the modal script queue. Other registered providers retain the
+	 * accessible fallback link used when interactive rendering is unavailable.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $html Rendered oEmbed or handler HTML.
+	 * @param string $url  Original provider URL.
+	 *
+	 * @return string
+	 */
+	public static function filter_supported_embed_html( $html, $url ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+
+		$provider = self::get_provider_from_embed_url( $url );
+
+		if ( '' === $provider ) {
+			return $html;
+		}
+
+		if ( self::is_interactive_provider( $provider ) ) {
+			if ( false === stripos( $html, '<iframe' ) ) {
+				return self::get_provider_fallback_markup( $url, $provider );
+			}
+
+			if ( preg_match( '#<iframe\b([^>]*)>(?:.*?</iframe\s*>)?#is', $html, $matches ) ) {
+				$iframe_attributes = (string) $matches[1];
+				$iframe_src        = self::get_heading_attribute( $iframe_attributes, 'src' );
+				$iframe_provider   = self::get_interactive_provider_from_embed_url( $iframe_src );
+
+				if ( $provider === $iframe_provider ) {
+					$iframe = self::get_safe_provider_iframe_markup( $iframe_attributes, $iframe_src, $provider );
+
+					if ( '' !== $iframe ) {
+						return $iframe;
+					}
+				}
+			}
+
+			return self::get_provider_fallback_markup( $url, $provider );
+		}
+
+		return self::get_provider_fallback_markup( $url, $provider );
+	}
+
+	/**
+	 * Determine whether a provider is allowed to render interactively.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $provider Provider label.
+	 *
+	 * @return bool
+	 */
+	protected static function is_interactive_provider( $provider ) {
+		return in_array( (string) $provider, [ 'YouTube', 'Spotify' ], true );
+	}
+
+	/**
+	 * Get the interactive provider for an explicitly allowlisted host.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $url Embed URL.
+	 *
+	 * @return string
+	 */
+	protected static function get_interactive_provider_from_embed_url( $url ) {
+		$url    = esc_url_raw( (string) $url );
+		$parts  = wp_parse_url( $url );
+		$scheme = is_array( $parts ) && isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
+		$host   = is_array( $parts ) && isset( $parts['host'] ) ? strtolower( rtrim( (string) $parts['host'], '.' ) ) : '';
+
+		if ( ! in_array( $scheme, [ '', 'http', 'https' ], true ) || ( '' === $scheme && ! str_starts_with( $url, '//' ) ) ) {
+			return '';
+		}
+
+		if ( in_array( $host, [ 'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be' ], true ) ) {
+			return 'YouTube';
+		}
+
+		if ( in_array( $host, [ 'open.spotify.com', 'play.spotify.com' ], true ) ) {
+			return 'Spotify';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Build a sanitized interactive provider iframe.
+	 *
+	 * Only presentation and browser permission attributes emitted by the core
+	 * provider handlers are retained. Event handlers, inline styles, arbitrary
+	 * data attributes, and source markup are intentionally discarded.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $attributes Raw iframe attributes.
+	 * @param string $src        Provider iframe URL.
+	 * @param string $provider   Provider label.
+	 *
+	 * @return string
+	 */
+	protected static function get_safe_provider_iframe_markup( $attributes, $src, $provider ) {
+		$src = self::get_safe_provider_embed_src( $src );
+
+		if ( '' === $src || ! self::is_interactive_provider( self::get_interactive_provider_from_embed_url( $src ) ) ) {
+			return '';
+		}
+
+		$defaults = 'Spotify' === $provider
+			? [
+				'width'  => '100%',
+				'height' => '352',
+			]
+			: [
+				'width'  => '560',
+				'height' => '315',
+			];
+		$title    = self::get_heading_attribute( (string) $attributes, 'title' );
+		/* translators: %s: embed provider name. */
+		$title    = '' !== $title ? self::sanitize_iframe_text_attribute( $title ) : sprintf( __( '%s embed', 'wp-distraction-free-view' ), $provider );
+		$width    = self::sanitize_iframe_dimension( self::get_heading_attribute( (string) $attributes, 'width' ), $defaults['width'] );
+		$height   = self::sanitize_iframe_dimension( self::get_heading_attribute( (string) $attributes, 'height' ), $defaults['height'] );
+		$loading  = self::get_heading_attribute( (string) $attributes, 'loading' );
+		$loading  = in_array( strtolower( $loading ), [ 'auto', 'eager', 'lazy' ], true ) ? strtolower( $loading ) : '';
+		$allow    = self::sanitize_iframe_allow_attribute( self::get_heading_attribute( (string) $attributes, 'allow' ) );
+		$policy   = self::get_heading_attribute( (string) $attributes, 'referrerpolicy' );
+		$policies = [ 'no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin', 'same-origin', 'strict-origin', 'strict-origin-when-cross-origin', 'unsafe-url' ];
+		$policy   = in_array( strtolower( $policy ), $policies, true ) ? strtolower( $policy ) : '';
+		$border   = self::get_heading_attribute( (string) $attributes, 'frameborder' );
+		$border   = preg_match( '/^\d{1,2}$/', $border ) ? $border : '';
+
+		$iframe_attributes = [
+			'class="wpdfv-reader-provider-embed wpdfv-reader-provider-embed--' . esc_attr( strtolower( $provider ) ) . '"',
+			'src="' . esc_attr( $src ) . '"',
+			'title="' . esc_attr( $title ) . '"',
+			'width="' . esc_attr( $width ) . '"',
+			'height="' . esc_attr( $height ) . '"',
+		];
+
+		if ( '' !== $loading ) {
+			$iframe_attributes[] = 'loading="' . esc_attr( $loading ) . '"';
+		}
+
+		if ( '' !== $allow ) {
+			$iframe_attributes[] = 'allow="' . esc_attr( $allow ) . '"';
+		}
+
+		if ( '' !== $policy ) {
+			$iframe_attributes[] = 'referrerpolicy="' . esc_attr( $policy ) . '"';
+		}
+
+		if ( '' !== $border ) {
+			$iframe_attributes[] = 'frameborder="' . esc_attr( $border ) . '"';
+		}
+
+		if ( preg_match( '/(?:^|\s)allowfullscreen(?:\s|=|$)/i', (string) $attributes ) ) {
+			$iframe_attributes[] = 'allowfullscreen=""';
+		}
+
+		return '<iframe ' . implode( ' ', $iframe_attributes ) . '></iframe>';
+	}
+
+	/**
+	 * Normalize a provider iframe URL to HTTP(S).
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $url Provider iframe URL.
+	 *
+	 * @return string
+	 */
+	protected static function get_safe_provider_embed_src( $url ) {
+		$url    = esc_url_raw( (string) $url );
+		$parts  = wp_parse_url( $url );
+		$scheme = is_array( $parts ) && isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
+
+		if ( 'http' === $scheme || 'https' === $scheme ) {
+			return $url;
+		}
+
+		return '' === $scheme && str_starts_with( $url, '//' ) ? 'https:' . $url : '';
+	}
+
+	/**
+	 * Sanitize an iframe dimension attribute.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $value   Raw dimension.
+	 * @param string $fallback Fallback dimension.
+	 *
+	 * @return string
+	 */
+	protected static function sanitize_iframe_dimension( $value, $fallback ) {
+		$value = trim( (string) $value );
+
+		return preg_match( '/^\d{1,4}%?$/', $value ) ? $value : $fallback;
+	}
+
+	/**
+	 * Sanitize an iframe allow attribute without permitting markup.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $value Raw allow value.
+	 *
+	 * @return string
+	 */
+	protected static function sanitize_iframe_allow_attribute( $value ) {
+		$value = preg_replace( '/[^a-zA-Z0-9* .;:=_\-]/', '', (string) $value );
+
+		return trim( $value );
+	}
+
+	/**
+	 * Sanitize a textual iframe attribute.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $value Raw attribute value.
+	 *
+	 * @return string
+	 */
+	protected static function sanitize_iframe_text_attribute( $value ) {
+		$value = wp_strip_all_tags( (string) $value );
+		$value = preg_replace( '/[\x00-\x1F\x7F]/', ' ', $value );
+
+		return trim( $value );
+	}
+
+	/**
+	 * Build a safe, labelled link for a supported provider embed.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $url      Provider URL.
+	 * @param string $provider Provider label.
+	 *
+	 * @return string
+	 */
+	protected static function get_provider_fallback_markup( $url, $provider ) {
+		$url = esc_url_raw( (string) $url );
+
+		if ( '' === $url ) {
+			return '';
+		}
+
+		/* translators: %s: embed provider name. */
+		$label = sprintf( __( 'Open %s content', 'wp-distraction-free-view' ), $provider );
+
+		return '<p class="wpdfv-provider-embed-fallback"><a href="' . esc_attr( $url ) . '" target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr( $label ) . '">' . esc_html( $label ) . '</a></p>';
+	}
+
+	/**
+	 * Get the supported provider name for an embed URL.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $url Embed URL.
+	 *
+	 * @return string
+	 */
+	protected static function get_provider_from_embed_url( $url ) {
+		$url     = esc_url_raw( (string) $url );
+		$parts   = wp_parse_url( $url );
+		$scheme  = is_array( $parts ) && isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
+		$host    = is_array( $parts ) && isset( $parts['host'] ) ? strtolower( rtrim( (string) $parts['host'], '.' ) ) : '';
+		$youtube = [ 'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be' ];
+		$spotify = [ 'open.spotify.com', 'play.spotify.com' ];
+
+		if ( ! in_array( $scheme, [ '', 'http', 'https' ], true ) || ( '' === $scheme && ! str_starts_with( $url, '//' ) ) ) {
+			return '';
+		}
+
+		if ( in_array( $host, $youtube, true ) ) {
+			return 'YouTube';
+		}
+
+		if ( in_array( $host, $spotify, true ) ) {
+			return 'Spotify';
+		}
+
+		if ( function_exists( '_wp_oembed_get_object' ) && class_exists( '\\WP_oEmbed' ) ) {
+			$oembed = _wp_oembed_get_object();
+			$lookup = $url;
+
+			if ( '' === $scheme && str_starts_with( $url, '//' ) ) {
+				$lookup = 'https:' . $url;
+			}
+
+			if ( $oembed instanceof \WP_oEmbed ) {
+				$provider = $oembed->get_provider( $lookup, [ 'discover' => false ] );
+
+				if ( false !== $provider ) {
+					$provider_parts = wp_parse_url( (string) $provider );
+					$provider_host  = is_array( $provider_parts ) && isset( $provider_parts['host'] ) ? strtolower( rtrim( (string) $provider_parts['host'], '.' ) ) : '';
+
+					return self::get_provider_label( $host, $provider_host );
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get a readable provider label from a provider hostname.
+	 *
+	 * @since 1.8.3
+	 *
+	 * @param string $host          Provider hostname.
+	 * @param string $fallback_host Registered provider endpoint hostname.
+	 *
+	 * @return string
+	 */
+	protected static function get_provider_label( $host, $fallback_host = '' ) {
+		$hosts = array_values(
+			array_filter(
+				array_unique(
+					array_map(
+						static function ( $value ) {
+							$value = strtolower( trim( (string) $value ) );
+							return preg_replace( '/^(?:www|m|open|play|embed|player|assets)\./', '', $value );
+						},
+						[ $host, $fallback_host ]
+					)
+				)
+			)
+		);
+
+		$labels = [
+			'a.co'                 => 'Amazon',
+			'amazon.com'           => 'Amazon',
+			'amzn.asia'            => 'Amazon',
+			'amzn.eu'              => 'Amazon',
+			'amzn.in'              => 'Amazon',
+			'amzn.to'              => 'Amazon',
+			'anghami.com'          => 'Anghami',
+			'animoto.com'          => 'Animoto',
+			'bsky.app'             => 'Bluesky',
+			'canva.com'            => 'Canva',
+			'cloudup.com'          => 'Cloudup',
+			'crowdsignal.net'      => 'Crowdsignal',
+			'dai.ly'               => 'Dailymotion',
+			'dailymotion.com'      => 'Dailymotion',
+			'flic.kr'              => 'Flickr',
+			'flickr.com'           => 'Flickr',
+			/* phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Provider hostname, not a remote asset. */
+			'imgur.com'            => 'Imgur',
+			'issuu.com'            => 'Issuu',
+			'kck.st'               => 'Kickstarter',
+			'kickstarter.com'      => 'Kickstarter',
+			'mixcloud.com'         => 'Mixcloud',
+			'pca.st'               => 'Pocket Casts',
+			'pocketcasts.com'      => 'Pocket Casts',
+			'pinterest.com'        => 'Pinterest',
+			'polldaddy.com'        => 'Crowdsignal',
+			'poll.fm'              => 'Crowdsignal',
+			'reddit.com'           => 'Reddit',
+			'reverbnation.com'     => 'ReverbNation',
+			'scribd.com'           => 'Scribd',
+			'smugmug.com'          => 'SmugMug',
+			'some.ly'              => 'Someecards',
+			'someecards.com'       => 'Someecards',
+			'soundcloud.com'       => 'SoundCloud',
+			'speakerdeck.com'      => 'Speaker Deck',
+			'survey.fm'            => 'Crowdsignal',
+			'ted.com'              => 'TED',
+			'tiktok.com'           => 'TikTok',
+			'tumblr.com'           => 'Tumblr',
+			'twitter.com'          => 'Twitter',
+			'spotify.com'          => 'Spotify',
+			'vimeo.com'            => 'Vimeo',
+			'video214.com'         => 'Animoto',
+			'videopress.com'       => 'VideoPress',
+			'wolframcloud.com'     => 'WolframCloud',
+			'wordpress.tv'         => 'WordPress.tv',
+			'youtu.be'             => 'YouTube',
+			'youtube-nocookie.com' => 'YouTube',
+			'youtube.com'          => 'YouTube',
+			'z.cn'                 => 'Amazon',
+		];
+
+		foreach ( $hosts as $candidate ) {
+			foreach ( $labels as $domain => $label ) {
+				if ( $candidate === $domain || str_ends_with( $candidate, '.' . $domain ) ) {
+					return $label;
+				}
+			}
+		}
+
+		$parts = explode( '.', $hosts[0] ?? '' );
+		$label = count( $parts ) > 1 ? $parts[ count( $parts ) - 2 ] : ( $hosts[0] ?? $host );
+
+		return ucwords( str_replace( [ '-', '_' ], ' ', $label ) );
 	}
 
 	/**
