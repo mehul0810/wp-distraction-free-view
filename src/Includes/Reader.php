@@ -692,7 +692,7 @@ class Reader {
 	 */
 	protected static function get_provider_from_embed_url( $url ) {
 		$url     = esc_url_raw( (string) $url );
-		$parts   = parse_url( $url );
+		$parts   = wp_parse_url( $url );
 		$scheme  = is_array( $parts ) && isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
 		$host    = is_array( $parts ) && isset( $parts['host'] ) ? strtolower( rtrim( (string) $parts['host'], '.' ) ) : '';
 		$youtube = [ 'youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be' ];

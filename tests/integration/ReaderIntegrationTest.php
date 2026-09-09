@@ -187,12 +187,20 @@ class ReaderIntegrationTest extends TestCase {
 	 */
 	public function test_rest_content_preserves_provider_fallbacks_after_kses() {
 		$source_content = '<p>Embedded content.</p><figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper"><iframe src="https://www.youtube.com/embed/video-123"></iframe></div></figure><figure class="wp-block-embed is-provider-spotify"><div class="wp-block-embed__wrapper"><iframe src="https://open.spotify.com/embed/playlist/playlist-123"></iframe></div></figure>';
-		$post_id        = $this->create_post(
-			[
-				'post_content' => $source_content,
-				'post_status'  => 'publish',
-			]
-		);
+		$previous_user  = get_current_user_id();
+
+		wp_set_current_user( 1 );
+
+		try {
+			$post_id = $this->create_post(
+				[
+					'post_content' => $source_content,
+					'post_status'  => 'publish',
+				]
+			);
+		} finally {
+			wp_set_current_user( $previous_user );
+		}
 
 		$response = $this->dispatch_content_request( $post_id );
 		$data     = $response->get_data();

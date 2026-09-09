@@ -323,6 +323,10 @@ function esc_url_raw( $url ) {
 	return filter_var( (string) $url, FILTER_SANITIZE_URL );
 }
 
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( (string) $url, $component );
+}
+
 function sanitize_key( $key ) {
 	return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', (string) $key ) );
 }
