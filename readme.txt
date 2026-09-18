@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.8.3
+Stable tag: 1.8.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,7 +70,7 @@ Reader Mode can also open from the URL on enabled single content:
 
 Setup and troubleshooting guide:
 
-https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.3/docs/reader-mode-setup.md
+https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.4/docs/reader-mode-setup.md
 
 = Template Customization =
 
@@ -143,6 +143,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
+
+= 1.8.4 =
+- Fixed: Scoped Reader Mode component styles to the plugin root so WordPress block editor controls retain their core styling. [#146](https://github.com/mehul0810/wp-distraction-free-view/issues/146)
 
 = 1.8.3 =
 - Fixed: Direct-access guard in the upgrades handler now matches the rest of the plugin instead of exposing a hardcoded string. [#126](https://github.com/mehul0810/wp-distraction-free-view/pull/126)
@@ -247,6 +250,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.8.4 =
+Restores WordPress block editor control styling by scoping Reader Mode component styles to the plugin root.
 
 = 1.8.3 =
 Hardens the direct-access guard in the upgrades handler and completes uninstall cleanup, including multisite networks.
