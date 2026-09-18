@@ -7,7 +7,7 @@ body.wpdfv-reader-mode-active {
 	overscroll-behavior: contain;
 }
 
-.components-modal__screen-overlay {
+:where(#wpdfv-reader-root) .components-modal__screen-overlay {
 	background: var(--wpdfv-reader-overlay, rgba(0, 0, 0, 0.35));
 	inset: 0;
 	position: fixed;
@@ -88,7 +88,7 @@ body.wpdfv-reader-mode-active {
 	--wpdfv-reader-text: #2f2418;
 }
 
-.components-button {
+:where(#wpdfv-reader-root) .components-button {
 	align-items: center;
 	appearance: none;
 	border: 1px solid var(--wpdfv-reader-border);
@@ -168,7 +168,7 @@ body.wpdfv-reader-mode-active {
 	}
 }
 
-.components-button-group {
+:where(#wpdfv-reader-root) .components-button-group {
 	display: inline-flex;
 	flex-wrap: wrap;
 	gap: 6px;
@@ -589,7 +589,7 @@ body.wpdfv-reader-mode-active {
 		text-shadow: none !important;
 	}
 
-	body > *:not(#wpdfv-reader-root) {
+	body.wpdfv-reader-mode-active > *:not(#wpdfv-reader-root) {
 		display: none !important;
 	}
 
@@ -607,7 +607,7 @@ body.wpdfv-reader-mode-active {
 	.wpdfv-reader-resume,
 	.wpdfv-reading-progress,
 	.wpdfv-reader-loading,
-	.components-modal__header {
+	:where(#wpdfv-reader-root) .components-modal__header {
 		display: none !important;
 	}
 
