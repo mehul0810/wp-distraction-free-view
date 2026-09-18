@@ -20,10 +20,10 @@ class AssetsTest extends TestCase {
 	 */
 	public function test_reader_component_selectors_are_scoped_to_reader_root() {
 		$unscoped_selectors = [
-			'/(?:^|})\\.components-modal__screen-overlay(?:\\{|,)/',
-			'/(?:^|})\\.components-button(?:[\\s:{.#,]|$)/',
-			'/(?:^|})\\.components-button-group(?:[\\s:{.#,]|$)/',
-			'/(?:^|})\\.components-modal__header(?:[\\s:{.#,]|$)/',
+			'/(?:^|[},])\\s*\\.components-modal__screen-overlay(?:\\{|,)/',
+			'/(?:^|[},])\\s*\\.components-button(?:[\\s:{.#,]|$)/',
+			'/(?:^|[},])\\s*\\.components-button-group(?:[\\s:{.#,]|$)/',
+			'/(?:^|[},])\\s*\\.components-modal__header(?:[\\s:{.#,]|$)/',
 		];
 
 		foreach ( [ 'wpdfv.css', 'wpdfv-rtl.css' ] as $stylesheet ) {
