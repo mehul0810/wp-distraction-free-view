@@ -190,12 +190,19 @@ class ReaderIntegrationTest extends TestCase {
 	public function test_structured_rest_content_returns_public_metadata_and_sanitized_content() {
 		$post_id = $this->create_post(
 			[
-				'post_content' => '<p>Structured <strong>reader</strong> content.</p><script>privateScript()</script>',
+				'post_content' => '<p>Structured <strong>reader</strong> content.</p>',
 				'post_status'  => 'publish',
 				'post_title'   => 'Structured reader title',
 				'post_excerpt' => 'A useful excerpt.',
 			]
 		);
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->posts,
+			[ 'post_content' => '<p>Structured <strong>reader</strong> content.</p><script>privateScript()</script>' ],
+			[ 'ID' => $post_id ]
+		);
+		clean_post_cache( $post_id );
 
 		$response = $this->dispatch_structured_content_request( $post_id );
 		$data     = $response->get_data();
@@ -294,8 +301,9 @@ class ReaderIntegrationTest extends TestCase {
 	 * @return void
 	 */
 	public function test_content_override_meta_is_registered_for_public_post_types() {
-		$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, get_registered_meta_keys( 'post' ) );
-		$this->assertArrayHasKey( '_wpdfv_reader_template', get_registered_meta_keys( 'post' ) );
+		$post_meta = get_registered_meta_keys( 'post', 'post' );
+		$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, $post_meta );
+		$this->assertArrayHasKey( '_wpdfv_reader_template', $post_meta );
 	}
 
 	/**
@@ -319,7 +327,7 @@ class ReaderIntegrationTest extends TestCase {
 
 		$this->assertTrue( $service->can_read_content( [ 'post_id' => $public_post_id ] ) );
 		$this->assertFalse( $service->can_read_content( [ 'post_id' => $private_post_id ] ) );
-		$this->assertWPError( $service->get_reader_content( [ 'post_id' => $private_post_id ] ) );
+		$this->assertInstanceOf( \WP_Error::class, $service->get_reader_content( [ 'post_id' => $private_post_id ] ) );
 	}
 
 	/**
