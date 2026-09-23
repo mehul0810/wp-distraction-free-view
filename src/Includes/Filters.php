@@ -50,7 +50,7 @@ class Filters {
 		}
 
 		// Bailout, if not to show on specific post type.
-		if ( ! Reader::is_post_type_enabled( $post->post_type ) ) {
+		if ( ! Reader::is_post_enabled_for_post( $post ) ) {
 			return $content;
 		}
 

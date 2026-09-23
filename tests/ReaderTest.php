@@ -8,6 +8,7 @@
 namespace WPDFV\Tests;
 
 use PHPUnit\Framework\TestCase;
+use WPDFV\Admin\ContentSettings;
 use WPDFV\Admin\Upgrades;
 use WPDFV\Includes\Actions;
 use WPDFV\Includes\Blocks;
@@ -47,6 +48,8 @@ class ReaderTest extends TestCase {
 		$this->assertTrue( $defaults['reading_time_enabled'] );
 		$this->assertFalse( $defaults['reader_toc_enabled'] );
 		$this->assertFalse( $defaults['reader_resume_enabled'] );
+		$this->assertFalse( $defaults['read_aloud_enabled'] );
+		$this->assertFalse( $defaults['discovery_metadata_enabled'] );
 		$this->assertTrue( $defaults['preference_controls_enabled'] );
 		$this->assertSame( '', $defaults['custom_css'] );
 	}
@@ -69,6 +72,8 @@ class ReaderTest extends TestCase {
 				'reading_time_enabled'        => 1,
 				'reader_toc_enabled'          => 1,
 				'reader_resume_enabled'       => 1,
+				'read_aloud_enabled'          => 1,
+				'discovery_metadata_enabled'  => 1,
 				'preference_controls_enabled' => true,
 				'default_reader_theme'        => 'neon',
 				'default_content_width'       => 'wide',
@@ -88,6 +93,8 @@ class ReaderTest extends TestCase {
 		$this->assertTrue( $settings['reading_time_enabled'] );
 		$this->assertTrue( $settings['reader_toc_enabled'] );
 		$this->assertTrue( $settings['reader_resume_enabled'] );
+		$this->assertTrue( $settings['read_aloud_enabled'] );
+		$this->assertTrue( $settings['discovery_metadata_enabled'] );
 		$this->assertSame( 'light', $settings['default_reader_theme'] );
 		$this->assertSame( 'wide', $settings['default_content_width'] );
 		$this->assertSame( 'large', $settings['default_font_size'] );
@@ -114,6 +121,38 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Content display controls default on and can be limited by the extension filter.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_controls_are_filterable_with_conservative_defaults() {
+		$this->assertSame(
+			[
+				'media'    => true,
+				'embeds'   => true,
+				'comments' => true,
+			],
+			Reader::get_reader_content_controls()
+		);
+
+		\add_filter(
+			'wpdfv_reader_content_controls',
+			static function () {
+				return [ 'media' => false ];
+			}
+		);
+
+		$this->assertSame(
+			[
+				'media'    => false,
+				'embeds'   => true,
+				'comments' => true,
+			],
+			Reader::get_reader_content_controls()
+		);
+	}
+
+	/**
 	 * Reader settings and public post type lookups are cached per request.
 	 *
 	 * @return void
@@ -134,6 +173,84 @@ class ReaderTest extends TestCase {
 		$this->assertSame( [ 'post', 'book' ], Reader::where_to_display() );
 		$this->assertTrue( Reader::is_post_type_enabled( 'book' ) );
 		$this->assertSame( 1, $GLOBALS['wpdfv_test_get_post_types_calls'] );
+	}
+
+	/**
+	 * Per-post availability overrides resolve before the global post-type list.
+	 *
+	 * @return void
+	 */
+	public function test_reader_post_availability_override_and_global_fallback() {
+		\update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [] ] ),
+			false
+		);
+		Reader::invalidate_request_cache();
+
+		$post                            = new \WP_Post();
+		$post->ID                        = 84;
+		$post->post_type                 = 'post';
+		$GLOBALS['wpdfv_test_posts'][84] = $post;
+
+		$this->assertFalse( Reader::is_post_enabled_for_post( $post ) );
+
+		\update_post_meta( 84, Reader::POST_AVAILABILITY_META, 'enabled' );
+		$this->assertTrue( Reader::is_post_enabled_for_post( $post ) );
+
+		\update_post_meta( 84, Reader::POST_AVAILABILITY_META, 'disabled' );
+		$this->assertFalse( Reader::is_post_enabled_for_post( $post ) );
+
+		\delete_post_meta( 84, Reader::POST_AVAILABILITY_META );
+		\update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [ 'post' ] ] ),
+			false
+		);
+		Reader::invalidate_request_cache();
+		$this->assertTrue( Reader::is_post_enabled_for_post( $post ) );
+	}
+
+	/**
+	 * A valid per-post template overrides the global template; blank inherits.
+	 *
+	 * @return void
+	 */
+	public function test_post_template_override_and_global_fallback() {
+		\add_filter(
+			'wpdfv_modal_templates',
+			static function ( $templates ) {
+				$templates['compact'] = [
+					'label'   => 'Compact',
+					'content' => '<!-- wp:post-content /-->',
+				];
+
+				return $templates;
+			}
+		);
+		\WPDFV\Includes\Templates::invalidate_request_cache();
+
+		$post            = new \WP_Post();
+		$post->ID        = 85;
+		$post->post_type = 'post';
+
+		$this->assertSame( Templates::DEFAULT_TEMPLATE, Templates::get_selected_template_slug( $post ) );
+		\update_post_meta( 85, '_wpdfv_reader_template', 'compact' );
+		$this->assertSame( 'compact', Templates::get_selected_template_slug( $post ) );
+	}
+
+	/**
+	 * Per-content editor values are limited to known availability and template options.
+	 *
+	 * @return void
+	 */
+	public function test_content_settings_sanitize_availability_and_template_values() {
+		$content_settings = new ContentSettings();
+
+		$this->assertSame( 'inherit', $content_settings->sanitize_availability( 'unexpected' ) );
+		$this->assertSame( 'enabled', $content_settings->sanitize_availability( 'enabled' ) );
+		$this->assertSame( '', $content_settings->sanitize_template( 'not-registered' ) );
+		$this->assertSame( Templates::DEFAULT_TEMPLATE, $content_settings->sanitize_template( Templates::DEFAULT_TEMPLATE ) );
 	}
 
 	/**
@@ -188,6 +305,88 @@ class ReaderTest extends TestCase {
 		$this->assertContains( 'compact', array_column( Templates::get_template_options(), 'value' ) );
 		$this->assertContains( 'compact', array_column( Templates::get_template_options(), 'value' ) );
 		$this->assertSame( 1, $template_filter_calls );
+	}
+
+	/**
+	 * Template definitions reject missing or non-string block markup and
+	 * normalize optional category and preview metadata.
+	 *
+	 * @return void
+	 */
+	public function test_template_registry_validates_template_contract_and_preview_metadata() {
+		\add_filter(
+			'wpdfv_modal_templates',
+			static function ( $templates ) {
+				$templates['with-preview']    = [
+					'label'       => '<b>Editorial layout</b>',
+					'description' => 'An editorial layout.',
+					'category'    => 'custom-layouts',
+					'content'     => '<!-- wp:post-content /-->',
+					'preview'     => [
+						'image' => 'https://example.org/layout.png',
+						'alt'   => '<script>preview</script>Editorial layout',
+					],
+				];
+				$templates['missing-content'] = [ 'label' => 'Invalid' ];
+				$templates['non-string']      = [ 'content' => [ 'invalid' ] ];
+
+				return $templates;
+			}
+		);
+
+		\WPDFV\Includes\Templates::invalidate_request_cache();
+		$options = \WPDFV\Includes\Templates::get_template_options();
+		$preview = array_values(
+			array_filter(
+				$options,
+				static function ( $option ) {
+					return 'with-preview' === $option['value'];
+				}
+			)
+		);
+
+		$this->assertCount( 1, $preview );
+		$this->assertSame( 'Editorial layout', $preview[0]['label'] );
+		$this->assertSame( 'custom-layouts', $preview[0]['category'] );
+		$this->assertSame(
+			[
+				'image' => 'https://example.org/layout.png',
+				'alt'   => 'Editorial layout',
+			],
+			$preview[0]['preview']
+		);
+		$this->assertNotContains( 'missing-content', array_column( $options, 'value' ) );
+		$this->assertNotContains( 'non-string', array_column( $options, 'value' ) );
+	}
+
+	/**
+	 * The built-in template keeps its translated label when extensions omit it.
+	 *
+	 * @return void
+	 */
+	public function test_default_template_keeps_its_label_when_filter_omits_it() {
+		\add_filter(
+			'wpdfv_modal_templates',
+			static function ( $templates ) {
+				$templates['default']['label'] = '';
+
+				return $templates;
+			}
+		);
+
+		Templates::invalidate_request_cache();
+		$options = Templates::get_template_options();
+		$default = array_values(
+			array_filter(
+				$options,
+				static function ( $option ) {
+					return Templates::DEFAULT_TEMPLATE === $option['value'];
+				}
+			)
+		);
+
+		$this->assertCount( 1, $default );
+		$this->assertSame( 'Default Reader Mode layout', $default[0]['label'] );
 	}
 
 	/**

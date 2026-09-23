@@ -317,6 +317,81 @@ test.describe( 'Reader Mode smoke', () => {
 		expect( layout.scrollsForExpandedSpacing ).toBe( true );
 	} );
 
+	test( 'toggles media, embeds, and comments without removing source markup', async ( {
+		page,
+	} ) => {
+		const content =
+			'<figure class="wp-block-image"><img src="https://example.com/image.jpg" alt="A mountain view"><figcaption>Mountain caption.</figcaption></figure>' +
+			'<div class="wp-block-embed">Embedded media.</div>' +
+			'<section class="wp-block-comments">Reader comments.</section>';
+		await mockReaderContentResponse( page, content );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+
+		const mediaToggle = page.getByLabel( 'Show images and media' );
+		const embedToggle = page.getByLabel( 'Show embedded content' );
+		const commentsToggle = page.getByLabel( 'Show comments' );
+		const image = page.locator( '.wpdfv-reader-content img' );
+
+		await mediaToggle.uncheck();
+		await expect( image ).toBeAttached();
+		await expect( image ).toHaveAttribute( 'alt', 'A mountain view' );
+		await expect( page.getByText( 'Mountain caption.' ) ).toBeAttached();
+		await expect( image ).toBeHidden();
+
+		await embedToggle.uncheck();
+		await commentsToggle.uncheck();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-embed' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-comments' )
+		).toBeHidden();
+
+		await page.getByRole( 'button', { name: /exit reader mode|close/i } ).click();
+		await openReader( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await expect( mediaToggle ).not.toBeChecked();
+		await expect( embedToggle ).not.toBeChecked();
+		await expect( commentsToggle ).not.toBeChecked();
+	} );
+
+	test( 'uses browser speech synthesis only when enabled and stops on close', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page );
+		await mockReaderContentResponse(
+			page,
+			'<article><p>Article only speech content.</p></article>'
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+
+		await page.getByRole( 'button', { name: 'Read aloud' } ).click();
+		await expect(
+			page.getByRole( 'button', { name: 'Pause reading' } )
+		).toBeVisible();
+		const spokenText = await page.evaluate(
+			() => window.__wpdfvLastSpokenText
+		);
+		expect( spokenText ).toContain( 'Article only speech content.' );
+		expect( spokenText ).not.toContain( 'outside article' );
+
+		await page.getByRole( 'button', { name: 'Pause reading' } ).click();
+		await page.getByRole( 'button', { name: 'Resume reading' } ).click();
+		await page.getByRole( 'button', { name: 'Stop reading' } ).click();
+		await page.getByRole( 'button', { name: 'Read aloud' } ).click();
+		await page.getByRole( 'button', { name: /exit reader mode|close/i } ).click();
+
+		await expect
+			.poll( () =>
+				page.evaluate( () => window.__wpdfvSpeechCancelCount )
+			)
+			.toBeGreaterThan( 0 );
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
 	test( 'shows reading progress only when enabled by frontend settings', async ( {
 		page,
 	} ) => {
@@ -720,6 +795,42 @@ async function enableReaderResume( page ) {
 		} );
 	}, positionsStorageKey );
 	await page.goto( readerUrl );
+	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
+}
+
+async function enableReadAloud( page ) {
+	await page.addInitScript( () => {
+		let config;
+
+		Object.defineProperty( window, 'wpdfvReaderMode', {
+			configurable: true,
+			get() {
+				return config;
+			},
+			set( value ) {
+				config = { ...value, readAloudEnabled: true };
+			},
+		} );
+		window.SpeechSynthesisUtterance = function ( text ) {
+			this.text = text;
+		};
+		window.__wpdfvSpeechCancelCount = 0;
+		Object.defineProperty( window, 'speechSynthesis', {
+			configurable: true,
+			value: {
+				cancel() {
+					window.__wpdfvSpeechCancelCount += 1;
+				},
+				pause() {},
+				resume() {},
+				speak( utterance ) {
+					window.__wpdfvLastSpokenText = utterance.text;
+					utterance.onstart?.();
+				},
+			},
+		} );
+	} );
+	await page.reload();
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 }
 

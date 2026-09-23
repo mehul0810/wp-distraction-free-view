@@ -11,7 +11,9 @@ use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 use WP_REST_Server;
 use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Abilities;
 use WPDFV\Includes\Reader;
+use WPDFV\Includes\Templates;
 use WPDFV\Plugin;
 
 /**
@@ -178,6 +180,146 @@ class ReaderIntegrationTest extends TestCase {
 		$this->assertSame( $post_id, $data['id'] );
 		$this->assertStringContainsString( 'Readable integration content.', $data['content'] );
 		$this->assertArrayHasKey( 'readingTime', $data );
+	}
+
+	/**
+	 * Structured content exposes only public, sanitized Reader Mode data.
+	 *
+	 * @return void
+	 */
+	public function test_structured_rest_content_returns_public_metadata_and_sanitized_content() {
+		$post_id = $this->create_post(
+			[
+				'post_content' => '<p>Structured <strong>reader</strong> content.</p><script>privateScript()</script>',
+				'post_status'  => 'publish',
+				'post_title'   => 'Structured reader title',
+				'post_excerpt' => 'A useful excerpt.',
+			]
+		);
+
+		$response = $this->dispatch_structured_content_request( $post_id );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( get_permalink( $post_id ), $data['canonicalUrl'] );
+		$this->assertSame( 'Structured reader title', $data['title'] );
+		$this->assertSame( 'A useful excerpt.', $data['excerpt'] );
+		$this->assertStringContainsString( 'Structured reader content.', $data['text'] );
+		$this->assertStringNotContainsString( 'privateScript', $data['text'] );
+		$this->assertStringNotContainsString( '<script', $data['html'] );
+		$this->assertNotEmpty( $data['language'] );
+		$this->assertNotEmpty( $data['publishedAt'] );
+		$this->assertNotEmpty( $data['modifiedAt'] );
+		$this->assertSame( 'post', $data['postType'] );
+		$this->assertArrayHasKey( 'readingTime', $data );
+		$this->assertNull( $data['featuredImage'] );
+		$this->assertArrayNotHasKey( 'scripts', $data );
+		$this->assertArrayNotHasKey( 'email', $data );
+	}
+
+	/**
+	 * Structured content uses the same privacy gate as the Reader Mode route.
+	 *
+	 * @return void
+	 */
+	public function test_structured_rest_content_forbids_private_posts_for_anonymous_readers() {
+		$post_id = $this->create_post( [ 'post_status' => 'private' ] );
+
+		$response = $this->dispatch_structured_content_request( $post_id );
+
+		$this->assertSame( 403, $response->get_status() );
+		$this->assertSame( 'wpdfv_post_forbidden', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * Per-post availability overrides can enable or disable a public post.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_respects_per_post_availability_override() {
+		update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [ 'page' ] ] ),
+			false
+		);
+		$post_id = $this->create_post( [ 'post_status' => 'publish' ] );
+
+		$this->assertSame( 403, $this->dispatch_content_request( $post_id )->get_status() );
+
+		update_post_meta( $post_id, Reader::POST_AVAILABILITY_META, 'enabled' );
+		$this->assertSame( 200, $this->dispatch_content_request( $post_id )->get_status() );
+
+		update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [ 'post' ] ] ),
+			false
+		);
+		update_post_meta( $post_id, Reader::POST_AVAILABILITY_META, 'disabled' );
+		$this->assertSame( 403, $this->dispatch_content_request( $post_id )->get_status() );
+	}
+
+	/**
+	 * A valid per-post template override is used when rendering Reader content.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_uses_per_post_template_override() {
+		$template_filter = static function ( $templates ) {
+			$templates['compact'] = [
+				'label'   => 'Compact',
+				'content' => '<!-- wp:paragraph --><p>Compact Reader template.</p><!-- /wp:paragraph -->',
+			];
+
+			return $templates;
+		};
+		add_filter( 'wpdfv_modal_templates', $template_filter );
+		Templates::invalidate_request_cache();
+		$post_id = $this->create_post( [ 'post_status' => 'publish' ] );
+		update_post_meta( $post_id, '_wpdfv_reader_template', 'compact' );
+
+		try {
+			$response = $this->dispatch_content_request( $post_id );
+		} finally {
+			remove_filter( 'wpdfv_modal_templates', $template_filter );
+			Templates::invalidate_request_cache();
+		}
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Compact Reader template.', $response->get_data()['content'] );
+	}
+
+	/**
+	 * Per-content overrides are registered for public post types in the REST meta schema.
+	 *
+	 * @return void
+	 */
+	public function test_content_override_meta_is_registered_for_public_post_types() {
+		$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, get_registered_meta_keys( 'post' ) );
+		$this->assertArrayHasKey( '_wpdfv_reader_template', get_registered_meta_keys( 'post' ) );
+	}
+
+	/**
+	 * The Abilities API exposes only publicly available Reader Mode content.
+	 *
+	 * @return void
+	 */
+	public function test_abilities_api_is_optional_and_rejects_private_content() {
+		if ( ! function_exists( 'wp_register_ability' ) || ! function_exists( 'wp_get_ability' ) ) {
+			$this->markTestSkipped( 'The WordPress Abilities API requires WordPress 6.9 or later.' );
+		}
+
+		$service = new Abilities();
+		do_action( 'wp_abilities_api_categories_init' );
+		do_action( 'wp_abilities_api_init' );
+
+		$this->assertNotNull( wp_get_ability( Abilities::ABILITY ) );
+
+		$public_post_id  = $this->create_post( [ 'post_status' => 'publish' ] );
+		$private_post_id = $this->create_post( [ 'post_status' => 'private' ] );
+
+		$this->assertTrue( $service->can_read_content( [ 'post_id' => $public_post_id ] ) );
+		$this->assertFalse( $service->can_read_content( [ 'post_id' => $private_post_id ] ) );
+		$this->assertWPError( $service->get_reader_content( [ 'post_id' => $private_post_id ] ) );
 	}
 
 	/**
@@ -427,6 +569,19 @@ class ReaderIntegrationTest extends TestCase {
 	 */
 	private function dispatch_content_request( $post_id ) {
 		$request = new WP_REST_Request( 'GET', '/wp-distraction-free-view/v1/content/' . absint( $post_id ) );
+
+		return rest_get_server()->dispatch( $request );
+	}
+
+	/**
+	 * Dispatch a structured Reader Mode REST request.
+	 *
+	 * @param int $post_id Post ID.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	private function dispatch_structured_content_request( $post_id ) {
+		$request = new WP_REST_Request( 'GET', '/wp-distraction-free-view/v1/structured-content/' . absint( $post_id ) );
 
 		return rest_get_server()->dispatch( $request );
 	}

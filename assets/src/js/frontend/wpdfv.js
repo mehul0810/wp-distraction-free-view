@@ -83,6 +83,34 @@ const PREFERENCE_OPTIONS = {
 		},
 	],
 };
+const CONTENT_PREFERENCES = [
+	{
+		key: 'showMedia',
+		control: 'media',
+		label: __( 'Show images and media', 'wp-distraction-free-view' ),
+	},
+	{
+		key: 'showEmbeds',
+		control: 'embeds',
+		label: __( 'Show embedded content', 'wp-distraction-free-view' ),
+	},
+	{
+		key: 'showComments',
+		control: 'comments',
+		label: __( 'Show comments', 'wp-distraction-free-view' ),
+	},
+];
+const SPEECH_BUTTON_COPY = {
+	stopped: {
+		label: __( 'Read aloud', 'wp-distraction-free-view' ),
+	},
+	playing: {
+		label: __( 'Pause reading', 'wp-distraction-free-view' ),
+	},
+	paused: {
+		label: __( 'Resume reading', 'wp-distraction-free-view' ),
+	},
+};
 const createHeroIcon = ( paths ) =>
 	createElement(
 		SVG,
@@ -345,6 +373,9 @@ const getDefaultPreferences = () => ( {
 		READER_CONFIG.defaultParagraphSpacing,
 		'default'
 	),
+	showMedia: true,
+	showEmbeds: true,
+	showComments: true,
 } );
 
 const getStoredPreferences = () => {
@@ -379,6 +410,9 @@ const getStoredPreferences = () => {
 				parsed.paragraphSpacing,
 				defaults.paragraphSpacing
 			),
+			showMedia: parsed.showMedia !== false,
+			showEmbeds: parsed.showEmbeds !== false,
+			showComments: parsed.showComments !== false,
 		};
 	} catch {
 		return defaults;
@@ -788,6 +822,42 @@ const PreferenceControls = ( { preferences, onChange } ) => (
 	</div>
 );
 
+const ContentPreferenceControls = ( { preferences, onChange } ) => {
+	const controls = READER_CONFIG.readerContentControls || {};
+	const available = CONTENT_PREFERENCES.filter(
+		( preference ) => controls[ preference.control ] !== false
+	);
+
+	if ( 0 === available.length ) {
+		return null;
+	}
+
+	return (
+		<fieldset className="wpdfv-reader-content-preferences">
+			<legend>
+				{ __( 'Content visibility', 'wp-distraction-free-view' ) }
+			</legend>
+			{ available.map( ( preference ) => (
+				<label
+					className="wpdfv-reader-content-preferences__item"
+					htmlFor={ 'wpdfv-reader-pref-' + preference.key }
+					key={ preference.key }
+				>
+					<input
+						id={ 'wpdfv-reader-pref-' + preference.key }
+						type="checkbox"
+						checked={ preferences[ preference.key ] }
+						onChange={ ( event ) =>
+							onChange( preference.key, event.target.checked )
+						}
+					/>
+					<span>{ preference.label }</span>
+				</label>
+			) ) }
+		</fieldset>
+	);
+};
+
 const ReaderTableOfContents = ( { items, onNavigate } ) => (
 	<nav
 		className="wpdfv-reader-toc"
@@ -834,8 +904,10 @@ const ReaderApp = () => {
 	const [ currentPostId, setCurrentPostId ] = useState( '' );
 	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
+	const [ speechStatus, setSpeechStatus ] = useState( 'stopped' );
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
+	const utteranceRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
 	const feedbackTimeoutRef = useRef( null );
 	const readerModeUrl = useMemo(
@@ -850,6 +922,11 @@ const ReaderApp = () => {
 		[ readerModeUrl, title ]
 	);
 	const canNativeShare = supportsNativeShare( shareData );
+	const canReadAloud =
+		READER_CONFIG.readAloudEnabled === true &&
+		'undefined' !== typeof window &&
+		'function' === typeof window.SpeechSynthesisUtterance &&
+		window.speechSynthesis;
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -862,31 +939,6 @@ const ReaderApp = () => {
 			].join( ' ' ),
 		[ preferences ]
 	);
-
-	useEffect( () => {
-		const handleClick = ( event ) => {
-			const trigger = event.target.closest( '.wpdfv-fullscreen-btn' );
-
-			if ( ! trigger ) {
-				return;
-			}
-
-			event.preventDefault();
-			openReader( trigger.dataset.postId );
-		};
-
-		document.addEventListener( 'click', handleClick );
-
-		return () => document.removeEventListener( 'click', handleClick );
-	}, [] );
-
-	useEffect( () => {
-		if ( ! READER_CONFIG.autoOpen || ! READER_CONFIG.currentPostId ) {
-			return;
-		}
-
-		openReader( READER_CONFIG.currentPostId );
-	}, [] );
 
 	useEffect( () => {
 		const storageKey =
@@ -944,6 +996,16 @@ const ReaderApp = () => {
 			}
 		};
 	}, [ linkFeedback ] );
+
+	useEffect(
+		() => () => {
+			if ( utteranceRef.current ) {
+				window.speechSynthesis?.cancel();
+				utteranceRef.current = null;
+			}
+		},
+		[]
+	);
 
 	useEffect( () => {
 		if ( ! isOpen ) {
@@ -1106,7 +1168,55 @@ const ReaderApp = () => {
 		} ) );
 	};
 
+	const stopReadAloud = useCallback( () => {
+		if ( utteranceRef.current && window.speechSynthesis ) {
+			window.speechSynthesis.cancel();
+		}
+
+		utteranceRef.current = null;
+		setSpeechStatus( 'stopped' );
+	}, [] );
+
+	const startReadAloud = () => {
+		const text = contentRef.current?.innerText?.trim();
+
+		if ( ! canReadAloud || ! text ) {
+			return;
+		}
+
+		stopReadAloud();
+		const utterance = new window.SpeechSynthesisUtterance( text );
+		utterance.onstart = () => setSpeechStatus( 'playing' );
+		utterance.onend = () => {
+			if ( utteranceRef.current === utterance ) {
+				utteranceRef.current = null;
+				setSpeechStatus( 'stopped' );
+			}
+		};
+		utterance.onerror = () => {
+			if ( utteranceRef.current === utterance ) {
+				utteranceRef.current = null;
+				setSpeechStatus( 'stopped' );
+			}
+		};
+		utteranceRef.current = utterance;
+		window.speechSynthesis.speak( utterance );
+	};
+
+	const toggleReadAloud = () => {
+		if ( 'playing' === speechStatus ) {
+			window.speechSynthesis.pause();
+			setSpeechStatus( 'paused' );
+		} else if ( 'paused' === speechStatus ) {
+			window.speechSynthesis.resume();
+			setSpeechStatus( 'playing' );
+		} else {
+			startReadAloud();
+		}
+	};
+
 	const closeReader = useCallback( () => {
+		stopReadAloud();
 		setIsOpen( false );
 		setIsSettingsOpen( false );
 		setIsFullscreen( false );
@@ -1115,51 +1225,82 @@ const ReaderApp = () => {
 		setTocItems( [] );
 		setResumePosition( null );
 		setLinkFeedback( null );
-	}, [] );
+	}, [ stopReadAloud ] );
 
-	const openReader = ( postId ) => {
-		if ( ! postId ) {
+	const openReader = useCallback(
+		( postId ) => {
+			if ( ! postId ) {
+				return;
+			}
+
+			stopReadAloud();
+			setIsOpen( true );
+			setIsLoading( true );
+			setError( '' );
+			setTitle( '' );
+			setPermalink( '' );
+			setContent( '' );
+			setScripts( [] );
+			setTocItems( [] );
+			setReadingTime( null );
+			setCurrentPostId( String( postId ) );
+			setResumePosition( null );
+			setIsSettingsOpen( false );
+			setProgress( 0 );
+			setLinkFeedback( null );
+
+			apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
+				.then( ( response ) => {
+					setTitle( response.title );
+					setPermalink( response.permalink || '' );
+					setContent( response.content );
+					setScripts(
+						Array.isArray( response.scripts )
+							? response.scripts
+							: []
+					);
+					setTocItems(
+						Array.isArray( response.toc ) ? response.toc : []
+					);
+					setReadingTime( response.readingTime );
+				} )
+				.catch( () => {
+					setError(
+						__(
+							'This content could not be loaded in Reader Mode.',
+							'wp-distraction-free-view'
+						)
+					);
+				} )
+				.finally( () => setIsLoading( false ) );
+		},
+		[ stopReadAloud ]
+	);
+
+	useEffect( () => {
+		const handleClick = ( event ) => {
+			const trigger = event.target.closest( '.wpdfv-fullscreen-btn' );
+
+			if ( ! trigger ) {
+				return;
+			}
+
+			event.preventDefault();
+			openReader( trigger.dataset.postId );
+		};
+
+		document.addEventListener( 'click', handleClick );
+
+		return () => document.removeEventListener( 'click', handleClick );
+	}, [ openReader ] );
+
+	useEffect( () => {
+		if ( ! READER_CONFIG.autoOpen || ! READER_CONFIG.currentPostId ) {
 			return;
 		}
 
-		setIsOpen( true );
-		setIsLoading( true );
-		setError( '' );
-		setTitle( '' );
-		setPermalink( '' );
-		setContent( '' );
-		setScripts( [] );
-		setTocItems( [] );
-		setReadingTime( null );
-		setCurrentPostId( String( postId ) );
-		setResumePosition( null );
-		setIsSettingsOpen( false );
-		setProgress( 0 );
-		setLinkFeedback( null );
-
-		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
-			.then( ( response ) => {
-				setTitle( response.title );
-				setPermalink( response.permalink || '' );
-				setContent( response.content );
-				setScripts(
-					Array.isArray( response.scripts ) ? response.scripts : []
-				);
-				setTocItems(
-					Array.isArray( response.toc ) ? response.toc : []
-				);
-				setReadingTime( response.readingTime );
-			} )
-			.catch( () => {
-				setError(
-					__(
-						'This content could not be loaded in Reader Mode.',
-						'wp-distraction-free-view'
-					)
-				);
-			} )
-			.finally( () => setIsLoading( false ) );
-	};
+		openReader( READER_CONFIG.currentPostId );
+	}, [ openReader ] );
 
 	const resumeReading = () => {
 		const scrollContainer = document.querySelector(
@@ -1287,6 +1428,17 @@ const ReaderApp = () => {
 		! error &&
 		tocItems.length > 1;
 	const showPreferenceControls = isEnabled( 'preferenceControlsEnabled' );
+	const readerContentClassName = [
+		'wpdfv-reader-content',
+		! preferences.showMedia && 'wpdfv-reader-content--hide-media',
+		! preferences.showEmbeds && 'wpdfv-reader-content--hide-embeds',
+		! preferences.showComments && 'wpdfv-reader-content--hide-comments',
+	]
+		.filter( Boolean )
+		.join( ' ' );
+	const speechButtonLabel =
+		SPEECH_BUTTON_COPY[ speechStatus ]?.label ||
+		SPEECH_BUTTON_COPY.stopped.label;
 
 	return (
 		isOpen && (
@@ -1299,6 +1451,31 @@ const ReaderApp = () => {
 				}
 				headerActions={
 					<div className="wpdfv-reader-header-actions">
+						{ canReadAloud && (
+							<>
+								<ReaderButton
+									label={ speechButtonLabel }
+									onClick={ toggleReadAloud }
+									disabled={ isLoading || ! content }
+								>
+									{ speechButtonLabel }
+								</ReaderButton>
+								{ 'stopped' !== speechStatus && (
+									<ReaderButton
+										label={ __(
+											'Stop reading',
+											'wp-distraction-free-view'
+										) }
+										onClick={ stopReadAloud }
+									>
+										{ __(
+											'Stop',
+											'wp-distraction-free-view'
+										) }
+									</ReaderButton>
+								) }
+							</>
+						) }
 						{ showReadingTime && (
 							<span className="wpdfv-reading-time wpdfv-reading-time--header">
 								{ readingTime.label }
@@ -1428,6 +1605,15 @@ const ReaderApp = () => {
 							preferences={ preferences }
 							onChange={ updatePreference }
 						/>
+						<ContentPreferenceControls
+							preferences={ preferences }
+							onChange={ ( key, value ) =>
+								setPreferences( ( current ) => ( {
+									...current,
+									[ key ]: Boolean( value ),
+								} ) )
+							}
+						/>
 					</aside>
 				) }
 
@@ -1439,7 +1625,7 @@ const ReaderApp = () => {
 				) }
 
 				<div
-					className="wpdfv-reader-content"
+					className={ readerContentClassName }
 					id="wpdfv-print"
 					ref={ contentRef }
 				>

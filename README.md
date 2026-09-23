@@ -111,6 +111,12 @@ Available settings:
 - Custom exit label.
 - Reader Mode custom CSS for scoped modal styling.
 - Reader template.
+- Visitor controls to hide media, embeds, and comments in Reader Mode.
+- Optional browser read-aloud controls.
+- Per-content availability and template overrides.
+- Structured public Reader Mode content and opt-in discovery metadata.
+
+The structured-content schema and extension hooks are documented in [the developer API guide](docs/developer-api.md).
 
 Automatic insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
 
