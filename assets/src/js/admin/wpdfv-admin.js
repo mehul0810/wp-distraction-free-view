@@ -1230,6 +1230,11 @@ const CustomCssControl = ( {
 	const isSyncingRef = useRef( false );
 	onChangeRef.current = onChange;
 	const textareaId = 'wpdfv-custom-css';
+	const hasCodeEditor = Boolean(
+		codeEditorSettings &&
+			typeof window !== 'undefined' &&
+			window.wp?.codeEditor
+	);
 	const exampleCss = `.wpdfv-reader-modal .wpdfv-reader-content {
 \tfont-family: Georgia, serif;
 }
@@ -1294,7 +1299,10 @@ const CustomCssControl = ( {
 				ref={ textareaRef }
 				id={ textareaId }
 				className="wpdfv-custom-css__textarea"
-				defaultValue={ initialValueRef.current }
+				defaultValue={
+					hasCodeEditor ? initialValueRef.current : undefined
+				}
+				value={ hasCodeEditor ? undefined : value }
 				rows={ 12 }
 				onChange={ ( event ) =>
 					onChangeRef.current( event.target.value )
