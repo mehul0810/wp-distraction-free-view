@@ -19,6 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Reader {
 	/**
+	 * Per-post Reader Mode availability meta key.
+	 *
+	 * @var string
+	 */
+	const POST_AVAILABILITY_META = '_wpdfv_reader_mode';
+
+	/**
 	 * Normalized settings cache for the current request.
 	 *
 	 * @since 1.8.0
@@ -91,6 +98,8 @@ class Reader {
 			'reading_time_enabled'        => true,
 			'reader_toc_enabled'          => false,
 			'reader_resume_enabled'       => false,
+			'read_aloud_enabled'          => false,
+			'discovery_metadata_enabled'  => false,
 			'preference_controls_enabled' => true,
 			'default_reader_theme'        => 'light',
 			'default_content_width'       => 'default',
@@ -194,6 +203,8 @@ class Reader {
 			'reading_time_enabled'        => isset( $data['reading_time_enabled'] ) ? (bool) $data['reading_time_enabled'] : $defaults['reading_time_enabled'],
 			'reader_toc_enabled'          => isset( $data['reader_toc_enabled'] ) ? (bool) $data['reader_toc_enabled'] : $defaults['reader_toc_enabled'],
 			'reader_resume_enabled'       => isset( $data['reader_resume_enabled'] ) ? (bool) $data['reader_resume_enabled'] : $defaults['reader_resume_enabled'],
+			'read_aloud_enabled'          => isset( $data['read_aloud_enabled'] ) ? (bool) $data['read_aloud_enabled'] : $defaults['read_aloud_enabled'],
+			'discovery_metadata_enabled'  => isset( $data['discovery_metadata_enabled'] ) ? (bool) $data['discovery_metadata_enabled'] : $defaults['discovery_metadata_enabled'],
 			'preference_controls_enabled' => isset( $data['preference_controls_enabled'] ) ? (bool) $data['preference_controls_enabled'] : $defaults['preference_controls_enabled'],
 			'default_reader_theme'        => in_array( $reader_theme, self::get_allowed_reader_themes(), true ) ? $reader_theme : $defaults['default_reader_theme'],
 			'default_content_width'       => in_array( $content_width, self::get_allowed_content_widths(), true ) ? $content_width : $defaults['default_content_width'],
@@ -487,6 +498,73 @@ class Reader {
 	 */
 	public static function is_post_type_enabled( $post_type ) {
 		return in_array( sanitize_key( $post_type ), self::where_to_display(), true );
+	}
+
+	/**
+	 * Determine whether Reader Mode is available for an individual post.
+	 *
+	 * The post override can enable a public post type that is not enabled in
+	 * global settings, or disable a post type that is globally enabled.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param \WP_Post $post Post to check.
+	 *
+	 * @return bool
+	 */
+	public static function is_post_enabled_for_post( \WP_Post $post ) {
+		if ( ! in_array( $post->post_type, self::get_public_post_type_slugs(), true ) ) {
+			return false;
+		}
+
+		$override = get_post_meta( $post->ID, self::POST_AVAILABILITY_META, true );
+
+		if ( 'enabled' === $override ) {
+			$enabled = true;
+		} elseif ( 'disabled' === $override ) {
+			$enabled = false;
+		} else {
+			$enabled = self::is_post_type_enabled( $post->post_type );
+		}
+
+		/**
+		 * Filter whether Reader Mode is available for an individual post.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param bool     $enabled Whether the post is available.
+		 * @param \WP_Post $post    Post being checked.
+		 * @param string   $override Per-post override: inherit, enabled, or disabled.
+		 */
+		return (bool) apply_filters( 'wpdfv_is_post_enabled_for_post', $enabled, $post, $override );
+	}
+
+	/**
+	 * Get the visitor content controls that may be shown in Reader Mode.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return array
+	 */
+	public static function get_reader_content_controls() {
+		$controls = apply_filters(
+			'wpdfv_reader_content_controls',
+			[
+				'media'    => true,
+				'embeds'   => true,
+				'comments' => true,
+			]
+		);
+
+		if ( ! is_array( $controls ) ) {
+			$controls = [];
+		}
+
+		return [
+			'media'    => ! array_key_exists( 'media', $controls ) || (bool) $controls['media'],
+			'embeds'   => ! array_key_exists( 'embeds', $controls ) || (bool) $controls['embeds'],
+			'comments' => ! array_key_exists( 'comments', $controls ) || (bool) $controls['comments'],
+		];
 	}
 
 	/**

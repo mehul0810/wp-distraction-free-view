@@ -1014,6 +1014,44 @@ const ConfigurePanel = ( {
 											'wp-distraction-free-view'
 										) }
 									/>
+									<ToggleControl
+										__nextHasNoMarginBottom
+										label={ __(
+											'Offer read aloud controls',
+											'wp-distraction-free-view'
+										) }
+										checked={ settings.read_aloud_enabled }
+										onChange={ ( value ) =>
+											onUpdateSetting(
+												'read_aloud_enabled',
+												value
+											)
+										}
+										help={ __(
+											'Uses the visitor browser speech engine and is off by default.',
+											'wp-distraction-free-view'
+										) }
+									/>
+									<ToggleControl
+										__nextHasNoMarginBottom
+										label={ __(
+											'Publish Reader Mode discovery metadata',
+											'wp-distraction-free-view'
+										) }
+										checked={
+											settings.discovery_metadata_enabled
+										}
+										onChange={ ( value ) =>
+											onUpdateSetting(
+												'discovery_metadata_enabled',
+												value
+											)
+										}
+										help={ __(
+											'Adds a structured content link and JSON-LD on eligible public content.',
+											'wp-distraction-free-view'
+										) }
+									/>
 								</div>
 							</SettingsSection>
 							<div className="wpdfv-privacy-note">

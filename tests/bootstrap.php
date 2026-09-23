@@ -24,6 +24,7 @@ $GLOBALS['wpdfv_test_get_plugins_calls']    = 0;
 $GLOBALS['wpdfv_test_get_post_types_calls'] = 0;
 $GLOBALS['wpdfv_test_plugins']              = [];
 $GLOBALS['wpdfv_test_posts']                = [];
+$GLOBALS['wpdfv_test_post_meta']            = [];
 $GLOBALS['wpdfv_test_shortcodes']           = [];
 $GLOBALS['wpdfv_test_user_caps']            = [];
 
@@ -78,6 +79,7 @@ function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_get_post_types_calls'] = 0;
 	$GLOBALS['wpdfv_test_plugins']              = [];
 	$GLOBALS['wpdfv_test_posts']                = [];
+	$GLOBALS['wpdfv_test_post_meta']            = [];
 	$GLOBALS['wpdfv_test_shortcodes']           = [];
 	$GLOBALS['wpdfv_test_user_caps']            = [];
 	$_GET                                       = [];
@@ -261,6 +263,24 @@ function get_post( $post_id = null ) {
 	$post_id = absint( $post_id );
 
 	return $GLOBALS['wpdfv_test_posts'][ $post_id ] ?? null;
+}
+
+function get_post_meta( $post_id, $meta_key = '', $single = false ) {
+	$value = $GLOBALS['wpdfv_test_post_meta'][ absint( $post_id ) ][ $meta_key ] ?? '';
+
+	return $single ? $value : ( '' === $value ? [] : [ $value ] );
+}
+
+function update_post_meta( $post_id, $meta_key, $meta_value ) {
+	$GLOBALS['wpdfv_test_post_meta'][ absint( $post_id ) ][ $meta_key ] = $meta_value;
+
+	return true;
+}
+
+function delete_post_meta( $post_id, $meta_key ) {
+	unset( $GLOBALS['wpdfv_test_post_meta'][ absint( $post_id ) ][ $meta_key ] );
+
+	return true;
 }
 
 function get_post_type( $post = null ) {

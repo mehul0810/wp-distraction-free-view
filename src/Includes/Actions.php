@@ -208,7 +208,7 @@ class Actions {
 			return false;
 		}
 
-		return Reader::is_post_type_enabled( $post->post_type );
+		return Reader::is_post_enabled_for_post( $post );
 	}
 
 	/**
@@ -230,7 +230,9 @@ class Actions {
 			'readingTimeEnabled'        => $settings['reading_time_enabled'],
 			'readerTocEnabled'          => $settings['reader_toc_enabled'],
 			'readerResumeEnabled'       => $settings['reader_resume_enabled'],
+			'readAloudEnabled'          => $settings['read_aloud_enabled'],
 			'preferenceControlsEnabled' => $settings['preference_controls_enabled'],
+			'readerContentControls'     => Reader::get_reader_content_controls(),
 			'defaultReaderTheme'        => $settings['default_reader_theme'],
 			'defaultContentWidth'       => $settings['default_content_width'],
 			'defaultFontSize'           => $settings['default_font_size'],
