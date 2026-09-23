@@ -218,8 +218,9 @@ class Templates {
 
 		if ( $post instanceof \WP_Post ) {
 			$post_template = get_post_meta( $post->ID, '_wpdfv_reader_template', true );
+			$post_template = is_string( $post_template ) ? sanitize_key( $post_template ) : '';
 
-			if ( is_string( $post_template ) && '' !== $post_template ) {
+			if ( '' !== $post_template && isset( self::get_registered_templates()[ $post_template ] ) ) {
 				$slug = sanitize_key( $post_template );
 			}
 		}

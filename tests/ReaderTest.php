@@ -240,6 +240,38 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * A stale per-post template falls back to the selected global template.
+	 *
+	 * @return void
+	 */
+	public function test_stale_post_template_override_falls_back_to_global_template() {
+		\add_filter(
+			'wpdfv_modal_templates',
+			static function ( $templates ) {
+				$templates['compact'] = [
+					'label'   => 'Compact',
+					'content' => '<!-- wp:post-content /-->',
+				];
+
+				return $templates;
+			}
+		);
+		\update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'modal_template' => 'compact' ] ),
+			false
+		);
+		\WPDFV\Includes\Templates::invalidate_request_cache();
+
+		$post            = new \WP_Post();
+		$post->ID        = 86;
+		$post->post_type = 'post';
+		\update_post_meta( 86, '_wpdfv_reader_template', 'removed-template' );
+
+		$this->assertSame( 'compact', Templates::get_selected_template_slug( $post ) );
+	}
+
+	/**
 	 * Per-content editor values are limited to known availability and template options.
 	 *
 	 * @return void

@@ -223,6 +223,9 @@ test.describe( 'Reader Mode smoke', () => {
 				width: 'wide',
 				lineHeight: 'spacious',
 				paragraphSpacing: 'relaxed',
+				showMedia: true,
+				showEmbeds: true,
+				showComments: true,
 			} );
 
 		await page.reload();
