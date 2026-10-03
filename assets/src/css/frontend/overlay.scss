@@ -242,33 +242,21 @@ body.wpdfv-reader-mode-active {
 		max-width: 730px;
 		width: 100%;
 	}
-}
 
-.wpdfv-reader-content--hide-media {
-
-	img,
-	picture,
-	video,
-	audio {
+	.wpdfv-reader-hidden-media,
+	.wpdfv-reader-hidden-embeds,
+	.wpdfv-reader-hidden-comments {
 		display: none !important;
 	}
-}
 
-.wpdfv-reader-content--hide-embeds {
-
-	.wp-block-embed,
-	.wp-embed,
-	iframe.wpdfv-reader-provider-embed {
-		display: none !important;
+	.wpdfv-reader-alternative {
+		display: none;
+		font-style: italic;
 	}
-}
 
-.wpdfv-reader-content--hide-comments {
-
-	.wp-block-comments,
-	#comments,
-	.comments-area {
-		display: none !important;
+	.wpdfv-reader-hidden-media + .wpdfv-reader-alternative--media,
+	.wpdfv-reader-hidden-embeds + .wpdfv-reader-alternative--embeds {
+		display: block;
 	}
 }
 

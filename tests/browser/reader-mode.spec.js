@@ -19,7 +19,9 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 	} );
 
-	test( 'opens and closes from the Reader Mode toggle', async ( { page } ) => {
+	test( 'opens and closes from the Reader Mode toggle', async ( {
+		page,
+	} ) => {
 		await openReader( page );
 		await expect( page.locator( modalSelector ) ).toBeVisible();
 		await expect( page.locator( 'html' ) ).toHaveClass(
@@ -96,9 +98,9 @@ test.describe( 'Reader Mode smoke', () => {
 			);
 		}
 
-		await expect.poll( () => getReaderScrollTop( page ) ).toBeGreaterThan(
-			0
-		);
+		await expect
+			.poll( () => getReaderScrollTop( page ) )
+			.toBeGreaterThan( 0 );
 
 		await page.keyboard.press( 'Home' );
 		await expect.poll( () => getReaderScrollTop( page ) ).toBe( 0 );
@@ -160,9 +162,7 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
-	test( 'persists reader typography preferences', async ( {
-		page,
-	} ) => {
+	test( 'persists reader typography preferences', async ( { page } ) => {
 		await page.goto( readerUrl );
 		await page.evaluate(
 			( key ) => window.localStorage.removeItem( key ),
@@ -308,7 +308,8 @@ test.describe( 'Reader Mode smoke', () => {
 					paragraphBox.right <= scrollBox.right + 1,
 				scrollsForExpandedSpacing:
 					Boolean( scrollContainer ) &&
-					scrollContainer.scrollHeight >= scrollContainer.clientHeight,
+					scrollContainer.scrollHeight >=
+						scrollContainer.clientHeight,
 			};
 		} );
 
@@ -325,7 +326,9 @@ test.describe( 'Reader Mode smoke', () => {
 	} ) => {
 		const content =
 			'<figure class="wp-block-image"><img src="https://example.com/image.jpg" alt="A mountain view"><figcaption>Mountain caption.</figcaption></figure>' +
+			'<p><img src="https://example.com/bare.jpg" alt="Bare image description"></p>' +
 			'<div class="wp-block-embed">Embedded media.</div>' +
+			'<figure class="wp-block-embed"><iframe title="Demo video"></iframe><figcaption>Demo caption.</figcaption></figure>' +
 			'<section class="wp-block-comments">Reader comments.</section>';
 		await mockReaderContentResponse( page, content );
 		await openReader( page );
@@ -335,12 +338,17 @@ test.describe( 'Reader Mode smoke', () => {
 		const mediaToggle = page.getByLabel( 'Show images and media' );
 		const embedToggle = page.getByLabel( 'Show embedded content' );
 		const commentsToggle = page.getByLabel( 'Show comments' );
-		const image = page.locator( '.wpdfv-reader-content img' );
+		const image = page.locator( '.wpdfv-reader-content img' ).first();
 
 		await mediaToggle.uncheck();
 		await expect( image ).toBeAttached();
 		await expect( image ).toHaveAttribute( 'alt', 'A mountain view' );
 		await expect( page.getByText( 'Mountain caption.' ) ).toBeAttached();
+		await expect( page.getByText( 'Mountain caption.' ) ).toBeVisible();
+		await expect( page.getByText( 'A mountain view' ) ).toBeVisible();
+		await expect(
+			page.getByText( 'Bare image description' )
+		).toBeVisible();
 		await expect( image ).toBeHidden();
 
 		await embedToggle.uncheck();
@@ -349,15 +357,68 @@ test.describe( 'Reader Mode smoke', () => {
 			page.locator( '.wpdfv-reader-content .wp-block-embed' )
 		).toBeHidden();
 		await expect(
+			page.locator( '.wpdfv-reader-alternative--embeds' ).filter( {
+				hasText: 'Embedded media.',
+			} )
+		).toBeVisible();
+		await expect(
+			page.getByText( 'Demo video; Demo caption.' )
+		).toBeVisible();
+		await expect(
 			page.locator( '.wpdfv-reader-content .wp-block-comments' )
 		).toBeHidden();
 
-		await page.getByRole( 'button', { name: /exit reader mode|close/i } ).click();
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.click();
 		await openReader( page );
 		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
 		await expect( mediaToggle ).not.toBeChecked();
 		await expect( embedToggle ).not.toBeChecked();
 		await expect( commentsToggle ).not.toBeChecked();
+	} );
+
+	test( 'honors custom content and protected selectors without losing text alternatives', async ( {
+		page,
+	} ) => {
+		await setContentSelectors( page, {
+			media: [ 'img', 'figure', '.related-content', ':invalid(' ],
+			embeds: [ '.wp-block-embed' ],
+			comments: [ '.wp-block-comments' ],
+			protected: [ '.reader-instructions' ],
+		} );
+		await mockReaderContentResponse(
+			page,
+			'<figure class="reader-instructions"><img src="https://example.com/help.jpg" alt="Instructions diagram"><figcaption>How to use this chart.</figcaption></figure>' +
+				'<figure><img src="https://example.com/photo.jpg" alt="Sunset photo"><figcaption>Evening light.</figcaption></figure>' +
+				'<div class="related-content">Related reading links.</div>'
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await page.getByLabel( 'Show images and media' ).uncheck();
+
+		await expect(
+			page.getByText( 'How to use this chart.' )
+		).toBeVisible();
+		await expect(
+			page.getByRole( 'img', { name: 'Instructions diagram' } )
+		).toBeVisible();
+		await expect(
+			page.getByText( 'Sunset photo; Evening light.' )
+		).toBeVisible();
+		await expect(
+			page.locator( '.wpdfv-reader-alternative' ).filter( {
+				hasText: 'Related reading links.',
+			} )
+		).toBeVisible();
+		await expect( page.locator( '.related-content' ) ).toBeHidden();
+
+		await page.getByLabel( 'Show images and media' ).check();
+		await expect(
+			page.getByRole( 'img', { name: 'Sunset photo' } )
+		).toBeVisible();
+		await expect( page.locator( '.related-content' ) ).toBeVisible();
 	} );
 
 	test( 'uses browser speech synthesis only when enabled and stops on close', async ( {
@@ -380,12 +441,17 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 		expect( spokenText ).toContain( 'Article only speech content.' );
 		expect( spokenText ).not.toContain( 'outside article' );
+		expect(
+			await page.evaluate( () => window.__wpdfvLastVoice?.localService )
+		).toBe( true );
 
 		await page.getByRole( 'button', { name: 'Pause reading' } ).click();
 		await page.getByRole( 'button', { name: 'Resume reading' } ).click();
 		await page.getByRole( 'button', { name: 'Stop reading' } ).click();
 		await page.getByRole( 'button', { name: 'Read aloud' } ).click();
-		await page.getByRole( 'button', { name: /exit reader mode|close/i } ).click();
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.click();
 
 		await expect
 			.poll( () =>
@@ -393,6 +459,32 @@ test.describe( 'Reader Mode smoke', () => {
 			)
 			.toBeGreaterThan( 0 );
 		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
+	test( 'does not offer read aloud when only remote voices exist', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page, 'remote' );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.getByRole( 'button', { name: 'Read aloud' } )
+		).toHaveCount( 0 );
+	} );
+
+	test( 'offers read aloud when a local voice arrives later', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page, 'delayed' );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.getByRole( 'button', { name: 'Read aloud' } )
+		).toHaveCount( 0 );
+		await page.evaluate( () => window.__wpdfvSetLocalVoice() );
+		await expect(
+			page.getByRole( 'button', { name: 'Read aloud' } )
+		).toBeVisible();
 	} );
 
 	test( 'shows reading progress only when enabled by frontend settings', async ( {
@@ -561,9 +653,7 @@ test.describe( 'Reader Mode smoke', () => {
 			page.getByText( 'Reader Mode link copied.' )
 		).toBeVisible();
 		await expect
-			.poll( () =>
-				page.evaluate( () => window.__wpdfvCopiedText || '' )
-			)
+			.poll( () => page.evaluate( () => window.__wpdfvCopiedText || '' ) )
 			.toBe( withReaderModeQuery( sourceUrl ) );
 	} );
 
@@ -690,7 +780,8 @@ test.describe( 'Reader Mode smoke', () => {
 							stale: {
 								scrollTop: 640,
 								progress: 45,
-								updatedAt: Date.now() - 40 * 24 * 60 * 60 * 1000,
+								updatedAt:
+									Date.now() - 40 * 24 * 60 * 60 * 1000,
 							},
 						},
 					} )
@@ -801,8 +892,8 @@ async function enableReaderResume( page ) {
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 }
 
-async function enableReadAloud( page ) {
-	await page.addInitScript( () => {
+async function enableReadAloud( page, voiceMode = 'local' ) {
+	await page.addInitScript( ( mode ) => {
 		let config;
 
 		Object.defineProperty( window, 'wpdfvReaderMode', {
@@ -818,9 +909,21 @@ async function enableReadAloud( page ) {
 			this.text = text;
 		};
 		window.__wpdfvSpeechCancelCount = 0;
+		let voices = [ { name: 'Remote', localService: false } ];
+		if ( 'local' === mode ) {
+			voices.push( { name: 'Local', localService: true } );
+		}
+		const synthesis = new EventTarget();
+		window.__wpdfvSetLocalVoice = () => {
+			voices = [ ...voices, { name: 'Local', localService: true } ];
+			synthesis.dispatchEvent( new Event( 'voiceschanged' ) );
+		};
 		Object.defineProperty( window, 'speechSynthesis', {
 			configurable: true,
-			value: {
+			value: Object.assign( synthesis, {
+				getVoices() {
+					return voices;
+				},
 				cancel() {
 					window.__wpdfvSpeechCancelCount += 1;
 				},
@@ -828,19 +931,38 @@ async function enableReadAloud( page ) {
 				resume() {},
 				speak( utterance ) {
 					window.__wpdfvLastSpokenText = utterance.text;
+					window.__wpdfvLastVoice = utterance.voice;
 					utterance.onstart?.();
 				},
+			} ),
+		} );
+	}, voiceMode );
+	await page.reload();
+	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
+}
+
+async function setContentSelectors( page, selectors ) {
+	await page.addInitScript( ( contentSelectors ) => {
+		let config;
+		Object.defineProperty( window, 'wpdfvReaderMode', {
+			configurable: true,
+			get() {
+				return config;
+			},
+			set( value ) {
+				config = { ...value, contentSelectors };
 			},
 		} );
-	} );
+	}, selectors );
 	await page.reload();
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 }
 
 async function getReaderPostId( page ) {
-	const postId = await page.locator( toggleSelector ).first().getAttribute(
-		'data-post-id'
-	);
+	const postId = await page
+		.locator( toggleSelector )
+		.first()
+		.getAttribute( 'data-post-id' );
 
 	expect( postId ).toBeTruthy();
 
@@ -874,8 +996,7 @@ async function mockReaderContentResponse( page, content ) {
 				body: JSON.stringify( {
 					id: 1,
 					title: 'Reliable Reader Fixture',
-					permalink:
-						'https://example.com/reliable-reader-fixture/',
+					permalink: 'https://example.com/reliable-reader-fixture/',
 					content,
 					scripts: [],
 					toc: [],

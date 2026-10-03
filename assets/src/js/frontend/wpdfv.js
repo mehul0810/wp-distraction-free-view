@@ -888,6 +888,126 @@ const ReaderTableOfContents = ( { items, onNavigate } ) => (
 	</nav>
 );
 
+const DEFAULT_CONTENT_SELECTORS = {
+	media: [ 'img', 'picture', 'video', 'audio' ],
+	embeds: [
+		'.wp-block-embed',
+		'.wp-embed',
+		'iframe.wpdfv-reader-provider-embed',
+	],
+	comments: [ '.wp-block-comments', '#comments', '.comments-area' ],
+	protected: [],
+};
+
+const queryReaderElements = ( container, selectors ) => {
+	const elements = new Set();
+
+	( Array.isArray( selectors ) ? selectors : [] ).forEach( ( selector ) => {
+		if ( 'string' !== typeof selector || ! selector.trim() ) {
+			return;
+		}
+
+		try {
+			container
+				.querySelectorAll( selector )
+				.forEach( ( element ) => elements.add( element ) );
+		} catch {
+			// A custom selector must not break the reader controls.
+		}
+	} );
+
+	return [ ...elements ];
+};
+
+const getReaderAlternative = ( element, category ) => {
+	const image =
+		'IMG' === element.tagName
+			? element
+			: element.querySelector( 'img[alt]' );
+	const caption = element.querySelector( 'figcaption' )?.textContent?.trim();
+	const label =
+		element.getAttribute( 'aria-label' ) ||
+		element.getAttribute( 'title' ) ||
+		image?.getAttribute( 'alt' );
+	const text = [ label?.trim(), caption ].filter( Boolean );
+
+	if ( ! text.length ) {
+		text.push( element.textContent?.trim() );
+	}
+
+	return (
+		[ ...new Set( text.filter( Boolean ) ) ].join( '; ' ) ||
+		( 'media' === category
+			? __( 'Media hidden', 'wp-distraction-free-view' )
+			: __( 'Embedded content hidden', 'wp-distraction-free-view' ) )
+	);
+};
+
+const applyReaderContentPreferences = ( container, preferences ) => {
+	const selectors = {
+		...DEFAULT_CONTENT_SELECTORS,
+		...( READER_CONFIG.contentSelectors || {} ),
+	};
+	const protectedElements = queryReaderElements(
+		container,
+		selectors.protected
+	);
+
+	[ 'media', 'embeds', 'comments' ].forEach( ( category ) => {
+		const hiddenClass = `wpdfv-reader-hidden-${ category }`;
+		container
+			.querySelectorAll( `.${ hiddenClass }` )
+			.forEach( ( element ) => element.classList.remove( hiddenClass ) );
+
+		const preferenceKey = {
+			media: 'showMedia',
+			embeds: 'showEmbeds',
+			comments: 'showComments',
+		}[ category ];
+		if ( preferences[ preferenceKey ] ) {
+			return;
+		}
+
+		const candidates = queryReaderElements(
+			container,
+			selectors[ category ]
+		);
+		candidates.forEach( ( element ) => {
+			if (
+				candidates.some(
+					( parent ) =>
+						parent !== element && parent.contains( element )
+				) ||
+				protectedElements.some(
+					( protectedElement ) =>
+						protectedElement === element ||
+						protectedElement.contains( element ) ||
+						element.contains( protectedElement )
+				)
+			) {
+				return;
+			}
+
+			element.classList.add( hiddenClass );
+			if ( 'comments' === category ) {
+				return;
+			}
+
+			let alternative = element.nextElementSibling;
+			if (
+				! alternative?.classList.contains(
+					`wpdfv-reader-alternative--${ category }`
+				)
+			) {
+				alternative = document.createElement( 'span' );
+				alternative.className = `wpdfv-reader-alternative wpdfv-reader-alternative--${ category }`;
+				element.insertAdjacentElement( 'afterend', alternative );
+			}
+			alternative.textContent = getReaderAlternative( element, category );
+		} );
+	} );
+};
+
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -905,6 +1025,7 @@ const ReaderApp = () => {
 	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
 	const [ speechStatus, setSpeechStatus ] = useState( 'stopped' );
+	const [ localVoice, setLocalVoice ] = useState( null );
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
 	const utteranceRef = useRef( null );
@@ -922,11 +1043,32 @@ const ReaderApp = () => {
 		[ readerModeUrl, title ]
 	);
 	const canNativeShare = supportsNativeShare( shareData );
-	const canReadAloud =
+	const hasSpeechSynthesis =
 		READER_CONFIG.readAloudEnabled === true &&
 		'undefined' !== typeof window &&
 		'function' === typeof window.SpeechSynthesisUtterance &&
-		window.speechSynthesis;
+		'function' === typeof window.speechSynthesis?.getVoices;
+	const canReadAloud = hasSpeechSynthesis && !! localVoice;
+
+	useEffect( () => {
+		if ( ! hasSpeechSynthesis ) {
+			return undefined;
+		}
+
+		const synthesis = window.speechSynthesis;
+		const refreshLocalVoice = () => {
+			setLocalVoice(
+				synthesis
+					.getVoices()
+					.find( ( voice ) => voice.localService === true ) || null
+			);
+		};
+
+		refreshLocalVoice();
+		synthesis.addEventListener( 'voiceschanged', refreshLocalVoice );
+		return () =>
+			synthesis.removeEventListener( 'voiceschanged', refreshLocalVoice );
+	}, [ hasSpeechSynthesis ] );
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -1161,6 +1303,12 @@ const ReaderApp = () => {
 		return () => hydrationModule?.remove();
 	}, [ isOpen, isLoading, error, content ] );
 
+	useEffect( () => {
+		if ( isOpen && ! isLoading && ! error && contentRef.current ) {
+			applyReaderContentPreferences( contentRef.current, preferences );
+		}
+	}, [ isOpen, isLoading, error, content, preferences ] );
+
 	const updatePreference = ( key, value ) => {
 		setPreferences( ( current ) => ( {
 			...current,
@@ -1179,13 +1327,17 @@ const ReaderApp = () => {
 
 	const startReadAloud = () => {
 		const text = contentRef.current?.innerText?.trim();
+		const voice = window.speechSynthesis
+			?.getVoices()
+			.find( ( availableVoice ) => availableVoice.localService === true );
 
-		if ( ! canReadAloud || ! text ) {
+		if ( ! canReadAloud || ! voice || ! text ) {
 			return;
 		}
 
 		stopReadAloud();
 		const utterance = new window.SpeechSynthesisUtterance( text );
+		utterance.voice = voice;
 		utterance.onstart = () => setSpeechStatus( 'playing' );
 		utterance.onend = () => {
 			if ( utteranceRef.current === utterance ) {
