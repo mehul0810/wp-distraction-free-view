@@ -86,7 +86,6 @@ function wpdfv_tests_reset_state() {
 
 	if ( class_exists( '\WPDFV\Includes\Actions' ) ) {
 		$frontend_settings_added = new ReflectionProperty( '\WPDFV\Includes\Actions', 'frontend_settings_added' );
-		$frontend_settings_added->setAccessible( true );
 		$frontend_settings_added->setValue( null, false );
 	}
 

@@ -49,7 +49,7 @@ class MorePluginsCatalog {
 	 * @return array
 	 */
 	public function get_free_plugins() {
-		return [
+		$plugins = [
 			'perform'                 => [
 				'slug'        => 'perform',
 				'plugin_file' => 'perform/perform.php',
@@ -82,6 +82,36 @@ class MorePluginsCatalog {
 				'requires_active_slug' => 'give',
 			],
 		];
+
+		/**
+		 * Filter installable free companion plugin definitions.
+		 *
+		 * Each entry requires slug, plugin_file, label, description, and wp_org_url.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param array $plugins Catalog keyed by plugin slug.
+		 */
+		$plugins = apply_filters( 'wpdfv_free_plugins_catalog', $plugins );
+		if ( ! is_array( $plugins ) ) {
+			return [];
+		}
+
+		$normalized = [];
+		foreach ( $plugins as $key => $plugin ) {
+			if ( ! is_array( $plugin ) ) {
+				continue;
+			}
+			$slug = sanitize_key( isset( $plugin['slug'] ) ? $plugin['slug'] : $key );
+			if ( '' === $slug || empty( $plugin['plugin_file'] ) || empty( $plugin['label'] ) || empty( $plugin['description'] ) || empty( $plugin['wp_org_url'] ) ) {
+				continue;
+			}
+			$plugin['slug']        = $slug;
+			$plugin['plugin_file'] = sanitize_text_field( $plugin['plugin_file'] );
+			$normalized[ $slug ]   = $plugin;
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -90,7 +120,7 @@ class MorePluginsCatalog {
 	 * @return array
 	 */
 	public function get_paid_plugins() {
-		return [
+		$plugins = [
 			[
 				'type'        => 'paid',
 				'slug'        => 'onecaptcha',
@@ -108,6 +138,35 @@ class MorePluginsCatalog {
 				'url'         => 'https://themerouter.com',
 			],
 		];
+
+		/**
+		 * Filter paid companion plugin cards.
+		 *
+		 * Each entry requires slug, label, description, and url.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param array $plugins Paid cards.
+		 */
+		$plugins = apply_filters( 'wpdfv_paid_plugins_catalog', $plugins );
+		if ( ! is_array( $plugins ) ) {
+			return [];
+		}
+
+		$normalized = [];
+		foreach ( $plugins as $plugin ) {
+			if ( ! is_array( $plugin ) || empty( $plugin['slug'] ) || empty( $plugin['label'] ) || empty( $plugin['description'] ) || empty( $plugin['url'] ) ) {
+				continue;
+			}
+			$plugin['slug'] = sanitize_key( $plugin['slug'] );
+			if ( '' === $plugin['slug'] ) {
+				continue;
+			}
+			$plugin['type'] = 'paid';
+			$normalized[]   = $plugin;
+		}
+
+		return $normalized;
 	}
 
 	/**

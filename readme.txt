@@ -77,7 +77,7 @@ Reader Mode can also open from the URL on enabled single content:
 
 Setup and troubleshooting guide:
 
-https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.4/docs/reader-mode-setup.md
+https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/reader-mode-setup.md
 
 = Template Customization =
 
@@ -85,7 +85,7 @@ The Reader Mode content is rendered through block-based templates. The plugin re
 
 Themes and site-specific code can add templates with the `wpdfv_modal_templates` filter.
 
-Template definitions accept a non-empty block-markup `content` string and optional `label`, `description`, `category`, and `preview` image and alt text. See [the developer API guide](docs/developer-api.md) for the structured content endpoint, WordPress Abilities API integration, template contract, and extension filters.
+Template definitions accept a non-empty block-markup `content` string and optional `label`, `description`, `category`, and `preview` image and alt text. See [the developer API guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/developer-api.md) for the structured content endpoint, WordPress Abilities API integration, template contract, and extension filters.
 
 == Installation ==
 
@@ -111,6 +111,10 @@ Yes. Add `?reader-mode=1` to enabled single posts, pages, or selected public cus
 = Are visitor preferences stored on the server? =
 
 No. Font size, theme, and content width preferences are saved only in the visitor browser with localStorage.
+
+= Why does a returning visitor see a different theme from the admin default? =
+
+Admin settings provide the initial reading defaults. A visitor's explicit theme, font size, and width choices take precedence in that browser while reader preference controls are enabled. A fresh browser without saved choices uses the admin defaults.
 
 = Does Reader Mode support print and fullscreen? =
 
@@ -155,6 +159,7 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 = 1.9.0 =
 - Added: Visitor controls for media, embeds, and comments, optional browser read-aloud, per-content availability and template overrides, structured public content, WordPress Abilities API support, and opt-in discovery metadata.
+- Improved: Redesigned the About, Configure, and More Plugins screens, with admin notices below the header and a version badge.
 - Improved: Formalized and documented the Reader Mode template registry, and split the settings API, plugin catalog, and plugin actions into focused services.
 
 = 1.8.4 =
@@ -263,6 +268,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.9.0 =
+Adds the redesigned settings screen, per-content overrides, reader content controls, and integration APIs. Existing settings are preserved. Read-aloud and discovery metadata remain opt-in.
 
 = 1.8.4 =
 Restores WordPress block editor control styling by scoping Reader Mode component styles to the plugin root.

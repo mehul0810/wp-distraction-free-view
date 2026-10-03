@@ -27,7 +27,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Requirements
 
 - WordPress 6.0 or later
-- Tested up to WordPress 7.1
+- Tested up to WordPress 7.1.2
 - PHP 8.2 or later
 - Node.js 24.15.0
 - npm 11 or later
@@ -86,6 +86,8 @@ WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
 The integration suite is intentionally separate from `composer test`. It boots real WordPress APIs for REST routing, block registration/rendering, options, migrations, and multisite activation coverage.
 
 ## Release Workflow
+
+Prepare milestone work on `release/<version>` and open its release PR into `main`. Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release triggers deployment to WordPress.org.
 
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
 

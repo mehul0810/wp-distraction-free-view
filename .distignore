@@ -17,6 +17,8 @@
 /assets/src
 /vendor/bin
 /coverage
+/playwright-report
+/test-results
 
 .scrutinizer.yml
 .travis.yml
@@ -52,6 +54,7 @@ package-lock.json
 phpunit.xml
 phpunit.xml.dist
 phpunit.integration.xml.dist
+playwright.config.js
 CHANGELOG.md
 README.md
 DESIGN.md

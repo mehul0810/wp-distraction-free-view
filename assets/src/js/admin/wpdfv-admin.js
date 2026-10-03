@@ -63,6 +63,7 @@ const SettingsApp = () => {
 	const [ activeTab, setActiveTab ] = useState( 'about' );
 	const [ activePluginAction, setActivePluginAction ] = useState( '' );
 	const [ notice, setNotice ] = useState( null );
+	const adminNoticesRef = useRef( null );
 	const [ isDirty, setIsDirty ] = useState( false );
 	const tabs = [
 		{
@@ -122,6 +123,42 @@ const SettingsApp = () => {
 	useEffect( () => {
 		loadSettings();
 	}, [ loadSettings ] );
+
+	useEffect( () => {
+		const noticeContainer = adminNoticesRef.current;
+		const adminContent = document.getElementById( 'wpcontent' );
+
+		if ( ! noticeContainer || ! adminContent ) {
+			return;
+		}
+
+		const relocateAdminNotices = () => {
+			adminContent
+				.querySelectorAll(
+					'#wpcontent .fs-notice, #wpbody-content .notice:not(.components-notice), #wpbody-content .updated, #wpbody-content .error, #wpbody-content .update-nag'
+				)
+				.forEach( ( adminNotice ) => {
+					if (
+						adminNotice.classList.contains( 'components-notice' ) ||
+						adminNotice.closest( '#wpdfv-settings-app' ) ||
+						adminNotice.parentElement?.closest(
+							'.notice, .updated, .error, .update-nag, .fs-notice'
+						)
+					) {
+						return;
+					}
+
+					noticeContainer.appendChild( adminNotice );
+				} );
+		};
+
+		// Other plugins can add notices after this app mounts.
+		const observer = new window.MutationObserver( relocateAdminNotices );
+		observer.observe( adminContent, { childList: true, subtree: true } );
+		relocateAdminNotices();
+
+		return () => observer.disconnect();
+	}, [] );
 
 	const selectedPostTypes = useMemo(
 		() => settings?.where_to_display || [],
@@ -314,6 +351,8 @@ const SettingsApp = () => {
 			/>
 
 			<div className="wpdfv-settings-content">
+				<div className="wpdfv-admin-notices" ref={ adminNoticesRef } />
+
 				{ notice && (
 					<Notice
 						status={ notice.status }

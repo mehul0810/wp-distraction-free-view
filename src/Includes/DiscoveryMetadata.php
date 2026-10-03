@@ -67,26 +67,35 @@ class DiscoveryMetadata {
 			return;
 		}
 
-		$data     = Content::get_structured_data( $post );
+		$data = Content::get_structured_data( $post );
+		if ( ! is_array( $data ) || empty( $data['canonicalUrl'] ) || ! is_string( $data['canonicalUrl'] ) || empty( $data['title'] ) || ! is_string( $data['title'] ) ) {
+			return;
+		}
 		$metadata = [
 			'@context'         => 'https://schema.org',
 			'@type'            => 'Article',
 			'mainEntityOfPage' => $data['canonicalUrl'],
 			'headline'         => $data['title'],
-			'description'      => $data['excerpt'],
-			'datePublished'    => $data['publishedAt'],
-			'dateModified'     => $data['modifiedAt'],
-			'inLanguage'       => $data['language'],
 		];
+		foreach ( [
+			'excerpt'     => 'description',
+			'publishedAt' => 'datePublished',
+			'modifiedAt'  => 'dateModified',
+			'language'    => 'inLanguage',
+		] as $source => $target ) {
+			if ( isset( $data[ $source ] ) && is_scalar( $data[ $source ] ) && '' !== (string) $data[ $source ] ) {
+				$metadata[ $target ] = $data[ $source ];
+			}
+		}
 
-		if ( $data['author'] ) {
+		if ( ! empty( $data['author'] ) && is_string( $data['author'] ) ) {
 			$metadata['author'] = [
 				'@type' => 'Person',
 				'name'  => $data['author'],
 			];
 		}
 
-		if ( $data['featuredImage'] ) {
+		if ( isset( $data['featuredImage'] ) && is_array( $data['featuredImage'] ) && ! empty( $data['featuredImage']['url'] ) && is_string( $data['featuredImage']['url'] ) ) {
 			$metadata['image'] = $data['featuredImage']['url'];
 		}
 

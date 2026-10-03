@@ -233,6 +233,7 @@ class Actions {
 			'readAloudEnabled'          => $settings['read_aloud_enabled'],
 			'preferenceControlsEnabled' => $settings['preference_controls_enabled'],
 			'readerContentControls'     => Reader::get_reader_content_controls(),
+			'contentSelectors'          => Reader::get_reader_content_selectors(),
 			'defaultReaderTheme'        => $settings['default_reader_theme'],
 			'defaultContentWidth'       => $settings['default_content_width'],
 			'defaultFontSize'           => $settings['default_font_size'],
