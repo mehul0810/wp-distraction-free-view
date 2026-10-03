@@ -269,6 +269,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 == Upgrade Notice ==
 
+= 1.9.0 =
+Adds the redesigned settings screen, per-content overrides, reader content controls, and integration APIs. Existing settings are preserved. Read-aloud and discovery metadata remain opt-in.
+
 = 1.8.4 =
 Restores WordPress block editor control styling by scoping Reader Mode component styles to the plugin root.
 
