@@ -442,7 +442,7 @@ test.describe( 'Reader Mode smoke', () => {
 		await enableReadAloud( page );
 		await mockReaderContentResponse(
 			page,
-			'<article><p>Article only speech content.</p></article>'
+			'<article lang="en-US"><p>Article only speech content.</p></article>'
 		);
 		await openReader( page );
 		await waitForReaderContent( page );
@@ -474,6 +474,66 @@ test.describe( 'Reader Mode smoke', () => {
 			)
 			.toBeGreaterThan( 0 );
 		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
+	test( 'prefers a matching local voice after unrelated local voices', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page, 'custom', [
+			{ name: 'French', lang: 'fr-FR', localService: true },
+			{ name: 'American', lang: 'en-US', localService: true },
+			{ name: 'British', lang: 'en-gB', localService: true },
+		] );
+		await mockReaderContentResponse(
+			page,
+			'<article lang="EN_gb"><p>British article.</p></article>'
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Read aloud' } ).click();
+		expect(
+			await page.evaluate( () => window.__wpdfvLastVoice?.name )
+		).toBe( 'British' );
+		expect( await page.evaluate( () => window.__wpdfvLastLanguage ) ).toBe(
+			'en-gB'
+		);
+	} );
+
+	test( 'falls back to a local voice with the same primary language', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page, 'custom', [
+			{ name: 'French', lang: 'fr-FR', localService: true },
+			{ name: 'Spanish', lang: 'es-ES', localService: true },
+		] );
+		await mockReaderContentResponse(
+			page,
+			'<article lang="es-MX"><p>Spanish article.</p></article>'
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Read aloud' } ).click();
+		expect(
+			await page.evaluate( () => window.__wpdfvLastVoice?.name )
+		).toBe( 'Spanish' );
+	} );
+
+	test( 'hides read aloud when no local voice matches the article language', async ( {
+		page,
+	} ) => {
+		await enableReadAloud( page, 'custom', [
+			{ name: 'English', lang: 'en-US', localService: true },
+			{ name: 'German Remote', lang: 'de-DE', localService: false },
+		] );
+		await mockReaderContentResponse(
+			page,
+			'<article lang="de-DE"><p>German article.</p></article>'
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.getByRole( 'button', { name: 'Read aloud' } )
+		).toHaveCount( 0 );
 	} );
 
 	test( 'does not offer read aloud when only remote voices exist', async ( {
@@ -907,51 +967,68 @@ async function enableReaderResume( page ) {
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 }
 
-async function enableReadAloud( page, voiceMode = 'local' ) {
-	await page.addInitScript( ( mode ) => {
-		let config;
+async function enableReadAloud(
+	page,
+	voiceMode = 'local',
+	customVoices = null
+) {
+	await page.addInitScript(
+		( { mode, configuredVoices } ) => {
+			let config;
 
-		Object.defineProperty( window, 'wpdfvReaderMode', {
-			configurable: true,
-			get() {
-				return config;
-			},
-			set( value ) {
-				config = { ...value, readAloudEnabled: true };
-			},
-		} );
-		window.SpeechSynthesisUtterance = function ( text ) {
-			this.text = text;
-		};
-		window.__wpdfvSpeechCancelCount = 0;
-		let voices = [ { name: 'Remote', localService: false } ];
-		if ( 'local' === mode ) {
-			voices.push( { name: 'Local', localService: true } );
-		}
-		const synthesis = new EventTarget();
-		window.__wpdfvSetLocalVoice = () => {
-			voices = [ ...voices, { name: 'Local', localService: true } ];
-			synthesis.dispatchEvent( new Event( 'voiceschanged' ) );
-		};
-		Object.defineProperty( window, 'speechSynthesis', {
-			configurable: true,
-			value: Object.assign( synthesis, {
-				getVoices() {
-					return voices;
+			Object.defineProperty( window, 'wpdfvReaderMode', {
+				configurable: true,
+				get() {
+					return config;
 				},
-				cancel() {
-					window.__wpdfvSpeechCancelCount += 1;
+				set( value ) {
+					config = { ...value, readAloudEnabled: true };
 				},
-				pause() {},
-				resume() {},
-				speak( utterance ) {
-					window.__wpdfvLastSpokenText = utterance.text;
-					window.__wpdfvLastVoice = utterance.voice;
-					utterance.onstart?.();
-				},
-			} ),
-		} );
-	}, voiceMode );
+			} );
+			window.SpeechSynthesisUtterance = function ( text ) {
+				this.text = text;
+			};
+			window.__wpdfvSpeechCancelCount = 0;
+			let voices = configuredVoices || [
+				{ name: 'Remote', lang: 'en-US', localService: false },
+			];
+			if ( 'local' === mode ) {
+				voices.push( {
+					name: 'Local',
+					lang: 'en-US',
+					localService: true,
+				} );
+			}
+			const synthesis = new EventTarget();
+			window.__wpdfvSetLocalVoice = () => {
+				voices = [
+					...voices,
+					{ name: 'Local', lang: 'en-US', localService: true },
+				];
+				synthesis.dispatchEvent( new Event( 'voiceschanged' ) );
+			};
+			Object.defineProperty( window, 'speechSynthesis', {
+				configurable: true,
+				value: Object.assign( synthesis, {
+					getVoices() {
+						return voices;
+					},
+					cancel() {
+						window.__wpdfvSpeechCancelCount += 1;
+					},
+					pause() {},
+					resume() {},
+					speak( utterance ) {
+						window.__wpdfvLastSpokenText = utterance.text;
+						window.__wpdfvLastVoice = utterance.voice;
+						window.__wpdfvLastLanguage = utterance.lang;
+						utterance.onstart?.();
+					},
+				} ),
+			} );
+		},
+		{ mode: voiceMode, configuredVoices: customVoices }
+	);
 	await page.reload();
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
 }

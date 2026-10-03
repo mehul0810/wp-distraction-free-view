@@ -1037,6 +1037,51 @@ const applyReaderContentPreferences = ( container, preferences ) => {
 	} );
 };
 
+const normalizeSpeechLanguage = ( language ) =>
+	'string' === typeof language
+		? language.trim().replace( /_/g, '-' ).toLowerCase()
+		: '';
+
+const getLocalSpeechVoice = ( voices, language ) => {
+	const normalizedLanguage = normalizeSpeechLanguage( language );
+	if ( ! normalizedLanguage || ! Array.isArray( voices ) ) {
+		return null;
+	}
+
+	const localVoices = voices.filter(
+		( voice ) => voice.localService === true
+	);
+	const exact = localVoices.find(
+		( voice ) =>
+			normalizeSpeechLanguage( voice.lang ) === normalizedLanguage
+	);
+	if ( exact ) {
+		return exact;
+	}
+
+	const primaryLanguage = normalizedLanguage.split( '-' )[ 0 ];
+	if ( ! /^[a-z]{2,8}$/.test( primaryLanguage ) ) {
+		return null;
+	}
+
+	return (
+		localVoices.find(
+			( voice ) =>
+				normalizeSpeechLanguage( voice.lang ).split( '-' )[ 0 ] ===
+				primaryLanguage
+		) || null
+	);
+};
+
+const getReaderSpeechLanguage = ( container ) =>
+	container?.getAttribute( 'lang' ) ||
+	container?.firstElementChild?.getAttribute( 'lang' ) ||
+	container?.firstElementChild?.firstElementChild?.getAttribute( 'lang' ) ||
+	container
+		?.querySelector( 'article[lang], .wp-block-post-content[lang]' )
+		?.getAttribute( 'lang' ) ||
+	document.documentElement.lang;
+
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -1055,6 +1100,9 @@ const ReaderApp = () => {
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
 	const [ speechStatus, setSpeechStatus ] = useState( 'stopped' );
 	const [ localVoice, setLocalVoice ] = useState( null );
+	const [ speechLanguage, setSpeechLanguage ] = useState(
+		document.documentElement.lang
+	);
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
 	const utteranceRef = useRef( null );
@@ -1080,6 +1128,12 @@ const ReaderApp = () => {
 	const canReadAloud = hasSpeechSynthesis && !! localVoice;
 
 	useEffect( () => {
+		if ( isOpen && ! isLoading && contentRef.current ) {
+			setSpeechLanguage( getReaderSpeechLanguage( contentRef.current ) );
+		}
+	}, [ isOpen, isLoading, content ] );
+
+	useEffect( () => {
 		if ( ! hasSpeechSynthesis ) {
 			return undefined;
 		}
@@ -1087,9 +1141,7 @@ const ReaderApp = () => {
 		const synthesis = window.speechSynthesis;
 		const refreshLocalVoice = () => {
 			setLocalVoice(
-				synthesis
-					.getVoices()
-					.find( ( voice ) => voice.localService === true ) || null
+				getLocalSpeechVoice( synthesis.getVoices(), speechLanguage )
 			);
 		};
 
@@ -1097,7 +1149,7 @@ const ReaderApp = () => {
 		synthesis.addEventListener( 'voiceschanged', refreshLocalVoice );
 		return () =>
 			synthesis.removeEventListener( 'voiceschanged', refreshLocalVoice );
-	}, [ hasSpeechSynthesis ] );
+	}, [ hasSpeechSynthesis, speechLanguage ] );
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -1356,9 +1408,10 @@ const ReaderApp = () => {
 
 	const startReadAloud = () => {
 		const text = contentRef.current?.innerText?.trim();
-		const voice = window.speechSynthesis
-			?.getVoices()
-			.find( ( availableVoice ) => availableVoice.localService === true );
+		const voice = getLocalSpeechVoice(
+			window.speechSynthesis?.getVoices(),
+			getReaderSpeechLanguage( contentRef.current )
+		);
 
 		if ( ! canReadAloud || ! voice || ! text ) {
 			return;
@@ -1367,6 +1420,7 @@ const ReaderApp = () => {
 		stopReadAloud();
 		const utterance = new window.SpeechSynthesisUtterance( text );
 		utterance.voice = voice;
+		utterance.lang = voice.lang;
 		utterance.onstart = () => setSpeechStatus( 'playing' );
 		utterance.onend = () => {
 			if ( utteranceRef.current === utterance ) {
