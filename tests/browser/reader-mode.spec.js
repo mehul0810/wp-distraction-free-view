@@ -329,6 +329,8 @@ test.describe( 'Reader Mode smoke', () => {
 			'<p><img src="https://example.com/bare.jpg" alt="Bare image description"></p>' +
 			'<div class="wp-block-embed">Embedded media.</div>' +
 			'<figure class="wp-block-embed"><iframe title="Demo video"></iframe><figcaption>Demo caption.</figcaption></figure>' +
+			'<div class="wp-block-embed"><iframe title="Standalone tutorial"></iframe></div>' +
+			'<div class="wp-block-embed"><iframe aria-labelledby="embed-label"></iframe><span id="embed-label">Labelled tutorial</span></div>' +
 			'<section class="wp-block-comments">Reader comments.</section>';
 		await mockReaderContentResponse( page, content );
 		await openReader( page );
@@ -364,9 +366,22 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect(
 			page.getByText( 'Demo video; Demo caption.' )
 		).toBeVisible();
+		await expect( page.getByText( 'Standalone tutorial' ) ).toBeVisible();
+		await expect(
+			page.locator( '.wpdfv-reader-alternative--embeds' ).filter( {
+				hasText: 'Labelled tutorial',
+			} )
+		).toBeVisible();
 		await expect(
 			page.locator( '.wpdfv-reader-content .wp-block-comments' )
 		).toBeHidden();
+		await mediaToggle.check();
+		await mediaToggle.uncheck();
+		await expect(
+			page.locator( '.wpdfv-reader-alternative--media' ).filter( {
+				hasText: 'Bare image description',
+			} )
+		).toHaveCount( 1 );
 
 		await page
 			.getByRole( 'button', { name: /exit reader mode|close/i } )

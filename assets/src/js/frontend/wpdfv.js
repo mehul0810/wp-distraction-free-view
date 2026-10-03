@@ -919,17 +919,46 @@ const queryReaderElements = ( container, selectors ) => {
 	return [ ...elements ];
 };
 
+const getReaderAccessibleName = ( element, container ) => {
+	const labelledBy = element.getAttribute( 'aria-labelledby' );
+	if ( labelledBy ) {
+		const labels = labelledBy
+			.trim()
+			.split( /\s+/ )
+			.map( ( id ) =>
+				[ ...container.querySelectorAll( '[id]' ) ]
+					.find( ( candidate ) => candidate.id === id )
+					?.textContent?.trim()
+			)
+			.filter( Boolean );
+		if ( labels.length ) {
+			return labels.join( ' ' );
+		}
+	}
+
+	return (
+		element.getAttribute( 'aria-label' )?.trim() ||
+		( 'IMG' === element.tagName
+			? element.getAttribute( 'alt' )?.trim()
+			: '' ) ||
+		element.getAttribute( 'title' )?.trim() ||
+		''
+	);
+};
+
 const getReaderAlternative = ( element, category ) => {
-	const image =
-		'IMG' === element.tagName
-			? element
-			: element.querySelector( 'img[alt]' );
+	const container = element.closest( '.wpdfv-reader-content' ) || element;
 	const caption = element.querySelector( 'figcaption' )?.textContent?.trim();
 	const label =
-		element.getAttribute( 'aria-label' ) ||
-		element.getAttribute( 'title' ) ||
-		image?.getAttribute( 'alt' );
-	const text = [ label?.trim(), caption ].filter( Boolean );
+		getReaderAccessibleName( element, container ) ||
+		[
+			...element.querySelectorAll(
+				'img, iframe, video, audio, object, embed'
+			),
+		]
+			.map( ( media ) => getReaderAccessibleName( media, container ) )
+			.find( Boolean );
+	const text = [ label, caption ].filter( Boolean );
 
 	if ( ! text.length ) {
 		text.push( element.textContent?.trim() );
