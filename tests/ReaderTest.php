@@ -152,6 +152,26 @@ class ReaderTest extends TestCase {
 		);
 	}
 
+	/** Content category selectors expose stable defaults and normalize extensions. */
+	public function test_reader_content_selectors_are_filterable_and_normalized() {
+		$this->assertSame( [ 'img', 'picture', 'video', 'audio' ], Reader::get_reader_content_selectors()['media'] );
+		\add_filter(
+			'wpdfv_reader_content_selectors',
+			static function () {
+				return [
+					'media'     => [ ' .related-content ', '.related-content', 12, '' ],
+					'embeds'    => 'invalid',
+					'comments'  => [],
+					'protected' => [ 'figure.instructional', '[data-wpdfv-protected]' ],
+				];
+			}
+		);
+		$this->assertSame( [ '.related-content' ], Reader::get_reader_content_selectors()['media'] );
+		$this->assertSame( [ '.wp-block-embed', '.wp-embed', 'iframe.wpdfv-reader-provider-embed' ], Reader::get_reader_content_selectors()['embeds'] );
+		$this->assertSame( [], Reader::get_reader_content_selectors()['comments'] );
+		$this->assertSame( [ 'figure.instructional', '[data-wpdfv-protected]' ], Reader::get_reader_content_selectors()['protected'] );
+	}
+
 	/**
 	 * Reader settings and public post type lookups are cached per request.
 	 *
@@ -1283,6 +1303,7 @@ class ReaderTest extends TestCase {
 
 		$this->assertStringContainsString( '"readerResumeEnabled":true', $inline_settings );
 		$this->assertStringContainsString( '"positionsStorageKey":"wpdfv_reader_positions"', $inline_settings );
+		$this->assertStringContainsString( '"contentSelectors":{"media":["img","picture","video","audio"]', $inline_settings );
 		$this->assertStringNotContainsString( 'scrollTop', $inline_settings );
 		$this->assertStringNotContainsString( 'progress":', $inline_settings );
 	}
@@ -1428,6 +1449,58 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 'active', $plugins['free'][0]['status'] );
 		$this->assertSame( 'installed', $plugins['free'][1]['status'] );
 		$this->assertSame( 1, $GLOBALS['wpdfv_test_get_plugins_calls'] );
+	}
+
+	/** Companion catalogs accept extension entries while discarding malformed items. */
+	public function test_more_plugins_catalogs_are_filterable_and_normalized() {
+		\add_filter(
+			'wpdfv_free_plugins_catalog',
+			static function ( $plugins ) {
+				$plugins[' my-addon '] = [
+					'slug'        => 'my-addon',
+					'plugin_file' => 'my-addon/main.php',
+					'label'       => 'Addon',
+					'description' => 'Description',
+					'wp_org_url'  => 'https://wordpress.org/plugins/my-addon',
+				];
+				$plugins['broken']     = [ 'slug' => 'broken' ];
+				return $plugins;
+			}
+		);
+		\add_filter(
+			'wpdfv_paid_plugins_catalog',
+			static function ( $plugins ) {
+				$plugins[] = [
+					'slug'        => 'new-paid',
+					'label'       => 'New Paid',
+					'description' => 'Description',
+					'url'         => 'https://example.org',
+				];
+				$plugins[] = [ 'slug' => 'broken' ];
+				return $plugins;
+			}
+		);
+		$api     = new TestableSettingsApi();
+		$catalog = $api->get_more_plugins_for_tests();
+		$this->assertContains( 'my-addon', array_column( $catalog['free'], 'slug' ) );
+		$this->assertContains( 'new-paid', array_column( $catalog['paid'], 'slug' ) );
+		$this->assertNotContains( 'broken', array_column( $catalog['free'], 'slug' ) );
+		$this->assertNotContains( 'broken', array_column( $catalog['paid'], 'slug' ) );
+	}
+
+	/** Catalog actions enforce install and activation capabilities even when called directly. */
+	public function test_more_plugins_actions_deny_missing_capabilities() {
+		$GLOBALS['wpdfv_test_user_caps'] = [
+			'install_plugins'  => false,
+			'activate_plugins' => false,
+		];
+		$api                             = new TestableSettingsApi();
+		$install                         = $api->handle_plugin_action_for_tests( 'perform', 'install' );
+		$activate                        = $api->handle_plugin_action_for_tests( 'perform', 'activate' );
+		$this->assertInstanceOf( \WP_Error::class, $install );
+		$this->assertSame( 'wpdfv_install_plugin_forbidden', $install->get_error_code() );
+		$this->assertInstanceOf( \WP_Error::class, $activate );
+		$this->assertSame( 'wpdfv_activate_plugin_forbidden', $activate->get_error_code() );
 	}
 
 	/**

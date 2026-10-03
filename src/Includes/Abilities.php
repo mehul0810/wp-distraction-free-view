@@ -31,6 +31,9 @@ class Abilities {
 	 */
 	const ABILITY = 'wp-distraction-free-view/get-reader-content';
 
+	/** Canonical public ability name. */
+	const CANONICAL_ABILITY = 'wpdfv/get-reader-mode-content';
+
 	/**
 	 * Register API hooks.
 	 *
@@ -74,59 +77,59 @@ class Abilities {
 			return;
 		}
 
-		if ( function_exists( 'wp_has_ability' ) && wp_has_ability( self::ABILITY ) ) {
-			return;
-		}
+		$config = [
+			'label'               => __( 'Get Reader Mode content', 'wp-distraction-free-view' ),
+			'description'         => __( 'Returns structured Reader Mode data for publicly readable content.', 'wp-distraction-free-view' ),
+			'category'            => self::CATEGORY,
+			'input_schema'        => [
+				'type'                 => 'object',
+				'properties'           => [
+					'post_id' => [
+						'type'        => 'integer',
+						'description' => __( 'ID of the public post to read.', 'wp-distraction-free-view' ),
+					],
+				],
+				'required'             => [ 'post_id' ],
+				'additionalProperties' => false,
+			],
+			'output_schema'       => [
+				'type'                 => 'object',
+				'properties'           => [
+					'id'            => [ 'type' => 'integer' ],
+					'canonicalUrl'  => [ 'type' => 'string' ],
+					'title'         => [ 'type' => 'string' ],
+					'excerpt'       => [ 'type' => 'string' ],
+					'text'          => [ 'type' => 'string' ],
+					'html'          => [ 'type' => 'string' ],
+					'language'      => [ 'type' => 'string' ],
+					'publishedAt'   => [ 'type' => 'string' ],
+					'modifiedAt'    => [ 'type' => 'string' ],
+					'postType'      => [ 'type' => 'string' ],
+					'author'        => [ 'type' => [ 'string', 'null' ] ],
+					'featuredImage' => [ 'type' => [ 'object', 'null' ] ],
+					'readingTime'   => [ 'type' => 'object' ],
+				],
+				'additionalProperties' => true,
+			],
+			'execute_callback'    => [ $this, 'get_reader_content' ],
+			'permission_callback' => [ $this, 'can_read_content' ],
+			'meta'                => [
+				'public'       => true,
+				'show_in_rest' => true,
+				'annotations'  => [
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				],
+			],
+		];
 
-		wp_register_ability(
-			self::ABILITY,
-			[
-				'label'               => __( 'Get Reader Mode content', 'wp-distraction-free-view' ),
-				'description'         => __( 'Returns structured Reader Mode data for publicly readable content.', 'wp-distraction-free-view' ),
-				'category'            => self::CATEGORY,
-				'input_schema'        => [
-					'type'                 => 'object',
-					'properties'           => [
-						'post_id' => [
-							'type'        => 'integer',
-							'description' => __( 'ID of the public post to read.', 'wp-distraction-free-view' ),
-						],
-					],
-					'required'             => [ 'post_id' ],
-					'additionalProperties' => false,
-				],
-				'output_schema'       => [
-					'type'                 => 'object',
-					'properties'           => [
-						'id'            => [ 'type' => 'integer' ],
-						'canonicalUrl'  => [ 'type' => 'string' ],
-						'title'         => [ 'type' => 'string' ],
-						'excerpt'       => [ 'type' => 'string' ],
-						'text'          => [ 'type' => 'string' ],
-						'html'          => [ 'type' => 'string' ],
-						'language'      => [ 'type' => 'string' ],
-						'publishedAt'   => [ 'type' => 'string' ],
-						'modifiedAt'    => [ 'type' => 'string' ],
-						'postType'      => [ 'type' => 'string' ],
-						'author'        => [ 'type' => [ 'string', 'null' ] ],
-						'featuredImage' => [ 'type' => [ 'object', 'null' ] ],
-						'readingTime'   => [ 'type' => 'object' ],
-					],
-					'additionalProperties' => true,
-				],
-				'execute_callback'    => [ $this, 'get_reader_content' ],
-				'permission_callback' => [ $this, 'can_read_content' ],
-				'meta'                => [
-					'public'       => true,
-					'show_in_rest' => true,
-					'annotations'  => [
-						'readonly'    => true,
-						'destructive' => false,
-						'idempotent'  => true,
-					],
-				],
-			]
-		);
+		foreach ( [ self::CANONICAL_ABILITY, self::ABILITY ] as $name ) {
+			if ( function_exists( 'wp_has_ability' ) && wp_has_ability( $name ) ) {
+				continue;
+			}
+			wp_register_ability( $name, $config );
+		}
 	}
 
 	/**

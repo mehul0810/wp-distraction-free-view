@@ -14,9 +14,9 @@ response includes:
 - canonicalUrl, title, excerpt, text, and sanitized rendered html.
 - readingTime with minutes and a localized label.
 - language, publishedAt, modifiedAt, and postType.
-- author, containing the public display name when present, or null.
-- featuredImage, containing url and alt when the post has a featured image,
-  or null.
+- author and featuredImage when present. Extensions may omit optional fields
+  through `wpdfv_structured_reader_content`; consumers should treat them as
+  optional. The discovery metadata renderer safely skips absent values.
 
 The route returns the same 404 and 403 errors as the interactive Reader Mode
 content route. It does not include extracted scripts or raw stored post content.
@@ -70,6 +70,14 @@ Use the wpdfv_reader_content_controls filter to hide one or more of these
 controls. Return an array with media, embeds, and comments boolean values. A
 missing key keeps that control available.
 
+The frontend also receives `contentSelectors`, grouped as `media`, `embeds`,
+`comments`, and `protected` arrays. Use `wpdfv_reader_content_selectors` to
+replace selectors in any category. Each category must be an array of CSS
+selector strings; malformed values are ignored or fall back to the defaults.
+For example, a site can add `.related-content` to `media` and
+`figure.instructional` to `protected`. Protected matches are preserved by the
+Reader view even when they are nested inside a category selected for hiding.
+
 Read-aloud controls are disabled by default. Administrators can enable them in
 Settings > Reader Mode > Configure > Reading tools. When enabled and supported
 by the visitor's browser, speech uses the browser's built-in speech synthesis
@@ -86,8 +94,20 @@ metadata.
 
 ## Abilities API
 
-On WordPress 6.9 and later, the plugin registers a read-only
-wp-distraction-free-view/get-reader-content ability when the Abilities API is
-available. It accepts a post ID and returns only content available through the
-public Reader Mode contract. On earlier WordPress versions, the ability is not
+On WordPress 6.9 and later, the plugin registers the read-only
+`wpdfv/get-reader-mode-content` ability when the Abilities API is available. The
+earlier `wp-distraction-free-view/get-reader-content` name remains as a
+compatibility alias. Both accept the same post ID schema, permission check, and
+execution callback, and return only content available through the public
+Reader Mode contract. On earlier WordPress versions, neither ability is
 registered and the plugin continues to work normally.
+
+## More Plugins catalog
+
+Use `wpdfv_free_plugins_catalog` to extend the installable free plugin catalog.
+Entries are keyed by slug and require `slug`, `plugin_file`, `label`,
+`description`, and `wp_org_url`; `website_url` and `requires_active_slug` are
+optional. Use `wpdfv_paid_plugins_catalog` for paid promotional cards. Each
+entry requires `slug`, `label`, `description`, and `url`; `websiteUrl` is
+optional. Invalid entries are omitted, and capability checks still apply to
+install and activate actions.

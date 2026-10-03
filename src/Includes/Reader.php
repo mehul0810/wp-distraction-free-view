@@ -568,6 +568,38 @@ class Reader {
 	}
 
 	/**
+	 * Get selectors used to classify content in Reader Mode.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return array<string,string[]>
+	 */
+	public static function get_reader_content_selectors() {
+		$defaults   = [
+			'media'     => [ 'img', 'picture', 'video', 'audio' ],
+			'embeds'    => [ '.wp-block-embed', '.wp-embed', 'iframe.wpdfv-reader-provider-embed' ],
+			'comments'  => [ '.wp-block-comments', '#comments', '.comments-area' ],
+			'protected' => [],
+		];
+		$selectors  = apply_filters( 'wpdfv_reader_content_selectors', $defaults );
+		$normalized = [];
+		foreach ( $defaults as $category => $fallback ) {
+			$items                   = is_array( $selectors ) && isset( $selectors[ $category ] ) && is_array( $selectors[ $category ] ) ? $selectors[ $category ] : $fallback;
+			$normalized[ $category ] = array_values(
+				array_unique(
+					array_filter(
+						array_map( 'trim', array_filter( $items, 'is_string' ) ),
+						static function ( $selector ) {
+							return '' !== $selector && strlen( $selector ) <= 256;
+						}
+					)
+				)
+			);
+		}
+		return $normalized;
+	}
+
+	/**
 	 * Determine whether the current request asks to open Reader Mode.
 	 *
 	 * @since 1.7.0

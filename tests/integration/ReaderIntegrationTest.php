@@ -12,6 +12,7 @@ use WP_REST_Request;
 use WP_REST_Server;
 use WPDFV\Admin\Upgrades;
 use WPDFV\Includes\Abilities;
+use WPDFV\Includes\DiscoveryMetadata;
 use WPDFV\Includes\Reader;
 use WPDFV\Includes\Templates;
 use WPDFV\Plugin;
@@ -238,6 +239,73 @@ class ReaderIntegrationTest extends TestCase {
 		$this->assertSame( 'wpdfv_post_forbidden', $response->as_error()->get_error_code() );
 	}
 
+	/** Discovery metadata respects public-read gates and tolerates optional fields removed by filters. */
+	public function test_discovery_metadata_gates_private_content_and_omits_missing_optional_fields() {
+		update_option( 'wpdfv_settings', array_merge( Reader::get_default_settings(), [ 'discovery_metadata_enabled' => true ] ), false );
+		$metadata = new DiscoveryMetadata();
+		$private  = $this->create_post( [ 'post_status' => 'private' ] );
+		$password = $this->create_post(
+			[
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+			]
+		);
+		$disabled = $this->create_post( [ 'post_status' => 'publish' ] );
+		update_post_meta( $disabled, Reader::POST_AVAILABILITY_META, 'disabled' );
+
+		global $wp_query, $post;
+		$wp_query->is_single   = true;
+		$wp_query->is_singular = true;
+		foreach ( [ $private, $password, $disabled ] as $post_id ) {
+			$post                     = get_post( $post_id );
+			$wp_query->queried_object = $post;
+			ob_start();
+			$metadata->render();
+			$output = ob_get_clean();
+			$this->assertSame( '', $output );
+		}
+
+		$public                   = $this->create_post(
+			[
+				'post_status' => 'publish',
+				'post_title'  => 'Public discovery',
+			]
+		);
+		$post                     = get_post( $public );
+		$wp_query->queried_object = $post;
+		$disable_metadata         = static function () {
+			return false;
+		};
+		add_filter( 'wpdfv_discovery_metadata_enabled', $disable_metadata );
+		ob_start();
+		$metadata->render();
+		$this->assertSame( '', ob_get_clean() );
+		remove_filter( 'wpdfv_discovery_metadata_enabled', $disable_metadata );
+		$remove_optional = static function ( $data ) {
+			unset( $data['author'], $data['featuredImage'], $data['excerpt'] );
+			return $data;
+		};
+		$adjust_metadata = static function ( $data ) {
+			$data['identifier'] = 'reviewed-public-metadata';
+			return $data;
+		};
+		add_filter( 'wpdfv_structured_reader_content', $remove_optional );
+		add_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+		try {
+			ob_start();
+			$metadata->render();
+			$output = ob_get_clean();
+		} finally {
+			remove_filter( 'wpdfv_structured_reader_content', $remove_optional );
+			remove_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+		}
+		$this->assertStringContainsString( 'application/ld+json', $output );
+		$this->assertStringNotContainsString( '"author"', $output );
+		$this->assertStringNotContainsString( '"image"', $output );
+		$this->assertStringNotContainsString( '"description"', $output );
+		$this->assertStringContainsString( 'reviewed-public-metadata', $output );
+	}
+
 	/**
 	 * Per-post availability overrides can enable or disable a public post.
 	 *
@@ -321,11 +389,15 @@ class ReaderIntegrationTest extends TestCase {
 		do_action( 'wp_abilities_api_init' );
 
 		$this->assertNotNull( wp_get_ability( Abilities::ABILITY ) );
+		$canonical = wp_get_ability( Abilities::CANONICAL_ABILITY );
+		$this->assertNotNull( $canonical );
+		$this->assertSame( [ 'post_id' ], $canonical->get_input_schema()['required'] );
 
 		$public_post_id  = $this->create_post( [ 'post_status' => 'publish' ] );
 		$private_post_id = $this->create_post( [ 'post_status' => 'private' ] );
 
 		$this->assertTrue( $service->can_read_content( [ 'post_id' => $public_post_id ] ) );
+		$this->assertSame( $public_post_id, $canonical->execute( [ 'post_id' => $public_post_id ] )['id'] );
 		$this->assertFalse( $service->can_read_content( [ 'post_id' => $private_post_id ] ) );
 		$this->assertInstanceOf( \WP_Error::class, $service->get_reader_content( [ 'post_id' => $private_post_id ] ) );
 	}
