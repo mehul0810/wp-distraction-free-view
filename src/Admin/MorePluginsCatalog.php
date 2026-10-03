@@ -142,7 +142,7 @@ class MorePluginsCatalog {
 		/**
 		 * Filter paid companion plugin cards.
 		 *
-		 * Each entry requires slug, label, description, and url.
+		 * Each entry requires slug, label, description, and url. websiteUrl is optional and defaults to url.
 		 *
 		 * @since 1.9.0
 		 *
@@ -161,6 +161,9 @@ class MorePluginsCatalog {
 			$plugin['slug'] = sanitize_key( $plugin['slug'] );
 			if ( '' === $plugin['slug'] ) {
 				continue;
+			}
+			if ( empty( $plugin['websiteUrl'] ) ) {
+				$plugin['websiteUrl'] = $plugin['url'];
 			}
 			$plugin['type'] = 'paid';
 			$normalized[]   = $plugin;
