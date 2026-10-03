@@ -356,8 +356,8 @@ test.describe( 'Reader Mode smoke', () => {
 		await embedToggle.uncheck();
 		await commentsToggle.uncheck();
 		await expect(
-			page.locator( '.wpdfv-reader-content .wp-block-embed' )
-		).toBeHidden();
+			page.locator( '.wpdfv-reader-content .wp-block-embed:visible' )
+		).toHaveCount( 0 );
 		await expect(
 			page.locator( '.wpdfv-reader-alternative--embeds' ).filter( {
 				hasText: 'Embedded media.',
@@ -384,7 +384,7 @@ test.describe( 'Reader Mode smoke', () => {
 		).toHaveCount( 1 );
 
 		await page
-			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.getByRole( 'button', { name: /exit reader mode/i } )
 			.click();
 		await openReader( page );
 		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
