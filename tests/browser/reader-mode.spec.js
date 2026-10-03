@@ -383,14 +383,90 @@ test.describe( 'Reader Mode smoke', () => {
 			} )
 		).toHaveCount( 1 );
 
-		await page
-			.getByRole( 'button', { name: /exit reader mode/i } )
-			.click();
+		await page.getByRole( 'button', { name: /exit reader mode/i } ).click();
 		await openReader( page );
 		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
 		await expect( mediaToggle ).not.toBeChecked();
 		await expect( embedToggle ).not.toBeChecked();
 		await expect( commentsToggle ).not.toBeChecked();
+	} );
+
+	test( 'keeps content visible while its controls are disabled and restores saved choices', async ( {
+		page,
+	} ) => {
+		await setDisabledContentControls( page, {
+			readerContentControls: {
+				media: false,
+				embeds: false,
+				comments: false,
+			},
+		} );
+		await mockReaderContentResponse( page, getContentVisibilityFixture() );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expectVisibleContentWithoutAlternatives( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await expect( page.getByLabel( 'Show images and media' ) ).toHaveCount(
+			0
+		);
+		await expect( page.getByLabel( 'Show embedded content' ) ).toHaveCount(
+			0
+		);
+		await expect( page.getByLabel( 'Show comments' ) ).toHaveCount( 0 );
+		await expectSavedContentChoices( page );
+
+		await reenableContentControls( page );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.locator( '.wpdfv-reader-content img' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-embed' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-comments' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-alternative--embeds' )
+		).toBeVisible();
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await expect(
+			page.getByLabel( 'Show images and media' )
+		).not.toBeChecked();
+		await expect(
+			page.getByLabel( 'Show embedded content' )
+		).not.toBeChecked();
+		await expect( page.getByLabel( 'Show comments' ) ).not.toBeChecked();
+	} );
+
+	test( 'keeps content visible while the entire preference panel is disabled', async ( {
+		page,
+	} ) => {
+		await setDisabledContentControls( page, {
+			preferenceControlsEnabled: false,
+		} );
+		await mockReaderContentResponse( page, getContentVisibilityFixture() );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.getByRole( 'button', { name: 'Reader settings' } )
+		).toHaveCount( 0 );
+		await expectVisibleContentWithoutAlternatives( page );
+		await expectSavedContentChoices( page );
+
+		await reenableContentControls( page );
+		await openReader( page );
+		await waitForReaderContent( page );
+		await expect(
+			page.locator( '.wpdfv-reader-content img' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-embed' )
+		).toBeHidden();
+		await expect(
+			page.locator( '.wpdfv-reader-content .wp-block-comments' )
+		).toBeHidden();
 	} );
 
 	test( 'honors custom content and protected selectors without losing text alternatives', async ( {
@@ -1048,6 +1124,93 @@ async function setContentSelectors( page, selectors ) {
 	}, selectors );
 	await page.reload();
 	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
+}
+
+async function setDisabledContentControls( page, disabledConfig ) {
+	await page.evaluate( ( key ) => {
+		window.localStorage.setItem(
+			key,
+			JSON.stringify( {
+				showMedia: false,
+				showEmbeds: false,
+				showComments: false,
+			} )
+		);
+		window.sessionStorage.setItem( 'wpdfv_test_controls_disabled', '1' );
+	}, storageKey );
+	await page.addInitScript( ( unavailable ) => {
+		let config;
+		Object.defineProperty( window, 'wpdfvReaderMode', {
+			configurable: true,
+			get() {
+				return config;
+			},
+			set( value ) {
+				config =
+					window.sessionStorage.getItem(
+						'wpdfv_test_controls_disabled'
+					) === '1'
+						? { ...value, ...unavailable }
+						: {
+								...value,
+								preferenceControlsEnabled: true,
+								readerContentControls: {
+									media: true,
+									embeds: true,
+									comments: true,
+								},
+						  };
+			},
+		} );
+	}, disabledConfig );
+	await page.reload();
+	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
+}
+
+async function reenableContentControls( page ) {
+	await page.evaluate( () =>
+		window.sessionStorage.setItem( 'wpdfv_test_controls_disabled', '0' )
+	);
+	await page.reload();
+	await expect( page.locator( toggleSelector ).first() ).toBeVisible();
+}
+
+async function expectSavedContentChoices( page ) {
+	const stored = await page.evaluate(
+		( key ) => JSON.parse( window.localStorage.getItem( key ) ),
+		storageKey
+	);
+	expect( stored ).toMatchObject( {
+		showMedia: false,
+		showEmbeds: false,
+		showComments: false,
+	} );
+}
+
+async function expectVisibleContentWithoutAlternatives( page ) {
+	await expect( page.locator( '.wpdfv-reader-content img' ) ).toBeVisible();
+	await expect(
+		page.locator( '.wpdfv-reader-content .wp-block-embed' )
+	).toBeVisible();
+	await expect(
+		page.locator( '.wpdfv-reader-content .wp-block-comments' )
+	).toBeVisible();
+	await expect(
+		page.locator(
+			'.wpdfv-reader-content .wpdfv-reader-alternative:visible'
+		)
+	).toHaveCount( 0 );
+	await expect( page.locator( '.wpdfv-reader-content' ) ).not.toHaveClass(
+		/hide-(media|embeds|comments)/
+	);
+}
+
+function getContentVisibilityFixture() {
+	return (
+		'<img src="https://example.com/visibility.jpg" alt="Visible image">' +
+		'<figure class="wp-block-embed"><figcaption>Visible embed</figcaption></figure>' +
+		'<section class="wp-block-comments">Visible comments</section>'
+	);
 }
 
 async function getReaderPostId( page ) {

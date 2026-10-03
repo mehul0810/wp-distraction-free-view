@@ -858,6 +858,20 @@ const ContentPreferenceControls = ( { preferences, onChange } ) => {
 	);
 };
 
+const getEffectiveContentPreferences = ( preferences ) => {
+	const effective = { ...preferences };
+	const controls = READER_CONFIG.readerContentControls || {};
+	const panelEnabled = isEnabled( 'preferenceControlsEnabled' );
+
+	CONTENT_PREFERENCES.forEach( ( { key, control } ) => {
+		if ( ! panelEnabled || controls[ control ] === false ) {
+			effective[ key ] = true;
+		}
+	} );
+
+	return effective;
+};
+
 const ReaderTableOfContents = ( { items, onNavigate } ) => (
 	<nav
 		className="wpdfv-reader-toc"
@@ -1098,6 +1112,10 @@ const ReaderApp = () => {
 	const [ currentPostId, setCurrentPostId ] = useState( '' );
 	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
+	const effectiveContentPreferences = useMemo(
+		() => getEffectiveContentPreferences( preferences ),
+		[ preferences ]
+	);
 	const [ speechStatus, setSpeechStatus ] = useState( 'stopped' );
 	const [ localVoice, setLocalVoice ] = useState( null );
 	const [ speechLanguage, setSpeechLanguage ] = useState(
@@ -1386,9 +1404,12 @@ const ReaderApp = () => {
 
 	useEffect( () => {
 		if ( isOpen && ! isLoading && ! error && contentRef.current ) {
-			applyReaderContentPreferences( contentRef.current, preferences );
+			applyReaderContentPreferences(
+				contentRef.current,
+				effectiveContentPreferences
+			);
 		}
-	}, [ isOpen, isLoading, error, content, preferences ] );
+	}, [ isOpen, isLoading, error, content, effectiveContentPreferences ] );
 
 	const updatePreference = ( key, value ) => {
 		setPreferences( ( current ) => ( {
@@ -1665,9 +1686,12 @@ const ReaderApp = () => {
 	const showPreferenceControls = isEnabled( 'preferenceControlsEnabled' );
 	const readerContentClassName = [
 		'wpdfv-reader-content',
-		! preferences.showMedia && 'wpdfv-reader-content--hide-media',
-		! preferences.showEmbeds && 'wpdfv-reader-content--hide-embeds',
-		! preferences.showComments && 'wpdfv-reader-content--hide-comments',
+		! effectiveContentPreferences.showMedia &&
+			'wpdfv-reader-content--hide-media',
+		! effectiveContentPreferences.showEmbeds &&
+			'wpdfv-reader-content--hide-embeds',
+		! effectiveContentPreferences.showComments &&
+			'wpdfv-reader-content--hide-comments',
 	]
 		.filter( Boolean )
 		.join( ' ' );
