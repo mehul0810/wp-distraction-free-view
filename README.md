@@ -87,6 +87,8 @@ The integration suite is intentionally separate from `composer test`. It boots r
 
 ## Release Workflow
 
+Prepare milestone work on `release/<version>` and open its release PR into `main`. Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release triggers deployment to WordPress.org.
+
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
 
 CI also builds the production package from `.distignore`, validates the package shape, and runs Plugin Check against the generated package directory rather than the raw source checkout.
