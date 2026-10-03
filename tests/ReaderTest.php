@@ -1476,6 +1476,20 @@ class ReaderTest extends TestCase {
 					'description' => 'Description',
 					'url'         => 'https://example.org',
 				];
+				$plugins[] = [
+					'slug'        => 'paid-with-empty-website',
+					'label'       => 'Paid With Empty Website',
+					'description' => 'Description',
+					'url'         => 'https://empty.example.org',
+					'websiteUrl'  => '',
+				];
+				$plugins[] = [
+					'slug'        => 'paid-with-website',
+					'label'       => 'Paid With Website',
+					'description' => 'Description',
+					'url'         => 'https://required.example.org',
+					'websiteUrl'  => 'https://custom.example.org',
+				];
 				$plugins[] = [ 'slug' => 'broken' ];
 				return $plugins;
 			}
@@ -1486,6 +1500,10 @@ class ReaderTest extends TestCase {
 		$this->assertContains( 'new-paid', array_column( $catalog['paid'], 'slug' ) );
 		$this->assertNotContains( 'broken', array_column( $catalog['free'], 'slug' ) );
 		$this->assertNotContains( 'broken', array_column( $catalog['paid'], 'slug' ) );
+		$paid_by_slug = array_column( $catalog['paid'], null, 'slug' );
+		$this->assertSame( 'https://example.org', $paid_by_slug['new-paid']['websiteUrl'] );
+		$this->assertSame( 'https://empty.example.org', $paid_by_slug['paid-with-empty-website']['websiteUrl'] );
+		$this->assertSame( 'https://custom.example.org', $paid_by_slug['paid-with-website']['websiteUrl'] );
 	}
 
 	/** Catalog actions enforce install and activation capabilities even when called directly. */
