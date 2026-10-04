@@ -159,7 +159,10 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 
 = 1.9.0 =
 - Added: Visitor controls for media, embeds, and comments, optional browser read-aloud, per-content availability and template overrides, structured public content, WordPress Abilities API support, and opt-in discovery metadata.
-- Improved: Redesigned the About, Configure, and More Plugins screens, with admin notices below the header and a version badge.
+- Added: PreviewShare to the free companion plugin catalog.
+- Improved: Redesigned the About and Configure screens with clearer setup guidance, block and shortcode information, admin notices below the header, and a version badge.
+- Improved: More Plugins now uses locally bundled plugin icons and compact, responsive three-column cards on desktop.
+- Improved: The selected settings tab and Configure section remain open after a page refresh.
 - Improved: Formalized and documented the Reader Mode template registry, and split the settings API, plugin catalog, and plugin actions into focused services.
 
 = 1.8.4 =
