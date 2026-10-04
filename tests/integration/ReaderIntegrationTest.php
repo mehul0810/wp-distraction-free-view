@@ -10,6 +10,7 @@ namespace WPDFV\Tests\Integration;
 use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 use WP_REST_Server;
+use WPDFV\Admin\ContentSettings;
 use WPDFV\Admin\Upgrades;
 use WPDFV\Includes\Abilities;
 use WPDFV\Includes\DiscoveryMetadata;
@@ -79,6 +80,52 @@ class ReaderIntegrationTest extends TestCase {
 		$GLOBALS['wp_rest_server'] = $this->server;
 
 		parent::tearDown();
+	}
+
+	/**
+	 * CPTs registered after our callback is attached expose Reader Mode REST metadata.
+	 *
+	 * @return void
+	 */
+	public function test_later_registered_public_post_type_has_reader_rest_metadata() {
+		$original_init                = $GLOBALS['wp_filter']['init'];
+		$GLOBALS['wp_filter']['init'] = new \WP_Hook();
+		$content_settings             = new ContentSettings();
+		$post_type                    = 'wpdfv_late_fixture';
+
+		try {
+			// Model a plugin loaded later, using the default init priority.
+			add_action(
+				'init',
+				static function () use ( $post_type ) {
+					register_post_type(
+						$post_type,
+						[
+							'public'       => true,
+							'show_in_rest' => true,
+							'supports'     => [ 'title', 'editor', 'custom-fields' ],
+						]
+					);
+				}
+			);
+			// Exercise real hook ordering without rerunning unrelated init callbacks.
+			$GLOBALS['wp_filter']['init']->do_action( [] );
+			$controller = new \WP_REST_Posts_Controller( $post_type );
+			$schema     = $controller->get_item_schema();
+			$properties = $schema['properties']['meta']['properties'];
+
+			$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, $properties );
+			$this->assertArrayHasKey( ContentSettings::TEMPLATE_META, $properties );
+			$this->assertSame( 'inherit', $properties[ Reader::POST_AVAILABILITY_META ]['default'] );
+			$this->assertSame( '', $properties[ ContentSettings::TEMPLATE_META ]['default'] );
+		} finally {
+			$GLOBALS['wp_filter']['init'] = $original_init;
+			remove_action( 'add_meta_boxes', [ $content_settings, 'add_meta_boxes' ] );
+			remove_action( 'save_post', [ $content_settings, 'save_post' ] );
+			unregister_post_meta( $post_type, Reader::POST_AVAILABILITY_META );
+			unregister_post_meta( $post_type, ContentSettings::TEMPLATE_META );
+			unregister_post_type( $post_type );
+		}
 	}
 
 	/**

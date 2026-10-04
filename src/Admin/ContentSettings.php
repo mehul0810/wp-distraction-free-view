@@ -40,7 +40,8 @@ class ContentSettings {
 	 * @return void
 	 */
 	public function __construct() {
-		add_action( 'init', [ $this, 'register_meta' ] );
+		// Register after plugins have added their public custom post types.
+		add_action( 'init', [ $this, 'register_meta' ], 99 );
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 		add_action( 'save_post', [ $this, 'save_post' ] );
 	}
