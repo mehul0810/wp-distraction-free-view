@@ -52,6 +52,7 @@ class MorePluginsCatalog {
 		$plugins = [
 			'perform'                 => [
 				'slug'        => 'perform',
+				'icon_url'    => WPDFV_PLUGIN_URL . 'assets/images/plugins/perform.jpg',
 				'plugin_file' => 'perform/perform.php',
 				'label'       => esc_html__( 'Perform', 'wp-distraction-free-view' ),
 				'description' => esc_html__( 'Improve WordPress performance with focused caching and runtime optimizations.', 'wp-distraction-free-view' ),
@@ -60,6 +61,7 @@ class MorePluginsCatalog {
 			],
 			'klaive'                  => [
 				'slug'                 => 'klaive',
+				'icon_url'             => WPDFV_PLUGIN_URL . 'assets/images/plugins/klaive.jpg',
 				'plugin_file'          => 'klaive/klaive.php',
 				'label'                => esc_html__( 'Klaive', 'wp-distraction-free-view' ),
 				'description'          => esc_html__( 'Connect GiveWP donation activity with Klaviyo email audiences.', 'wp-distraction-free-view' ),
@@ -68,13 +70,23 @@ class MorePluginsCatalog {
 			],
 			'cleanlinks'              => [
 				'slug'        => 'cleanlinks',
+				'icon_url'    => WPDFV_PLUGIN_URL . 'assets/images/plugins/cleanlinks.png',
 				'plugin_file' => 'cleanlinks/cleanlinks.php',
 				'label'       => esc_html__( 'CleanLinks', 'wp-distraction-free-view' ),
 				'description' => esc_html__( 'Create cleaner, branded links from inside WordPress.', 'wp-distraction-free-view' ),
 				'wp_org_url'  => 'https://wordpress.org/plugins/cleanlinks',
 			],
+			'previewshare'            => [
+				'slug'        => 'previewshare',
+				'icon_url'    => WPDFV_PLUGIN_URL . 'assets/images/plugins/previewshare.png',
+				'plugin_file' => 'previewshare/previewshare.php',
+				'label'       => esc_html__( 'PreviewShare', 'wp-distraction-free-view' ),
+				'description' => esc_html__( 'Securely share previews of draft, pending, or scheduled content without publishing it.', 'wp-distraction-free-view' ),
+				'wp_org_url'  => 'https://wordpress.org/plugins/previewshare',
+			],
 			'mg-instamojo-for-givewp' => [
 				'slug'                 => 'mg-instamojo-for-givewp',
+				'icon_url'             => WPDFV_PLUGIN_URL . 'assets/images/plugins/mg-instamojo-for-givewp.svg',
 				'plugin_file'          => 'mg-instamojo-for-givewp/mg-instamojo-for-givewp.php',
 				'label'                => esc_html__( 'MG - Instamojo for GiveWP', 'wp-distraction-free-view' ),
 				'description'          => esc_html__( 'Accept Instamojo payments in GiveWP donation forms.', 'wp-distraction-free-view' ),
@@ -126,6 +138,7 @@ class MorePluginsCatalog {
 				'slug'        => 'onecaptcha',
 				'label'       => esc_html__( 'OneCaptcha', 'wp-distraction-free-view' ),
 				'description' => esc_html__( 'Premium CAPTCHA protection built for focused WordPress forms and conversion flows.', 'wp-distraction-free-view' ),
+				'iconUrl'     => WPDFV_PLUGIN_URL . 'assets/images/plugins/onecaptcha.svg',
 				'websiteUrl'  => 'https://onecaptchawp.com',
 				'url'         => 'https://onecaptchawp.com',
 			],
@@ -134,6 +147,7 @@ class MorePluginsCatalog {
 				'slug'        => 'themerouter',
 				'label'       => esc_html__( 'ThemeRouter', 'wp-distraction-free-view' ),
 				'description' => esc_html__( 'Route WordPress visitors to purpose-built theme experiences without duplicating sites.', 'wp-distraction-free-view' ),
+				'iconUrl'     => WPDFV_PLUGIN_URL . 'assets/images/plugins/themerouter.svg',
 				'websiteUrl'  => 'https://themerouter.com',
 				'url'         => 'https://themerouter.com',
 			],
@@ -186,6 +200,7 @@ class MorePluginsCatalog {
 			'label'        => $plugin['label'],
 			'description'  => $plugin['description'],
 			'wordpressUrl' => $plugin['wp_org_url'],
+			'iconUrl'      => isset( $plugin['icon_url'] ) ? esc_url_raw( $plugin['icon_url'] ) : '',
 			'websiteUrl'   => isset( $plugin['website_url'] ) ? $plugin['website_url'] : '',
 			'url'          => $plugin['wp_org_url'],
 			'status'       => $this->get_free_plugin_status( $plugin ),

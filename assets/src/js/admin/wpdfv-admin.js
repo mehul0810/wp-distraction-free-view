@@ -39,6 +39,28 @@ const checkIcon = createElement(
 		d: 'M16.5 7.5 10 13.9l-2.5-2.4-1 1 3.5 3.6 7.5-7.6z',
 	} )
 );
+// Keep navigation in the URL so refreshes and copied links retain the view.
+const useAdminNavigation = ( parameter, allowedValues, defaultValue ) => {
+	const [ value, setValue ] = useState( () => {
+		const requested = new URL( window.location.href ).searchParams.get(
+			parameter
+		);
+		return allowedValues.includes( requested ) ? requested : defaultValue;
+	} );
+
+	const navigate = ( nextValue ) => {
+		if ( ! allowedValues.includes( nextValue ) ) {
+			return;
+		}
+		const url = new URL( window.location.href );
+		url.searchParams.set( parameter, nextValue );
+		window.history.replaceState( window.history.state, '', url );
+		setValue( nextValue );
+	};
+
+	return [ value, navigate ];
+};
+
 const SettingsApp = () => {
 	const [ settings, setSettings ] = useState( null );
 	const [ postTypes, setPostTypes ] = useState( [] );
@@ -60,7 +82,11 @@ const SettingsApp = () => {
 	} );
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
-	const [ activeTab, setActiveTab ] = useState( 'about' );
+	const [ activeTab, setActiveTab ] = useAdminNavigation(
+		'wpdfv_tab',
+		[ 'about', 'configure', 'more-plugins' ],
+		'about'
+	);
 	const [ activePluginAction, setActivePluginAction ] = useState( '' );
 	const [ notice, setNotice ] = useState( null );
 	const adminNoticesRef = useRef( null );
@@ -140,7 +166,9 @@ const SettingsApp = () => {
 				.forEach( ( adminNotice ) => {
 					if (
 						adminNotice.classList.contains( 'components-notice' ) ||
-						adminNotice.closest( '#wpdfv-settings-app' ) ||
+						adminNotice.closest(
+							'.wpdfv-admin-notices, .wpdfv-settings-tab-panel'
+						) ||
 						adminNotice.parentElement?.closest(
 							'.notice, .updated, .error, .update-nag, .fs-notice'
 						)
@@ -152,7 +180,8 @@ const SettingsApp = () => {
 				} );
 		};
 
-		// Other plugins can add notices after this app mounts.
+		// Other plugins can insert notices beside our heading after the app mounts.
+		// Keep those notices below the header, but leave panel-owned notices alone.
 		const observer = new window.MutationObserver( relocateAdminNotices );
 		observer.observe( adminContent, { childList: true, subtree: true } );
 		relocateAdminNotices();
@@ -509,7 +538,11 @@ const ConfigurePanel = ( {
 	onUpdateSetting,
 	onSave,
 } ) => {
-	const [ activeSection, setActiveSection ] = useState( 'general' );
+	const [ activeSection, setActiveSection ] = useAdminNavigation(
+		'wpdfv_section',
+		[ 'general', 'appearance', 'reading', 'advanced' ],
+		'general'
+	);
 	const sections = [
 		{ id: 'general', label: __( 'General', 'wp-distraction-free-view' ) },
 		{
@@ -1428,17 +1461,20 @@ const AboutPanel = ( {
 		<section className="wpdfv-about-hero">
 			<div className="wpdfv-about-hero__copy">
 				<p className="wpdfv-eyebrow">
-					{ __( 'Frontend Reader Mode', 'wp-distraction-free-view' ) }
+					{ __(
+						'Reader Mode for your visitors',
+						'wp-distraction-free-view'
+					) }
 				</p>
 				<h2>
 					{ __(
-						'Give visitors a calmer way to read.',
+						'A focused reading view for your content.',
 						'wp-distraction-free-view'
 					) }
 				</h2>
 				<p>
 					{ __(
-						'WP Distraction Free View turns long-form content into a focused reading experience without changing the original theme layout.',
+						'Let visitors open a post or page in a dedicated reading view, away from site navigation and sidebars. They can return to the original page whenever they choose.',
 						'wp-distraction-free-view'
 					) }
 				</p>
@@ -1469,40 +1505,88 @@ const AboutPanel = ( {
 				</p>
 				<h3>
 					{ __(
-						'Make room for the story.',
+						'Your content, easier to focus on.',
 						'wp-distraction-free-view'
 					) }
 				</h3>
 				<p>
 					{ __(
-						'A quiet space for the words that matter. Comfortable typography, thoughtful controls, and fewer distractions.',
+						'Choose a comfortable text size, switch between light, dark, and sepia, and settle into the article.',
 						'wp-distraction-free-view'
 					) }
 				</p>
 				<span>
-					{ __( 'Sample content', 'wp-distraction-free-view' ) }
+					{ __(
+						'Illustrative preview, not a live post',
+						'wp-distraction-free-view'
+					) }
 				</span>
+			</div>
+		</section>
+
+		<section
+			className="wpdfv-about-features"
+			aria-label={ __(
+				'Reader Mode features',
+				'wp-distraction-free-view'
+			) }
+		>
+			<div>
+				<h3>
+					{ __( 'Comfortable reading', 'wp-distraction-free-view' ) }
+				</h3>
+				<p className="wpdfv-about-features__description">
+					{ __(
+						'Offer controls for theme, text size, width, and spacing. Visitors can also hide media, embeds, or comments when those controls are available.',
+						'wp-distraction-free-view'
+					) }
+				</p>
+			</div>
+			<div>
+				<h3>
+					{ __(
+						'Optional reading tools',
+						'wp-distraction-free-view'
+					) }
+				</h3>
+				<p className="wpdfv-about-features__description">
+					{ __(
+						'Show reading progress and estimated reading time. You can also enable a table of contents, resume reading, or read aloud when a matching local browser voice is available.',
+						'wp-distraction-free-view'
+					) }
+				</p>
+			</div>
+			<div>
+				<h3>
+					{ __(
+						'Preferences stay personal',
+						'wp-distraction-free-view'
+					) }
+				</h3>
+				<p className="wpdfv-about-features__description">
+					{ __(
+						'Reader preferences and resume positions are saved in the visitor’s browser. They do not change your post content or the defaults for other visitors.',
+						'wp-distraction-free-view'
+					) }
+				</p>
 			</div>
 		</section>
 
 		<div className="wpdfv-about-layout">
 			<InfoPanel
-				title={ __(
-					'Start with three simple steps',
-					'wp-distraction-free-view'
-				) }
+				title={ __( 'Set up Reader Mode', 'wp-distraction-free-view' ) }
 			>
 				<ol className="wpdfv-steps">
 					<li>
 						<strong>
 							{ __(
-								'Choose your content',
+								'Choose where it is available',
 								'wp-distraction-free-view'
 							) }
 						</strong>
 						<span>
 							{ __(
-								'Enable Reader Mode for posts, pages, or selected public post types.',
+								'In Configure → General, enable posts, pages, or other public content types. Individual posts can override Reader Mode availability in the editor.',
 								'wp-distraction-free-view'
 							) }
 						</span>
@@ -1510,13 +1594,13 @@ const AboutPanel = ( {
 					<li>
 						<strong>
 							{ __(
-								'Add an entry point',
+								'Place the Reader Mode button',
 								'wp-distraction-free-view'
 							) }
 						</strong>
 						<span>
 							{ __(
-								'Choose automatic placement or add the Reader Mode Toggle block.',
+								'Choose before content, after content, or a floating button. For manual placement, add the Reader Mode Toggle block or the [wpdfv] shortcode.',
 								'wp-distraction-free-view'
 							) }
 						</span>
@@ -1524,13 +1608,13 @@ const AboutPanel = ( {
 					<li>
 						<strong>
 							{ __(
-								'Set the reading experience',
+								'Set defaults, save, and try it',
 								'wp-distraction-free-view'
 							) }
 						</strong>
 						<span>
 							{ __(
-								'Pick a default theme, text size, and comfortable content width.',
+								'Choose a theme, text size, and content width in Appearance. Save your settings, then open an enabled published post and try its Reader Mode button.',
 								'wp-distraction-free-view'
 							) }
 						</span>
@@ -1538,14 +1622,17 @@ const AboutPanel = ( {
 				</ol>
 				<p className="wpdfv-about-shortcode">
 					{ __(
-						'Need manual placement?',
+						'Block editor: search for Reader Mode Toggle. Shortcode placement:',
 						'wp-distraction-free-view'
 					) }{ ' ' }
 					<code>[wpdfv]</code>
 				</p>
 			</InfoPanel>
 			<InfoPanel
-				title={ __( 'Current defaults', 'wp-distraction-free-view' ) }
+				title={ __(
+					'Your current configuration',
+					'wp-distraction-free-view'
+				) }
 			>
 				<dl className="wpdfv-compact-details">
 					<div>
@@ -1617,6 +1704,12 @@ const AboutPanel = ( {
 		</div>
 
 		<dl className="wpdfv-about-facts">
+			<div>
+				<dt>{ __( 'Block editor', 'wp-distraction-free-view' ) }</dt>
+				<dd>
+					{ __( 'Reader Mode Toggle', 'wp-distraction-free-view' ) }
+				</dd>
+			</div>
 			<div>
 				<dt>{ __( 'Shortcode', 'wp-distraction-free-view' ) }</dt>
 				<dd>
@@ -1714,6 +1807,27 @@ const PluginSection = ( { title, description, children } ) => (
 	</section>
 );
 
+const PluginLogo = ( { plugin } ) => {
+	const [ failed, setFailed ] = useState( false );
+
+	return (
+		<span className="wpdfv-plugin-card__mark" aria-hidden="true">
+			{ plugin.iconUrl && ! failed ? (
+				<img
+					src={ plugin.iconUrl }
+					alt=""
+					width="56"
+					height="56"
+					loading="lazy"
+					onError={ () => setFailed( true ) }
+				/>
+			) : (
+				plugin.label.charAt( 0 )
+			) }
+		</span>
+	);
+};
+
 const FreePluginCard = ( { plugin, activePluginAction, onPluginAction } ) => {
 	const action = getFreePluginAction( plugin );
 	const isBusy = action
@@ -1722,38 +1836,40 @@ const FreePluginCard = ( { plugin, activePluginAction, onPluginAction } ) => {
 
 	return (
 		<article className="wpdfv-plugin-card">
-			<span className="wpdfv-plugin-card__mark" aria-hidden="true">
-				{ plugin.label.charAt( 0 ) }
-			</span>
-			<div className="wpdfv-plugin-card__content">
+			<div className="wpdfv-plugin-card__header">
+				<PluginLogo plugin={ plugin } />
 				<h4>{ plugin.label }</h4>
+			</div>
+			<div className="wpdfv-plugin-card__content">
 				<p className="wpdfv-plugin-card__description">
 					{ plugin.description }
 				</p>
 			</div>
-			<div className="wpdfv-plugin-card__links">
-				<ExternalLink
-					className="wpdfv-plugin-link"
-					href={ plugin.wordpressUrl }
-				>
-					{ __( 'WordPress.org', 'wp-distraction-free-view' ) }
-				</ExternalLink>
-				{ plugin.websiteUrl && (
+			<div className="wpdfv-plugin-card__footer">
+				<div className="wpdfv-plugin-card__links">
 					<ExternalLink
 						className="wpdfv-plugin-link"
-						href={ plugin.websiteUrl }
+						href={ plugin.wordpressUrl }
 					>
-						{ __( 'Website', 'wp-distraction-free-view' ) }
+						{ __( 'WordPress.org', 'wp-distraction-free-view' ) }
 					</ExternalLink>
-				) }
-			</div>
-			<div className="wpdfv-plugin-card__actions">
-				<FreePluginAction
-					action={ action }
-					isBusy={ isBusy }
-					plugin={ plugin }
-					onPluginAction={ onPluginAction }
-				/>
+					{ plugin.websiteUrl && (
+						<ExternalLink
+							className="wpdfv-plugin-link"
+							href={ plugin.websiteUrl }
+						>
+							{ __( 'Website', 'wp-distraction-free-view' ) }
+						</ExternalLink>
+					) }
+				</div>
+				<div className="wpdfv-plugin-card__actions">
+					<FreePluginAction
+						action={ action }
+						isBusy={ isBusy }
+						plugin={ plugin }
+						onPluginAction={ onPluginAction }
+					/>
+				</div>
 			</div>
 		</article>
 	);
@@ -1761,16 +1877,16 @@ const FreePluginCard = ( { plugin, activePluginAction, onPluginAction } ) => {
 
 const PaidPluginCard = ( { plugin } ) => (
 	<article className="wpdfv-plugin-card">
-		<span className="wpdfv-plugin-card__mark is-premium" aria-hidden="true">
-			{ plugin.label.charAt( 0 ) }
-		</span>
-		<div className="wpdfv-plugin-card__content">
+		<div className="wpdfv-plugin-card__header">
+			<PluginLogo plugin={ plugin } />
 			<h4>{ plugin.label }</h4>
+		</div>
+		<div className="wpdfv-plugin-card__content">
 			<p className="wpdfv-plugin-card__description">
 				{ plugin.description }
 			</p>
 		</div>
-		<div className="wpdfv-plugin-card__actions">
+		<div className="wpdfv-plugin-card__footer">
 			<ExternalLink
 				className="wpdfv-plugin-link"
 				href={ plugin.websiteUrl }

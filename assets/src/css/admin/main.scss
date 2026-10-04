@@ -790,6 +790,25 @@
 	}
 }
 
+.wpdfv-about-features {
+	display: grid;
+	gap: 24px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+
+	h3 {
+		font-size: 16px;
+		line-height: 1.4;
+		margin: 0 0 8px;
+	}
+
+	.wpdfv-about-features__description {
+		color: var(--wpdfv-ui-muted);
+		font-size: 14px;
+		line-height: 1.6;
+		margin: 0;
+	}
+}
+
 .wpdfv-about-layout {
 	display: grid;
 	gap: 24px;
@@ -883,7 +902,7 @@
 	border-top: 1px solid var(--wpdfv-ui-line);
 	display: grid;
 	gap: 18px;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(5, minmax(0, 1fr));
 	margin: 0;
 	padding-top: 24px;
 
@@ -928,39 +947,62 @@
 
 .wpdfv-plugin-grid {
 	display: grid;
-	gap: 24px;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .wpdfv-plugin-card {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 12px;
 	min-width: 0;
-	padding: 28px;
+	padding: 20px;
 
 	h4 {
-		font-size: 21px;
-		margin: 0 0 9px;
+		font-size: 19px;
+		line-height: 1.35;
+		margin: 0;
+		overflow-wrap: anywhere;
 	}
+}
+
+.wpdfv-plugin-card__header {
+	align-items: center;
+	display: flex;
+	gap: 12px;
 }
 
 .wpdfv-plugin-card__mark {
 	align-items: center;
 	background: var(--wpdfv-ui-soft-blue);
-	border-radius: 8px;
+	border-radius: 12px;
 	color: var(--wpdfv-ui-blue);
 	display: flex;
-	font-size: 18px;
+	flex: 0 0 56px;
+	font-size: 22px;
 	font-weight: 700;
-	height: 44px;
+	height: 56px;
 	justify-content: center;
-	width: 44px;
+	overflow: hidden;
+	width: 56px;
 
-	&.is-premium {
-		background: #f0edf9;
-		color: #64518c;
+	img {
+		display: block;
+		height: 100%;
+		object-fit: contain;
+		width: 100%;
 	}
+}
+
+.wpdfv-plugin-card__footer {
+	align-items: center;
+	border-top: 1px solid var(--wpdfv-ui-line);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 16px;
+	justify-content: space-between;
+	min-height: 38px;
+	padding-top: 12px;
 }
 
 .wpdfv-plugin-card__content {
@@ -1024,6 +1066,14 @@
 
 @media (max-width: 1100px) {
 
+	.wpdfv-about-facts {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.wpdfv-plugin-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
 	.wpdfv-configure-layout {
 		grid-template-columns: 150px minmax(0, 1fr);
 	}
@@ -1035,6 +1085,10 @@
 }
 
 @media (max-width: 782px) {
+
+	.wpdfv-about-features {
+		grid-template-columns: 1fr;
+	}
 
 	.wpdfv-settings-page {
 		margin-left: -10px;

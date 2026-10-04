@@ -1444,7 +1444,7 @@ class ReaderTest extends TestCase {
 		$settings_api = new TestableSettingsApi();
 		$plugins      = $settings_api->get_more_plugins_for_tests();
 
-		$this->assertSame( [ 'perform', 'cleanlinks' ], array_column( $plugins['free'], 'slug' ) );
+		$this->assertSame( [ 'perform', 'cleanlinks', 'previewshare' ], array_column( $plugins['free'], 'slug' ) );
 		$this->assertSame( [ 'onecaptcha', 'themerouter' ], array_column( $plugins['paid'], 'slug' ) );
 		$this->assertSame( 'active', $plugins['free'][0]['status'] );
 		$this->assertSame( 'installed', $plugins['free'][1]['status'] );
@@ -1536,7 +1536,7 @@ class ReaderTest extends TestCase {
 		$plugins      = $settings_api->get_more_plugins_for_tests();
 
 		$this->assertSame(
-			[ 'perform', 'klaive', 'cleanlinks', 'mg-instamojo-for-givewp' ],
+			[ 'perform', 'klaive', 'cleanlinks', 'previewshare', 'mg-instamojo-for-givewp' ],
 			array_column( $plugins['free'], 'slug' )
 		);
 	}
