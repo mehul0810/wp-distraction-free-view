@@ -52,4 +52,12 @@ class TestableSettingsApi extends SettingsApi {
 
 		return $this->activate_free_plugin( $catalog[ $slug ] );
 	}
+
+	/** Handle a requested More Plugins action through its real capability check. */
+	public function handle_plugin_action_for_tests( $slug, $action ) {
+		$request = new \WP_REST_Request();
+		$request->set_param( 'slug', $slug );
+		$request->set_param( 'action', $action );
+		return $this->handle_plugin_action( $request );
+	}
 }

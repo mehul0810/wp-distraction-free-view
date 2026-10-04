@@ -83,6 +83,34 @@ const PREFERENCE_OPTIONS = {
 		},
 	],
 };
+const CONTENT_PREFERENCES = [
+	{
+		key: 'showMedia',
+		control: 'media',
+		label: __( 'Show images and media', 'wp-distraction-free-view' ),
+	},
+	{
+		key: 'showEmbeds',
+		control: 'embeds',
+		label: __( 'Show embedded content', 'wp-distraction-free-view' ),
+	},
+	{
+		key: 'showComments',
+		control: 'comments',
+		label: __( 'Show comments', 'wp-distraction-free-view' ),
+	},
+];
+const SPEECH_BUTTON_COPY = {
+	stopped: {
+		label: __( 'Read aloud', 'wp-distraction-free-view' ),
+	},
+	playing: {
+		label: __( 'Pause reading', 'wp-distraction-free-view' ),
+	},
+	paused: {
+		label: __( 'Resume reading', 'wp-distraction-free-view' ),
+	},
+};
 const createHeroIcon = ( paths ) =>
 	createElement(
 		SVG,
@@ -345,6 +373,9 @@ const getDefaultPreferences = () => ( {
 		READER_CONFIG.defaultParagraphSpacing,
 		'default'
 	),
+	showMedia: true,
+	showEmbeds: true,
+	showComments: true,
 } );
 
 const getStoredPreferences = () => {
@@ -379,6 +410,9 @@ const getStoredPreferences = () => {
 				parsed.paragraphSpacing,
 				defaults.paragraphSpacing
 			),
+			showMedia: parsed.showMedia !== false,
+			showEmbeds: parsed.showEmbeds !== false,
+			showComments: parsed.showComments !== false,
 		};
 	} catch {
 		return defaults;
@@ -788,6 +822,56 @@ const PreferenceControls = ( { preferences, onChange } ) => (
 	</div>
 );
 
+const ContentPreferenceControls = ( { preferences, onChange } ) => {
+	const controls = READER_CONFIG.readerContentControls || {};
+	const available = CONTENT_PREFERENCES.filter(
+		( preference ) => controls[ preference.control ] !== false
+	);
+
+	if ( 0 === available.length ) {
+		return null;
+	}
+
+	return (
+		<fieldset className="wpdfv-reader-content-preferences">
+			<legend>
+				{ __( 'Content visibility', 'wp-distraction-free-view' ) }
+			</legend>
+			{ available.map( ( preference ) => (
+				<label
+					className="wpdfv-reader-content-preferences__item"
+					htmlFor={ 'wpdfv-reader-pref-' + preference.key }
+					key={ preference.key }
+				>
+					<input
+						id={ 'wpdfv-reader-pref-' + preference.key }
+						type="checkbox"
+						checked={ preferences[ preference.key ] }
+						onChange={ ( event ) =>
+							onChange( preference.key, event.target.checked )
+						}
+					/>
+					<span>{ preference.label }</span>
+				</label>
+			) ) }
+		</fieldset>
+	);
+};
+
+const getEffectiveContentPreferences = ( preferences ) => {
+	const effective = { ...preferences };
+	const controls = READER_CONFIG.readerContentControls || {};
+	const panelEnabled = isEnabled( 'preferenceControlsEnabled' );
+
+	CONTENT_PREFERENCES.forEach( ( { key, control } ) => {
+		if ( ! panelEnabled || controls[ control ] === false ) {
+			effective[ key ] = true;
+		}
+	} );
+
+	return effective;
+};
+
 const ReaderTableOfContents = ( { items, onNavigate } ) => (
 	<nav
 		className="wpdfv-reader-toc"
@@ -818,6 +902,200 @@ const ReaderTableOfContents = ( { items, onNavigate } ) => (
 	</nav>
 );
 
+const DEFAULT_CONTENT_SELECTORS = {
+	media: [ 'img', 'picture', 'video', 'audio' ],
+	embeds: [
+		'.wp-block-embed',
+		'.wp-embed',
+		'iframe.wpdfv-reader-provider-embed',
+	],
+	comments: [ '.wp-block-comments', '#comments', '.comments-area' ],
+	protected: [],
+};
+
+const queryReaderElements = ( container, selectors ) => {
+	const elements = new Set();
+
+	( Array.isArray( selectors ) ? selectors : [] ).forEach( ( selector ) => {
+		if ( 'string' !== typeof selector || ! selector.trim() ) {
+			return;
+		}
+
+		try {
+			container
+				.querySelectorAll( selector )
+				.forEach( ( element ) => elements.add( element ) );
+		} catch {
+			// A custom selector must not break the reader controls.
+		}
+	} );
+
+	return [ ...elements ];
+};
+
+const getReaderAccessibleName = ( element, container ) => {
+	const labelledBy = element.getAttribute( 'aria-labelledby' );
+	if ( labelledBy ) {
+		const labels = labelledBy
+			.trim()
+			.split( /\s+/ )
+			.map( ( id ) =>
+				[ ...container.querySelectorAll( '[id]' ) ]
+					.find( ( candidate ) => candidate.id === id )
+					?.textContent?.trim()
+			)
+			.filter( Boolean );
+		if ( labels.length ) {
+			return labels.join( ' ' );
+		}
+	}
+
+	return (
+		element.getAttribute( 'aria-label' )?.trim() ||
+		( 'IMG' === element.tagName
+			? element.getAttribute( 'alt' )?.trim()
+			: '' ) ||
+		element.getAttribute( 'title' )?.trim() ||
+		''
+	);
+};
+
+const getReaderAlternative = ( element, category ) => {
+	const container = element.closest( '.wpdfv-reader-content' ) || element;
+	const caption = element.querySelector( 'figcaption' )?.textContent?.trim();
+	const label =
+		getReaderAccessibleName( element, container ) ||
+		[
+			...element.querySelectorAll(
+				'img, iframe, video, audio, object, embed'
+			),
+		]
+			.map( ( media ) => getReaderAccessibleName( media, container ) )
+			.find( Boolean );
+	const text = [ label, caption ].filter( Boolean );
+
+	if ( ! text.length ) {
+		text.push( element.textContent?.trim() );
+	}
+
+	return (
+		[ ...new Set( text.filter( Boolean ) ) ].join( '; ' ) ||
+		( 'media' === category
+			? __( 'Media hidden', 'wp-distraction-free-view' )
+			: __( 'Embedded content hidden', 'wp-distraction-free-view' ) )
+	);
+};
+
+const applyReaderContentPreferences = ( container, preferences ) => {
+	const selectors = {
+		...DEFAULT_CONTENT_SELECTORS,
+		...( READER_CONFIG.contentSelectors || {} ),
+	};
+	const protectedElements = queryReaderElements(
+		container,
+		selectors.protected
+	);
+
+	[ 'media', 'embeds', 'comments' ].forEach( ( category ) => {
+		const hiddenClass = `wpdfv-reader-hidden-${ category }`;
+		container
+			.querySelectorAll( `.${ hiddenClass }` )
+			.forEach( ( element ) => element.classList.remove( hiddenClass ) );
+
+		const preferenceKey = {
+			media: 'showMedia',
+			embeds: 'showEmbeds',
+			comments: 'showComments',
+		}[ category ];
+		if ( preferences[ preferenceKey ] ) {
+			return;
+		}
+
+		const candidates = queryReaderElements(
+			container,
+			selectors[ category ]
+		);
+		candidates.forEach( ( element ) => {
+			if (
+				candidates.some(
+					( parent ) =>
+						parent !== element && parent.contains( element )
+				) ||
+				protectedElements.some(
+					( protectedElement ) =>
+						protectedElement === element ||
+						protectedElement.contains( element ) ||
+						element.contains( protectedElement )
+				)
+			) {
+				return;
+			}
+
+			element.classList.add( hiddenClass );
+			if ( 'comments' === category ) {
+				return;
+			}
+
+			let alternative = element.nextElementSibling;
+			if (
+				! alternative?.classList.contains(
+					`wpdfv-reader-alternative--${ category }`
+				)
+			) {
+				alternative = document.createElement( 'span' );
+				alternative.className = `wpdfv-reader-alternative wpdfv-reader-alternative--${ category }`;
+				element.insertAdjacentElement( 'afterend', alternative );
+			}
+			alternative.textContent = getReaderAlternative( element, category );
+		} );
+	} );
+};
+
+const normalizeSpeechLanguage = ( language ) =>
+	'string' === typeof language
+		? language.trim().replace( /_/g, '-' ).toLowerCase()
+		: '';
+
+const getLocalSpeechVoice = ( voices, language ) => {
+	const normalizedLanguage = normalizeSpeechLanguage( language );
+	if ( ! normalizedLanguage || ! Array.isArray( voices ) ) {
+		return null;
+	}
+
+	const localVoices = voices.filter(
+		( voice ) => voice.localService === true
+	);
+	const exact = localVoices.find(
+		( voice ) =>
+			normalizeSpeechLanguage( voice.lang ) === normalizedLanguage
+	);
+	if ( exact ) {
+		return exact;
+	}
+
+	const primaryLanguage = normalizedLanguage.split( '-' )[ 0 ];
+	if ( ! /^[a-z]{2,8}$/.test( primaryLanguage ) ) {
+		return null;
+	}
+
+	return (
+		localVoices.find(
+			( voice ) =>
+				normalizeSpeechLanguage( voice.lang ).split( '-' )[ 0 ] ===
+				primaryLanguage
+		) || null
+	);
+};
+
+const getReaderSpeechLanguage = ( container ) =>
+	container?.getAttribute( 'lang' ) ||
+	container?.firstElementChild?.getAttribute( 'lang' ) ||
+	container?.firstElementChild?.firstElementChild?.getAttribute( 'lang' ) ||
+	container
+		?.querySelector( 'article[lang], .wp-block-post-content[lang]' )
+		?.getAttribute( 'lang' ) ||
+	document.documentElement.lang;
+
 const ReaderApp = () => {
 	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -834,8 +1112,18 @@ const ReaderApp = () => {
 	const [ currentPostId, setCurrentPostId ] = useState( '' );
 	const [ resumePosition, setResumePosition ] = useState( null );
 	const [ preferences, setPreferences ] = useState( getStoredPreferences );
+	const effectiveContentPreferences = useMemo(
+		() => getEffectiveContentPreferences( preferences ),
+		[ preferences ]
+	);
+	const [ speechStatus, setSpeechStatus ] = useState( 'stopped' );
+	const [ localVoice, setLocalVoice ] = useState( null );
+	const [ speechLanguage, setSpeechLanguage ] = useState(
+		document.documentElement.lang
+	);
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
+	const utteranceRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
 	const feedbackTimeoutRef = useRef( null );
 	const readerModeUrl = useMemo(
@@ -850,6 +1138,36 @@ const ReaderApp = () => {
 		[ readerModeUrl, title ]
 	);
 	const canNativeShare = supportsNativeShare( shareData );
+	const hasSpeechSynthesis =
+		READER_CONFIG.readAloudEnabled === true &&
+		'undefined' !== typeof window &&
+		'function' === typeof window.SpeechSynthesisUtterance &&
+		'function' === typeof window.speechSynthesis?.getVoices;
+	const canReadAloud = hasSpeechSynthesis && !! localVoice;
+
+	useEffect( () => {
+		if ( isOpen && ! isLoading && contentRef.current ) {
+			setSpeechLanguage( getReaderSpeechLanguage( contentRef.current ) );
+		}
+	}, [ isOpen, isLoading, content ] );
+
+	useEffect( () => {
+		if ( ! hasSpeechSynthesis ) {
+			return undefined;
+		}
+
+		const synthesis = window.speechSynthesis;
+		const refreshLocalVoice = () => {
+			setLocalVoice(
+				getLocalSpeechVoice( synthesis.getVoices(), speechLanguage )
+			);
+		};
+
+		refreshLocalVoice();
+		synthesis.addEventListener( 'voiceschanged', refreshLocalVoice );
+		return () =>
+			synthesis.removeEventListener( 'voiceschanged', refreshLocalVoice );
+	}, [ hasSpeechSynthesis, speechLanguage ] );
 	const modalClassName = useMemo(
 		() =>
 			[
@@ -862,31 +1180,6 @@ const ReaderApp = () => {
 			].join( ' ' ),
 		[ preferences ]
 	);
-
-	useEffect( () => {
-		const handleClick = ( event ) => {
-			const trigger = event.target.closest( '.wpdfv-fullscreen-btn' );
-
-			if ( ! trigger ) {
-				return;
-			}
-
-			event.preventDefault();
-			openReader( trigger.dataset.postId );
-		};
-
-		document.addEventListener( 'click', handleClick );
-
-		return () => document.removeEventListener( 'click', handleClick );
-	}, [] );
-
-	useEffect( () => {
-		if ( ! READER_CONFIG.autoOpen || ! READER_CONFIG.currentPostId ) {
-			return;
-		}
-
-		openReader( READER_CONFIG.currentPostId );
-	}, [] );
 
 	useEffect( () => {
 		const storageKey =
@@ -944,6 +1237,16 @@ const ReaderApp = () => {
 			}
 		};
 	}, [ linkFeedback ] );
+
+	useEffect(
+		() => () => {
+			if ( utteranceRef.current ) {
+				window.speechSynthesis?.cancel();
+				utteranceRef.current = null;
+			}
+		},
+		[]
+	);
 
 	useEffect( () => {
 		if ( ! isOpen ) {
@@ -1099,6 +1402,15 @@ const ReaderApp = () => {
 		return () => hydrationModule?.remove();
 	}, [ isOpen, isLoading, error, content ] );
 
+	useEffect( () => {
+		if ( isOpen && ! isLoading && ! error && contentRef.current ) {
+			applyReaderContentPreferences(
+				contentRef.current,
+				effectiveContentPreferences
+			);
+		}
+	}, [ isOpen, isLoading, error, content, effectiveContentPreferences ] );
+
 	const updatePreference = ( key, value ) => {
 		setPreferences( ( current ) => ( {
 			...current,
@@ -1106,7 +1418,61 @@ const ReaderApp = () => {
 		} ) );
 	};
 
+	const stopReadAloud = useCallback( () => {
+		if ( utteranceRef.current && window.speechSynthesis ) {
+			window.speechSynthesis.cancel();
+		}
+
+		utteranceRef.current = null;
+		setSpeechStatus( 'stopped' );
+	}, [] );
+
+	const startReadAloud = () => {
+		const text = contentRef.current?.innerText?.trim();
+		const voice = getLocalSpeechVoice(
+			window.speechSynthesis?.getVoices(),
+			getReaderSpeechLanguage( contentRef.current )
+		);
+
+		if ( ! canReadAloud || ! voice || ! text ) {
+			return;
+		}
+
+		stopReadAloud();
+		const utterance = new window.SpeechSynthesisUtterance( text );
+		utterance.voice = voice;
+		utterance.lang = voice.lang;
+		utterance.onstart = () => setSpeechStatus( 'playing' );
+		utterance.onend = () => {
+			if ( utteranceRef.current === utterance ) {
+				utteranceRef.current = null;
+				setSpeechStatus( 'stopped' );
+			}
+		};
+		utterance.onerror = () => {
+			if ( utteranceRef.current === utterance ) {
+				utteranceRef.current = null;
+				setSpeechStatus( 'stopped' );
+			}
+		};
+		utteranceRef.current = utterance;
+		window.speechSynthesis.speak( utterance );
+	};
+
+	const toggleReadAloud = () => {
+		if ( 'playing' === speechStatus ) {
+			window.speechSynthesis.pause();
+			setSpeechStatus( 'paused' );
+		} else if ( 'paused' === speechStatus ) {
+			window.speechSynthesis.resume();
+			setSpeechStatus( 'playing' );
+		} else {
+			startReadAloud();
+		}
+	};
+
 	const closeReader = useCallback( () => {
+		stopReadAloud();
 		setIsOpen( false );
 		setIsSettingsOpen( false );
 		setIsFullscreen( false );
@@ -1115,51 +1481,82 @@ const ReaderApp = () => {
 		setTocItems( [] );
 		setResumePosition( null );
 		setLinkFeedback( null );
-	}, [] );
+	}, [ stopReadAloud ] );
 
-	const openReader = ( postId ) => {
-		if ( ! postId ) {
+	const openReader = useCallback(
+		( postId ) => {
+			if ( ! postId ) {
+				return;
+			}
+
+			stopReadAloud();
+			setIsOpen( true );
+			setIsLoading( true );
+			setError( '' );
+			setTitle( '' );
+			setPermalink( '' );
+			setContent( '' );
+			setScripts( [] );
+			setTocItems( [] );
+			setReadingTime( null );
+			setCurrentPostId( String( postId ) );
+			setResumePosition( null );
+			setIsSettingsOpen( false );
+			setProgress( 0 );
+			setLinkFeedback( null );
+
+			apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
+				.then( ( response ) => {
+					setTitle( response.title );
+					setPermalink( response.permalink || '' );
+					setContent( response.content );
+					setScripts(
+						Array.isArray( response.scripts )
+							? response.scripts
+							: []
+					);
+					setTocItems(
+						Array.isArray( response.toc ) ? response.toc : []
+					);
+					setReadingTime( response.readingTime );
+				} )
+				.catch( () => {
+					setError(
+						__(
+							'This content could not be loaded in Reader Mode.',
+							'wp-distraction-free-view'
+						)
+					);
+				} )
+				.finally( () => setIsLoading( false ) );
+		},
+		[ stopReadAloud ]
+	);
+
+	useEffect( () => {
+		const handleClick = ( event ) => {
+			const trigger = event.target.closest( '.wpdfv-fullscreen-btn' );
+
+			if ( ! trigger ) {
+				return;
+			}
+
+			event.preventDefault();
+			openReader( trigger.dataset.postId );
+		};
+
+		document.addEventListener( 'click', handleClick );
+
+		return () => document.removeEventListener( 'click', handleClick );
+	}, [ openReader ] );
+
+	useEffect( () => {
+		if ( ! READER_CONFIG.autoOpen || ! READER_CONFIG.currentPostId ) {
 			return;
 		}
 
-		setIsOpen( true );
-		setIsLoading( true );
-		setError( '' );
-		setTitle( '' );
-		setPermalink( '' );
-		setContent( '' );
-		setScripts( [] );
-		setTocItems( [] );
-		setReadingTime( null );
-		setCurrentPostId( String( postId ) );
-		setResumePosition( null );
-		setIsSettingsOpen( false );
-		setProgress( 0 );
-		setLinkFeedback( null );
-
-		apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
-			.then( ( response ) => {
-				setTitle( response.title );
-				setPermalink( response.permalink || '' );
-				setContent( response.content );
-				setScripts(
-					Array.isArray( response.scripts ) ? response.scripts : []
-				);
-				setTocItems(
-					Array.isArray( response.toc ) ? response.toc : []
-				);
-				setReadingTime( response.readingTime );
-			} )
-			.catch( () => {
-				setError(
-					__(
-						'This content could not be loaded in Reader Mode.',
-						'wp-distraction-free-view'
-					)
-				);
-			} )
-			.finally( () => setIsLoading( false ) );
-	};
+		openReader( READER_CONFIG.currentPostId );
+	}, [ openReader ] );
 
 	const resumeReading = () => {
 		const scrollContainer = document.querySelector(
@@ -1287,6 +1684,20 @@ const ReaderApp = () => {
 		! error &&
 		tocItems.length > 1;
 	const showPreferenceControls = isEnabled( 'preferenceControlsEnabled' );
+	const readerContentClassName = [
+		'wpdfv-reader-content',
+		! effectiveContentPreferences.showMedia &&
+			'wpdfv-reader-content--hide-media',
+		! effectiveContentPreferences.showEmbeds &&
+			'wpdfv-reader-content--hide-embeds',
+		! effectiveContentPreferences.showComments &&
+			'wpdfv-reader-content--hide-comments',
+	]
+		.filter( Boolean )
+		.join( ' ' );
+	const speechButtonLabel =
+		SPEECH_BUTTON_COPY[ speechStatus ]?.label ||
+		SPEECH_BUTTON_COPY.stopped.label;
 
 	return (
 		isOpen && (
@@ -1299,6 +1710,31 @@ const ReaderApp = () => {
 				}
 				headerActions={
 					<div className="wpdfv-reader-header-actions">
+						{ canReadAloud && (
+							<>
+								<ReaderButton
+									label={ speechButtonLabel }
+									onClick={ toggleReadAloud }
+									disabled={ isLoading || ! content }
+								>
+									{ speechButtonLabel }
+								</ReaderButton>
+								{ 'stopped' !== speechStatus && (
+									<ReaderButton
+										label={ __(
+											'Stop reading',
+											'wp-distraction-free-view'
+										) }
+										onClick={ stopReadAloud }
+									>
+										{ __(
+											'Stop',
+											'wp-distraction-free-view'
+										) }
+									</ReaderButton>
+								) }
+							</>
+						) }
 						{ showReadingTime && (
 							<span className="wpdfv-reading-time wpdfv-reading-time--header">
 								{ readingTime.label }
@@ -1428,6 +1864,15 @@ const ReaderApp = () => {
 							preferences={ preferences }
 							onChange={ updatePreference }
 						/>
+						<ContentPreferenceControls
+							preferences={ preferences }
+							onChange={ ( key, value ) =>
+								setPreferences( ( current ) => ( {
+									...current,
+									[ key ]: Boolean( value ),
+								} ) )
+							}
+						/>
 					</aside>
 				) }
 
@@ -1439,7 +1884,7 @@ const ReaderApp = () => {
 				) }
 
 				<div
-					className="wpdfv-reader-content"
+					className={ readerContentClassName }
 					id="wpdfv-print"
 					ref={ contentRef }
 				>

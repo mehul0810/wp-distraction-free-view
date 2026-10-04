@@ -84,9 +84,13 @@ class Blocks {
 			return '';
 		}
 
-		$post_type = isset( $block->context['postType'] ) ? sanitize_key( $block->context['postType'] ) : get_post_type( $post_id );
+		$post = get_post( $post_id );
 
-		if ( ! $post_type || ! Reader::is_post_type_enabled( $post_type ) ) {
+		$is_enabled = $post instanceof \WP_Post
+			? Reader::is_post_enabled_for_post( $post )
+			: ( ! empty( $block->context['postType'] ) && Reader::is_post_type_enabled( $block->context['postType'] ) );
+
+		if ( ! $is_enabled ) {
 			return '';
 		}
 

@@ -10,8 +10,12 @@ namespace WPDFV\Tests\Integration;
 use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 use WP_REST_Server;
+use WPDFV\Admin\ContentSettings;
 use WPDFV\Admin\Upgrades;
+use WPDFV\Includes\Abilities;
+use WPDFV\Includes\DiscoveryMetadata;
 use WPDFV\Includes\Reader;
+use WPDFV\Includes\Templates;
 use WPDFV\Plugin;
 
 /**
@@ -76,6 +80,52 @@ class ReaderIntegrationTest extends TestCase {
 		$GLOBALS['wp_rest_server'] = $this->server;
 
 		parent::tearDown();
+	}
+
+	/**
+	 * CPTs registered after our callback is attached expose Reader Mode REST metadata.
+	 *
+	 * @return void
+	 */
+	public function test_later_registered_public_post_type_has_reader_rest_metadata() {
+		$original_init                = $GLOBALS['wp_filter']['init'];
+		$GLOBALS['wp_filter']['init'] = new \WP_Hook();
+		$content_settings             = new ContentSettings();
+		$post_type                    = 'wpdfv_late_fixture';
+
+		try {
+			// Model a plugin loaded later, using the default init priority.
+			add_action(
+				'init',
+				static function () use ( $post_type ) {
+					register_post_type(
+						$post_type,
+						[
+							'public'       => true,
+							'show_in_rest' => true,
+							'supports'     => [ 'title', 'editor', 'custom-fields' ],
+						]
+					);
+				}
+			);
+			// Exercise real hook ordering without rerunning unrelated init callbacks.
+			$GLOBALS['wp_filter']['init']->do_action( [] );
+			$controller = new \WP_REST_Posts_Controller( $post_type );
+			$schema     = $controller->get_item_schema();
+			$properties = $schema['properties']['meta']['properties'];
+
+			$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, $properties );
+			$this->assertArrayHasKey( ContentSettings::TEMPLATE_META, $properties );
+			$this->assertSame( 'inherit', $properties[ Reader::POST_AVAILABILITY_META ]['default'] );
+			$this->assertSame( '', $properties[ ContentSettings::TEMPLATE_META ]['default'] );
+		} finally {
+			$GLOBALS['wp_filter']['init'] = $original_init;
+			remove_action( 'add_meta_boxes', [ $content_settings, 'add_meta_boxes' ] );
+			remove_action( 'save_post', [ $content_settings, 'save_post' ] );
+			unregister_post_meta( $post_type, Reader::POST_AVAILABILITY_META );
+			unregister_post_meta( $post_type, ContentSettings::TEMPLATE_META );
+			unregister_post_type( $post_type );
+		}
 	}
 
 	/**
@@ -178,6 +228,225 @@ class ReaderIntegrationTest extends TestCase {
 		$this->assertSame( $post_id, $data['id'] );
 		$this->assertStringContainsString( 'Readable integration content.', $data['content'] );
 		$this->assertArrayHasKey( 'readingTime', $data );
+	}
+
+	/**
+	 * Structured content exposes only public, sanitized Reader Mode data.
+	 *
+	 * @return void
+	 */
+	public function test_structured_rest_content_returns_public_metadata_and_sanitized_content() {
+		$post_id = $this->create_post(
+			[
+				'post_content' => '<p>Structured <strong>reader</strong> content.</p>',
+				'post_status'  => 'publish',
+				'post_title'   => 'Structured reader title',
+				'post_excerpt' => 'A useful excerpt.',
+			]
+		);
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->posts,
+			[ 'post_content' => '<p>Structured <strong>reader</strong> content.</p><script>privateScript()</script>' ],
+			[ 'ID' => $post_id ]
+		);
+		clean_post_cache( $post_id );
+
+		$response = $this->dispatch_structured_content_request( $post_id );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( get_permalink( $post_id ), $data['canonicalUrl'] );
+		$this->assertSame( 'Structured reader title', $data['title'] );
+		$this->assertSame( 'A useful excerpt.', $data['excerpt'] );
+		$this->assertStringContainsString( 'Structured reader content.', $data['text'] );
+		$this->assertStringNotContainsString( 'privateScript', $data['text'] );
+		$this->assertStringNotContainsString( '<script', $data['html'] );
+		$this->assertNotEmpty( $data['language'] );
+		$this->assertNotEmpty( $data['publishedAt'] );
+		$this->assertNotEmpty( $data['modifiedAt'] );
+		$this->assertSame( 'post', $data['postType'] );
+		$this->assertArrayHasKey( 'readingTime', $data );
+		$this->assertNull( $data['featuredImage'] );
+		$this->assertArrayNotHasKey( 'scripts', $data );
+		$this->assertArrayNotHasKey( 'email', $data );
+	}
+
+	/**
+	 * Structured content uses the same privacy gate as the Reader Mode route.
+	 *
+	 * @return void
+	 */
+	public function test_structured_rest_content_forbids_private_posts_for_anonymous_readers() {
+		$post_id = $this->create_post( [ 'post_status' => 'private' ] );
+
+		$response = $this->dispatch_structured_content_request( $post_id );
+
+		$this->assertSame( 403, $response->get_status() );
+		$this->assertSame( 'wpdfv_post_forbidden', $response->as_error()->get_error_code() );
+	}
+
+	/** Discovery metadata respects public-read gates and tolerates optional fields removed by filters. */
+	public function test_discovery_metadata_gates_private_content_and_omits_missing_optional_fields() {
+		update_option( 'wpdfv_settings', array_merge( Reader::get_default_settings(), [ 'discovery_metadata_enabled' => true ] ), false );
+		$metadata = new DiscoveryMetadata();
+		$private  = $this->create_post( [ 'post_status' => 'private' ] );
+		$password = $this->create_post(
+			[
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+			]
+		);
+		$disabled = $this->create_post( [ 'post_status' => 'publish' ] );
+		update_post_meta( $disabled, Reader::POST_AVAILABILITY_META, 'disabled' );
+
+		global $wp_query, $post;
+		$wp_query->is_single   = true;
+		$wp_query->is_singular = true;
+		foreach ( [ $private, $password, $disabled ] as $post_id ) {
+			$post                     = get_post( $post_id );
+			$wp_query->queried_object = $post;
+			ob_start();
+			$metadata->render();
+			$output = ob_get_clean();
+			$this->assertSame( '', $output );
+		}
+
+		$public                   = $this->create_post(
+			[
+				'post_status' => 'publish',
+				'post_title'  => 'Public discovery',
+			]
+		);
+		$post                     = get_post( $public );
+		$wp_query->queried_object = $post;
+		$disable_metadata         = static function () {
+			return false;
+		};
+		add_filter( 'wpdfv_discovery_metadata_enabled', $disable_metadata );
+		ob_start();
+		$metadata->render();
+		$this->assertSame( '', ob_get_clean() );
+		remove_filter( 'wpdfv_discovery_metadata_enabled', $disable_metadata );
+		$remove_optional = static function ( $data ) {
+			unset( $data['author'], $data['featuredImage'], $data['excerpt'] );
+			return $data;
+		};
+		$adjust_metadata = static function ( $data ) {
+			$data['identifier'] = 'reviewed-public-metadata';
+			return $data;
+		};
+		add_filter( 'wpdfv_structured_reader_content', $remove_optional );
+		add_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+		try {
+			ob_start();
+			$metadata->render();
+			$output = ob_get_clean();
+		} finally {
+			remove_filter( 'wpdfv_structured_reader_content', $remove_optional );
+			remove_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+		}
+		$this->assertStringContainsString( 'application/ld+json', $output );
+		$this->assertStringNotContainsString( '"author"', $output );
+		$this->assertStringNotContainsString( '"image"', $output );
+		$this->assertStringNotContainsString( '"description"', $output );
+		$this->assertStringContainsString( 'reviewed-public-metadata', $output );
+	}
+
+	/**
+	 * Per-post availability overrides can enable or disable a public post.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_respects_per_post_availability_override() {
+		update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [ 'page' ] ] ),
+			false
+		);
+		$post_id = $this->create_post( [ 'post_status' => 'publish' ] );
+
+		$this->assertSame( 403, $this->dispatch_content_request( $post_id )->get_status() );
+
+		update_post_meta( $post_id, Reader::POST_AVAILABILITY_META, 'enabled' );
+		$this->assertSame( 200, $this->dispatch_content_request( $post_id )->get_status() );
+
+		update_option(
+			'wpdfv_settings',
+			array_merge( Reader::get_default_settings(), [ 'where_to_display' => [ 'post' ] ] ),
+			false
+		);
+		update_post_meta( $post_id, Reader::POST_AVAILABILITY_META, 'disabled' );
+		$this->assertSame( 403, $this->dispatch_content_request( $post_id )->get_status() );
+	}
+
+	/**
+	 * A valid per-post template override is used when rendering Reader content.
+	 *
+	 * @return void
+	 */
+	public function test_reader_content_uses_per_post_template_override() {
+		$template_filter = static function ( $templates ) {
+			$templates['compact'] = [
+				'label'   => 'Compact',
+				'content' => '<!-- wp:paragraph --><p>Compact Reader template.</p><!-- /wp:paragraph -->',
+			];
+
+			return $templates;
+		};
+		add_filter( 'wpdfv_modal_templates', $template_filter );
+		Templates::invalidate_request_cache();
+		$post_id = $this->create_post( [ 'post_status' => 'publish' ] );
+		update_post_meta( $post_id, '_wpdfv_reader_template', 'compact' );
+
+		try {
+			$response = $this->dispatch_content_request( $post_id );
+		} finally {
+			remove_filter( 'wpdfv_modal_templates', $template_filter );
+			Templates::invalidate_request_cache();
+		}
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Compact Reader template.', $response->get_data()['content'] );
+	}
+
+	/**
+	 * Per-content overrides are registered for public post types in the REST meta schema.
+	 *
+	 * @return void
+	 */
+	public function test_content_override_meta_is_registered_for_public_post_types() {
+		$post_meta = get_registered_meta_keys( 'post', 'post' );
+		$this->assertArrayHasKey( Reader::POST_AVAILABILITY_META, $post_meta );
+		$this->assertArrayHasKey( '_wpdfv_reader_template', $post_meta );
+	}
+
+	/**
+	 * The Abilities API exposes only publicly available Reader Mode content.
+	 *
+	 * @return void
+	 */
+	public function test_abilities_api_is_optional_and_rejects_private_content() {
+		if ( ! function_exists( 'wp_register_ability' ) || ! function_exists( 'wp_get_ability' ) ) {
+			$this->markTestSkipped( 'The WordPress Abilities API requires WordPress 6.9 or later.' );
+		}
+
+		$service = new Abilities();
+		do_action( 'wp_abilities_api_categories_init' );
+		do_action( 'wp_abilities_api_init' );
+
+		$this->assertNotNull( wp_get_ability( Abilities::ABILITY ) );
+		$canonical = wp_get_ability( Abilities::CANONICAL_ABILITY );
+		$this->assertNotNull( $canonical );
+		$this->assertSame( [ 'post_id' ], $canonical->get_input_schema()['required'] );
+
+		$public_post_id  = $this->create_post( [ 'post_status' => 'publish' ] );
+		$private_post_id = $this->create_post( [ 'post_status' => 'private' ] );
+
+		$this->assertTrue( $service->can_read_content( [ 'post_id' => $public_post_id ] ) );
+		$this->assertSame( $public_post_id, $canonical->execute( [ 'post_id' => $public_post_id ] )['id'] );
+		$this->assertFalse( $service->can_read_content( [ 'post_id' => $private_post_id ] ) );
+		$this->assertInstanceOf( \WP_Error::class, $service->get_reader_content( [ 'post_id' => $private_post_id ] ) );
 	}
 
 	/**
@@ -427,6 +696,19 @@ class ReaderIntegrationTest extends TestCase {
 	 */
 	private function dispatch_content_request( $post_id ) {
 		$request = new WP_REST_Request( 'GET', '/wp-distraction-free-view/v1/content/' . absint( $post_id ) );
+
+		return rest_get_server()->dispatch( $request );
+	}
+
+	/**
+	 * Dispatch a structured Reader Mode REST request.
+	 *
+	 * @param int $post_id Post ID.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	private function dispatch_structured_content_request( $post_id ) {
+		$request = new WP_REST_Request( 'GET', '/wp-distraction-free-view/v1/structured-content/' . absint( $post_id ) );
 
 		return rest_get_server()->dispatch( $request );
 	}

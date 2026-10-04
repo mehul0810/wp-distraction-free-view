@@ -12,6 +12,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WPDFV\Includes\Actions;
+use WPDFV\Includes\Content;
 use WPDFV\Includes\Helpers;
 use WPDFV\Includes\Reader;
 use WPDFV\Includes\Templates;
@@ -58,9 +59,9 @@ class Main {
 			$post_id = $post instanceof \WP_Post ? $post->ID : 0;
 		}
 
-		$post_type = get_post_type( $post_id );
+		$post = get_post( $post_id );
 
-		if ( ! $post_type || ! Reader::is_post_type_enabled( $post_type ) ) {
+		if ( ! $post instanceof \WP_Post || ! Reader::is_post_enabled_for_post( $post ) ) {
 			return '';
 		}
 
@@ -87,6 +88,24 @@ class Main {
 				'args'                => [
 					'id' => [
 						'description'       => __( 'Post ID to render in Reader Mode.', 'wp-distraction-free-view' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			WPDFV_REST_NAMESPACE,
+			'/structured-content/(?P<id>\d+)',
+			[
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_structured_content_response' ],
+				'permission_callback' => '__return_true',
+				'args'                => [
+					'id' => [
+						'description'       => __( 'Post ID to return as structured Reader Mode content.', 'wp-distraction-free-view' ),
 						'type'              => 'integer',
 						'required'          => true,
 						'sanitize_callback' => 'absint',
@@ -145,6 +164,42 @@ class Main {
 	}
 
 	/**
+	 * Return a structured representation of public Reader Mode content.
+	 *
+	 * This route shares the access checks and sanitized rendering used by the
+	 * interactive Reader Mode endpoint. It never exposes stored post content
+	 * or executable scripts.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_structured_content_response( WP_REST_Request $request ) {
+		$post_id = absint( $request['id'] );
+		$post    = get_post( $post_id );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return new WP_Error(
+				'wpdfv_post_not_found',
+				__( 'Post not found.', 'wp-distraction-free-view' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		if ( ! $this->can_read_post( $post ) ) {
+			return new WP_Error(
+				'wpdfv_post_forbidden',
+				__( 'This content is not available in Reader Mode.', 'wp-distraction-free-view' ),
+				[ 'status' => 403 ]
+			);
+		}
+
+		return rest_ensure_response( Content::get_structured_data( $post ) );
+	}
+
+	/**
 	 * Determine whether a post can be read through the public reader endpoint.
 	 *
 	 * @since 1.7.0
@@ -154,18 +209,6 @@ class Main {
 	 * @return bool
 	 */
 	protected function can_read_post( \WP_Post $post ) {
-		if ( ! Reader::is_post_type_enabled( $post->post_type ) ) {
-			return false;
-		}
-
-		if ( post_password_required( $post ) ) {
-			return false;
-		}
-
-		if ( current_user_can( 'read_post', $post->ID ) ) {
-			return true;
-		}
-
-		return 'publish' === get_post_status( $post ) && is_post_publicly_viewable( $post );
+		return Content::can_read_post( $post );
 	}
 }

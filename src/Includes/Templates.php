@@ -80,6 +80,19 @@ class Templates {
 		}
 
 		foreach ( self::get_registered_templates() as $slug => $template ) {
+			if (
+				function_exists( 'register_block_pattern_category' ) &&
+				self::PATTERN_CATEGORY !== $template['category'] &&
+				! $this->is_pattern_category_registered( $template['category'] )
+			) {
+				register_block_pattern_category(
+					$template['category'],
+					[
+						'label' => sanitize_text_field( ucwords( str_replace( [ '-', '_' ], ' ', $template['category'] ) ) ),
+					]
+				);
+			}
+
 			$pattern_name = sprintf( 'wpdfv/%s-modal-template', sanitize_title( $slug ) );
 
 			if ( $this->is_pattern_registered( $pattern_name ) ) {
@@ -117,6 +130,8 @@ class Templates {
 				'label'       => $template['label'],
 				'value'       => $slug,
 				'description' => $template['description'],
+				'category'    => $template['category'],
+				'preview'     => $template['preview'],
 			];
 		}
 
@@ -148,7 +163,7 @@ class Templates {
 	 */
 	public static function render_modal_content( \WP_Post $post ) {
 		$templates     = self::get_registered_templates();
-		$template_slug = self::get_selected_template_slug();
+		$template_slug = self::get_selected_template_slug( $post );
 		$template      = $templates[ $template_slug ] ?? $templates[ self::DEFAULT_TEMPLATE ];
 		$previous_post = $GLOBALS['post'] ?? null;
 
@@ -197,9 +212,18 @@ class Templates {
 	 *
 	 * @return string
 	 */
-	public static function get_selected_template_slug() {
+	public static function get_selected_template_slug( ?\WP_Post $post = null ) {
 		$settings = Helpers::get_settings();
 		$slug     = isset( $settings['modal_template'] ) ? sanitize_key( $settings['modal_template'] ) : self::DEFAULT_TEMPLATE;
+
+		if ( $post instanceof \WP_Post ) {
+			$post_template = get_post_meta( $post->ID, '_wpdfv_reader_template', true );
+			$post_template = is_string( $post_template ) ? sanitize_key( $post_template ) : '';
+
+			if ( '' !== $post_template && isset( self::get_registered_templates()[ $post_template ] ) ) {
+				$slug = sanitize_key( $post_template );
+			}
+		}
 
 		return self::sanitize_template_slug( $slug );
 	}
@@ -238,6 +262,7 @@ class Templates {
 				'description' => __( 'Displays the current post content inside the frontend Reader Mode view.', 'wp-distraction-free-view' ),
 				'category'    => self::PATTERN_CATEGORY,
 				'content'     => self::get_default_template_content(),
+				'preview'     => null,
 			],
 		];
 
@@ -290,15 +315,43 @@ class Templates {
 		foreach ( $templates as $slug => $template ) {
 			$slug = sanitize_key( $slug );
 
-			if ( ! $slug || ! is_array( $template ) || empty( $template['content'] ) ) {
+			if ( ! $slug || ! is_array( $template ) || ! isset( $template['content'] ) || ! is_string( $template['content'] ) || '' === trim( $template['content'] ) ) {
 				continue;
 			}
 
+			$preview  = null;
+			$label    = isset( $template['label'] ) ? sanitize_text_field( $template['label'] ) : '';
+			$category = isset( $template['category'] ) ? sanitize_key( $template['category'] ) : '';
+
+			if ( '' === $label ) {
+				$label = self::DEFAULT_TEMPLATE === $slug
+					? __( 'Default Reader Mode layout', 'wp-distraction-free-view' )
+					: $slug;
+			}
+
+			if ( '' === $category ) {
+				$category = self::PATTERN_CATEGORY;
+			}
+
+			if ( isset( $template['preview'] ) && is_array( $template['preview'] ) && ! empty( $template['preview']['image'] ) ) {
+				$preview_url = esc_url_raw( $template['preview']['image'] );
+				$preview_alt = isset( $template['preview']['alt'] ) ? (string) $template['preview']['alt'] : '';
+				$preview_alt = preg_replace( '#<(script|style|noscript)\b[^>]*>.*?</\1\s*>#is', '', $preview_alt );
+
+				if ( $preview_url ) {
+					$preview = [
+						'image' => $preview_url,
+						'alt'   => sanitize_text_field( $preview_alt ),
+					];
+				}
+			}
+
 			$normalized[ $slug ] = [
-				'label'       => ! empty( $template['label'] ) ? sanitize_text_field( $template['label'] ) : $slug,
+				'label'       => $label,
 				'description' => ! empty( $template['description'] ) ? sanitize_text_field( $template['description'] ) : '',
-				'category'    => ! empty( $template['category'] ) ? sanitize_key( $template['category'] ) : self::PATTERN_CATEGORY,
+				'category'    => $category,
 				'content'     => (string) $template['content'],
+				'preview'     => $preview,
 			];
 		}
 
@@ -308,6 +361,7 @@ class Templates {
 				'description' => __( 'Displays the current post content inside the frontend Reader Mode view.', 'wp-distraction-free-view' ),
 				'category'    => self::PATTERN_CATEGORY,
 				'content'     => self::get_default_template_content(),
+				'preview'     => null,
 			];
 		}
 
@@ -321,12 +375,12 @@ class Templates {
 	 *
 	 * @return bool
 	 */
-	protected function is_pattern_category_registered() {
+	protected function is_pattern_category_registered( $category = self::PATTERN_CATEGORY ) {
 		if ( ! class_exists( '\WP_Block_Pattern_Categories_Registry' ) ) {
 			return false;
 		}
 
-		return \WP_Block_Pattern_Categories_Registry::get_instance()->is_registered( self::PATTERN_CATEGORY );
+		return \WP_Block_Pattern_Categories_Registry::get_instance()->is_registered( $category );
 	}
 
 	/**

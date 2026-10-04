@@ -75,7 +75,9 @@ test.describe( 'Reader Mode RTL fixture proof', () => {
 				( response ) =>
 					response.url().includes(
 						'/wp-json/wp-distraction-free-view/v1/content/'
-					) && 'GET' === response.request().method()
+					) &&
+					'GET' === response.request().method() &&
+					response.ok()
 			);
 			await toggles.first().click();
 			const readerResponse = await readerResponsePromise;

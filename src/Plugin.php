@@ -64,13 +64,16 @@ final class Plugin {
 	public function register_services() {
 		// Load Admin Files.
 		new Admin\Actions();
+		new Admin\ContentSettings();
 		new Admin\Filters();
 		new Admin\Settings();
 		new Admin\Upgrades();
 
 		// Load Frontend Files.
 		new Includes\Actions();
+		new Includes\Abilities();
 		new Includes\Blocks();
+		new Includes\DiscoveryMetadata();
 		new Includes\Filters();
 		new Includes\Templates();
 		new Includes\Shortcodes\Main();

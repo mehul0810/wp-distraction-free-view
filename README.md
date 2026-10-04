@@ -27,7 +27,7 @@ WordPress core already includes distraction-free writing tools for the admin edi
 ## Requirements
 
 - WordPress 6.0 or later
-- Tested up to WordPress 7.1
+- Tested up to WordPress 7.1.2
 - PHP 8.2 or later
 - Node.js 24.15.0
 - npm 11 or later
@@ -87,6 +87,8 @@ The integration suite is intentionally separate from `composer test`. It boots r
 
 ## Release Workflow
 
+Prepare milestone work on `release/<version>` and open its release PR into `main`. Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release triggers deployment to WordPress.org.
+
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
 
 CI also builds the production package from `.distignore`, validates the package shape, and runs Plugin Check against the generated package directory rather than the raw source checkout.
@@ -111,6 +113,12 @@ Available settings:
 - Custom exit label.
 - Reader Mode custom CSS for scoped modal styling.
 - Reader template.
+- Visitor controls to hide media, embeds, and comments in Reader Mode.
+- Optional browser read-aloud controls.
+- Per-content availability and template overrides.
+- Structured public Reader Mode content and opt-in discovery metadata.
+
+The structured-content schema and extension hooks are documented in [the developer API guide](docs/developer-api.md).
 
 Automatic insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
 

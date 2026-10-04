@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/mehulgohil
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.8.4
+Stable tag: 1.9.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,7 +33,11 @@ Use it to offer focused reading for posts, pages, and selected public custom pos
 10. Block-based Reader Mode templates for full site editing themes.
 11. Scoped Reader Mode custom CSS for administrators with the WordPress CSS editing capability.
 12. WordPress-components settings screen.
-13. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
+13. Visitor controls to hide media, embeds, or comments while reading, with preferences stored in the visitor browser.
+14. Optional browser-based read-aloud controls.
+15. Structured public Reader Mode content for integrations, with opt-in discovery metadata.
+16. Per-content Reader Mode availability and template overrides.
+17. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
 
 = Settings Overview =
 
@@ -53,6 +57,9 @@ The settings screen is organized into **About**, **Configure**, and **More Plugi
 * Custom exit label.
 * Reader Mode custom CSS.
 * Reader template.
+* Optional read-aloud controls and public discovery metadata.
+
+Each public content editor can inherit the global Reader Mode settings or override availability and template choice for that item.
 
 Automatic toggle insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
 
@@ -70,13 +77,15 @@ Reader Mode can also open from the URL on enabled single content:
 
 Setup and troubleshooting guide:
 
-https://github.com/mehul0810/wp-distraction-free-view/blob/release/1.8.4/docs/reader-mode-setup.md
+https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/reader-mode-setup.md
 
 = Template Customization =
 
 The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
 
 Themes and site-specific code can add templates with the `wpdfv_modal_templates` filter.
+
+Template definitions accept a non-empty block-markup `content` string and optional `label`, `description`, `category`, and `preview` image and alt text. See [the developer API guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/developer-api.md) for the structured content endpoint, WordPress Abilities API integration, template contract, and extension filters.
 
 == Installation ==
 
@@ -102,6 +111,10 @@ Yes. Add `?reader-mode=1` to enabled single posts, pages, or selected public cus
 = Are visitor preferences stored on the server? =
 
 No. Font size, theme, and content width preferences are saved only in the visitor browser with localStorage.
+
+= Why does a returning visitor see a different theme from the admin default? =
+
+Admin settings provide the initial reading defaults. A visitor's explicit theme, font size, and width choices take precedence in that browser while reader preference controls are enabled. A fresh browser without saved choices uses the admin defaults.
 
 = Does Reader Mode support print and fullscreen? =
 
@@ -143,6 +156,14 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
 
 == Changelog ==
+
+= 1.9.0 =
+- Added: Visitor controls for media, embeds, and comments, optional browser read-aloud, per-content availability and template overrides, structured public content, WordPress Abilities API support, and opt-in discovery metadata.
+- Added: PreviewShare to the free companion plugin catalog.
+- Improved: Redesigned the About and Configure screens with clearer setup guidance, block and shortcode information, admin notices below the header, and a version badge.
+- Improved: More Plugins now uses locally bundled plugin icons and compact, responsive three-column cards on desktop.
+- Improved: The selected settings tab and Configure section remain open after a page refresh.
+- Improved: Formalized and documented the Reader Mode template registry, and split the settings API, plugin catalog, and plugin actions into focused services.
 
 = 1.8.4 =
 - Fixed: Scoped Reader Mode component styles to the plugin root so WordPress block editor controls retain their core styling. [#146](https://github.com/mehul0810/wp-distraction-free-view/issues/146)
@@ -250,6 +271,9 @@ Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdf
 - Ability to change "DF View" button text.
 
 == Upgrade Notice ==
+
+= 1.9.0 =
+Adds the redesigned settings screen, per-content overrides, reader content controls, and integration APIs. Existing settings are preserved. Read-aloud and discovery metadata remain opt-in.
 
 = 1.8.4 =
 Restores WordPress block editor control styling by scoping Reader Mode component styles to the plugin root.
