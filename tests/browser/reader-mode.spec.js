@@ -44,6 +44,42 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
+	test( 'rejects non-canonical post IDs before making a REST request', async ( {
+		page,
+	} ) => {
+		const readerRequests = [];
+		const invalidPostIds = [
+			'../../../wp/v2/users?_method=POST',
+			'..%2f..%2fwp%2fv2%2fusers?_method=POST',
+			'1?context=edit',
+			'1#fragment',
+			'01',
+			'1e2',
+			'1\n',
+		];
+
+		page.on( 'request', ( request ) => {
+			if ( request.url().includes( '/wp-json/' ) ) {
+				readerRequests.push( request.url() );
+			}
+		} );
+
+		for ( const postId of invalidPostIds ) {
+			await page.evaluate( ( value ) => {
+				const trigger = document.createElement( 'button' );
+				trigger.className = 'wpdfv-fullscreen-btn';
+				trigger.dataset.postId = value;
+				document.body.appendChild( trigger );
+				trigger.click();
+				trigger.remove();
+			}, postId );
+		}
+
+		await page.waitForTimeout( 100 );
+		expect( readerRequests ).toEqual( [] );
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
 	test( 'keeps the modal close target clickable without a hover tooltip layer', async ( {
 		page,
 	} ) => {

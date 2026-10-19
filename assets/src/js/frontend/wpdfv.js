@@ -1485,7 +1485,18 @@ const ReaderApp = () => {
 
 	const openReader = useCallback(
 		( postId ) => {
-			if ( ! postId ) {
+			const normalizedPostId =
+				'number' === typeof postId &&
+				Number.isSafeInteger( postId ) &&
+				postId > 0
+					? String( postId )
+					: postId;
+			const isCanonicalPostId =
+				'string' === typeof normalizedPostId &&
+				/^[1-9]/.test( normalizedPostId ) &&
+				! /[^0-9]/.test( normalizedPostId );
+
+			if ( ! isCanonicalPostId ) {
 				return;
 			}
 
@@ -1499,13 +1510,13 @@ const ReaderApp = () => {
 			setScripts( [] );
 			setTocItems( [] );
 			setReadingTime( null );
-			setCurrentPostId( String( postId ) );
+			setCurrentPostId( normalizedPostId );
 			setResumePosition( null );
 			setIsSettingsOpen( false );
 			setProgress( 0 );
 			setLinkFeedback( null );
 
-			apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
+			apiFetch( { path: `${ CONTENT_PATH }${ normalizedPostId }` } )
 				.then( ( response ) => {
 					setTitle( response.title );
 					setPermalink( response.permalink || '' );

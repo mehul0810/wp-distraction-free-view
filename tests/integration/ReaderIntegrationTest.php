@@ -483,6 +483,26 @@ class ReaderIntegrationTest extends TestCase {
 	}
 
 	/**
+	 * TOC generation cannot turn attribute-like title text into executable markup.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_keeps_attribute_text_inside_heading_title() {
+		$title    = 'Comparison > id=foo onmouseover=alert(1)//';
+		$prepared = Reader::prepare_rendered_content( '<h2 title="' . $title . '">Heading</h2>' );
+		$document = new \DOMDocument();
+
+		$document->loadHTML( $prepared['content'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+		$heading = $document->getElementsByTagName( 'h2' )->item( 0 );
+
+		$this->assertInstanceOf( \DOMElement::class, $heading );
+		$this->assertSame( $title, $heading->getAttribute( 'title' ) );
+		$this->assertSame( 'heading', $heading->getAttribute( 'id' ) );
+		$this->assertFalse( $heading->hasAttribute( 'onmouseover' ) );
+		$this->assertSame( 'heading', $prepared['toc'][0]['id'] );
+	}
+
+	/**
 	 * Registered non-YouTube/Spotify providers use the core oEmbed registry.
 	 *
 	 * @return void

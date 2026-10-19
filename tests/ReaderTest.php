@@ -851,6 +851,39 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Text resembling attributes inside a title cannot escape into heading markup.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_does_not_promote_title_text_to_attributes() {
+		$title    = 'Comparison > id=foo onmouseover=alert(1)//';
+		$prepared = Reader::prepare_table_of_contents( '<h2 title="' . $title . '">Heading</h2>' );
+		$document = new \DOMDocument();
+
+		$document->loadHTML( $prepared['content'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+		$heading = $document->getElementsByTagName( 'h2' )->item( 0 );
+
+		$this->assertInstanceOf( \DOMElement::class, $heading );
+		$this->assertSame( $title, $heading->getAttribute( 'title' ) );
+		$this->assertSame( 'heading', $heading->getAttribute( 'id' ) );
+		$this->assertFalse( $heading->hasAttribute( 'onmouseover' ) );
+		$this->assertSame( 'heading', $prepared['items'][0]['id'] );
+	}
+
+	/**
+	 * Malformed headings are preserved without erasing surrounding content.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_preserves_an_unclosed_heading() {
+		$content  = '<p>Before</p><h2 class="section" ' . str_repeat( 'a', 200 ) . '><p>After</p>';
+		$prepared = Reader::prepare_table_of_contents( $content );
+
+		$this->assertSame( $content, $prepared['content'] );
+		$this->assertSame( [], $prepared['items'] );
+	}
+
+	/**
 	 * Developers can customize which full element blocks are removed.
 	 *
 	 * @return void

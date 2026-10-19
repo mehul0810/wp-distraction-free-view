@@ -1284,22 +1284,48 @@ class Reader {
 	 * @return array{content:string,items:array}
 	 */
 	public static function prepare_table_of_contents( $content ) {
-		$content = (string) $content;
-		$items   = [];
-		$used    = [];
+		$content        = (string) $content;
+		$items          = [];
+		$used           = [];
+		$prepared       = '';
+		$content_offset = 0;
+		$search_offset  = 0;
 
-		$content = (string) preg_replace_callback(
-			'#<h([1-6])\b([^>]*)>(.*?)</h\1>#is',
-			static function ( $matches ) use ( &$items, &$used ) {
-				$level      = absint( $matches[1] );
-				$attributes = (string) $matches[2];
-				$inner_html = (string) $matches[3];
-				$text       = trim( wp_strip_all_tags( html_entity_decode( $inner_html, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+		while ( preg_match( '/<h([1-6])\b/i', $content, $opening_match, PREG_OFFSET_CAPTURE, $search_offset ) ) {
+			$opening_tag   = (string) $opening_match[0][0];
+			$opening_start = (int) $opening_match[0][1];
+			$level         = absint( $opening_match[1][0] );
+			$attributes_at = $opening_start + strlen( $opening_tag );
+			$opening_end   = self::find_html_tag_end( $content, $attributes_at );
 
-				if ( '' === $text ) {
-					return $matches[0];
-				}
+			if ( false === $opening_end ) {
+				break;
+			}
 
+			$has_closing_tag = preg_match(
+				'#</h' . $level . '\s*>#i',
+				$content,
+				$closing_match,
+				PREG_OFFSET_CAPTURE,
+				$opening_end + 1
+			);
+
+			if ( 1 !== $has_closing_tag ) {
+				break;
+			}
+
+			$closing_tag   = (string) $closing_match[0][0];
+			$closing_start = (int) $closing_match[0][1];
+			$closing_end   = $closing_start + strlen( $closing_tag );
+			$attributes    = substr( $content, $attributes_at, $opening_end - $attributes_at );
+			$inner_html    = substr( $content, $opening_end + 1, $closing_start - $opening_end - 1 );
+			$text          = trim( wp_strip_all_tags( html_entity_decode( $inner_html, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+
+			$prepared .= substr( $content, $content_offset, $opening_start - $content_offset );
+
+			if ( '' === $text ) {
+				$prepared .= substr( $content, $opening_start, $closing_end - $opening_start );
+			} else {
 				$existing_id = self::get_heading_attribute( $attributes, 'id' );
 				$base_id     = '' !== $existing_id ? sanitize_title( strtolower( $existing_id ) ) : sanitize_title( strtolower( $text ) );
 
@@ -1316,16 +1342,61 @@ class Reader {
 				];
 
 				$attributes = self::set_heading_id_attribute( $attributes, $id );
+				$prepared  .= '<h' . $level . $attributes . '>' . $inner_html . '</h' . $level . '>';
+			}
 
-				return '<h' . $level . $attributes . '>' . $inner_html . '</h' . $level . '>';
-			},
-			$content
-		);
+			$content_offset = $closing_end;
+			$search_offset  = $closing_end;
+		}
+
+		$content = $prepared . substr( $content, $content_offset );
 
 		return [
 			'content' => $content,
 			'items'   => $items,
 		];
+	}
+
+	/**
+	 * Find the end of an opening HTML tag without treating quoted text as markup.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $html   HTML containing the opening tag.
+	 * @param int    $offset First byte after the tag name.
+	 *
+	 * @return int|false Byte offset of the closing angle bracket, or false.
+	 */
+	protected static function find_html_tag_end( $html, $offset ) {
+		$length = strlen( $html );
+		$quote  = '';
+
+		for ( $index = (int) $offset; $index < $length; ++$index ) {
+			$character = $html[ $index ];
+
+			if ( '' !== $quote ) {
+				if ( $quote === $character ) {
+					$quote = '';
+				}
+
+				continue;
+			}
+
+			if ( '"' === $character || "'" === $character ) {
+				$quote = $character;
+				continue;
+			}
+
+			if ( '>' === $character ) {
+				return $index;
+			}
+
+			if ( '<' === $character ) {
+				return false;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -1339,17 +1410,58 @@ class Reader {
 	 * @return string
 	 */
 	protected static function get_heading_attribute( $attributes, $name ) {
-		if ( ! preg_match( '/(?:^|\s)' . preg_quote( $name, '/' ) . '\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))/i', $attributes, $match ) ) {
-			return '';
-		}
+		$name = strtolower( (string) $name );
 
-		foreach ( [ 1, 2, 3 ] as $index ) {
-			if ( isset( $match[ $index ] ) && '' !== $match[ $index ] ) {
-				return html_entity_decode( $match[ $index ], ENT_QUOTES, get_bloginfo( 'charset' ) );
+		foreach ( self::parse_html_attributes( $attributes ) as $attribute ) {
+			if ( strtolower( $attribute['name'] ) === $name && 'n' === $attribute['vless'] ) {
+				return html_entity_decode( $attribute['value'], ENT_QUOTES, get_bloginfo( 'charset' ) );
 			}
 		}
 
 		return '';
+	}
+
+	/**
+	 * Parse an HTML attribute list without matching text inside quoted values.
+	 *
+	 * WordPress 6.0 does not include WP_HTML_Tag_Processor, so use the KSES
+	 * attribute parser available throughout the plugin's supported range.
+	 * Invalid names and case-insensitive duplicates are discarded before any
+	 * attributes are read or serialized.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $attributes Raw attribute string.
+	 *
+	 * @return array<int,array{name:string,value:string,vless:string}>
+	 */
+	protected static function parse_html_attributes( $attributes ) {
+		$parsed     = wp_kses_hair( trim( (string) $attributes ), wp_allowed_protocols() );
+		$attributes = [];
+		$seen       = [];
+
+		foreach ( $parsed as $attribute ) {
+			$name = isset( $attribute['name'] ) ? (string) $attribute['name'] : '';
+
+			if ( ! preg_match( '/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/D', $name ) ) {
+				continue;
+			}
+
+			$normalized_name = strtolower( $name );
+
+			if ( isset( $seen[ $normalized_name ] ) ) {
+				continue;
+			}
+
+			$seen[ $normalized_name ] = true;
+			$attributes[]             = [
+				'name'  => $name,
+				'value' => isset( $attribute['value'] ) ? (string) $attribute['value'] : '',
+				'vless' => isset( $attribute['vless'] ) && 'y' === $attribute['vless'] ? 'y' : 'n',
+			];
+		}
+
+		return $attributes;
 	}
 
 	/**
@@ -1387,13 +1499,31 @@ class Reader {
 	 * @return string
 	 */
 	protected static function set_heading_id_attribute( $attributes, $id ) {
-		$id = esc_attr( $id );
+		$serialized = [];
+		$has_id     = false;
 
-		if ( preg_match( '/(?:^|\s)id\s*=/i', $attributes ) ) {
-			return preg_replace( '/\s*id\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+)/i', ' id="' . $id . '"', $attributes, 1 );
+		foreach ( self::parse_html_attributes( $attributes ) as $attribute ) {
+			$name = $attribute['name'];
+
+			if ( 'id' === strtolower( $name ) ) {
+				$name               = 'id';
+				$attribute['value'] = (string) $id;
+				$attribute['vless'] = 'n';
+				$has_id             = true;
+			}
+
+			if ( 'y' === $attribute['vless'] ) {
+				$serialized[] = $name;
+			} else {
+				$serialized[] = $name . '="' . esc_attr( $attribute['value'] ) . '"';
+			}
 		}
 
-		return rtrim( $attributes ) . ' id="' . $id . '"';
+		if ( ! $has_id ) {
+			$serialized[] = 'id="' . esc_attr( $id ) . '"';
+		}
+
+		return ' ' . implode( ' ', $serialized );
 	}
 
 	/**

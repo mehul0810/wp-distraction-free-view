@@ -393,6 +393,50 @@ function wp_kses_post( $content ) {
 	return preg_replace( '#</?(script|style|noscript)\b[^>]*>#i', '', (string) $content );
 }
 
+function wp_allowed_protocols() {
+	return [ 'http', 'https' ];
+}
+
+function wp_kses_hair( $attributes, $allowed_protocols ) {
+	unset( $allowed_protocols );
+
+	$parsed = [];
+	preg_match_all(
+		'/(?:^|\s)([_a-zA-Z][-_a-zA-Z0-9:.]*)(?:\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\']+)))?/',
+		(string) $attributes,
+		$matches,
+		PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL
+	);
+
+	foreach ( $matches as $match ) {
+		$name = $match[1];
+
+		if ( isset( $parsed[ $name ] ) ) {
+			continue;
+		}
+
+		$value = '';
+		$vless = 'y';
+
+		foreach ( [ 2, 3, 4 ] as $index ) {
+			if ( null !== $match[ $index ] ) {
+				$value = $match[ $index ];
+				$vless = 'n';
+				break;
+			}
+		}
+
+		$parsed[ $name ] = [
+			'name'  => $name,
+			'value' => $value,
+			'whole' => $match[0],
+			'vless' => $vless,
+		];
+	}
+
+	return $parsed;
+}
+
 function strip_shortcodes( $content ) {
 	return preg_replace( '/\[[^\]]+\]/', '', (string) $content );
 }
