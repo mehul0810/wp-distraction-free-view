@@ -41,7 +41,7 @@ Clone the repository into your local WordPress plugins directory:
 
 ```bash
 cd /path/to/wp-content/plugins
-git clone https://github.com/mehul0810/wp-distraction-free-view.git
+git clone --branch main https://github.com/mehul0810/wp-distraction-free-view.git
 cd wp-distraction-free-view
 ```
 
@@ -49,7 +49,7 @@ Install dependencies:
 
 ```bash
 composer install
-npm install
+npm ci
 ```
 
 Build assets:
@@ -87,9 +87,13 @@ The integration suite is intentionally separate from `composer test`. It boots r
 
 ## Release Workflow
 
-Prepare milestone work on `release/<version>` and open its release PR into `main`. Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release triggers deployment to WordPress.org.
+Use `main` as the single integration branch. Open short-lived feature, fix, and dependency PRs into `main`; an optional `release/<version>` branch is only for final release preparation and also merges into `main`. See [Contributing](CONTRIBUTING.md) for checks and the [migration plan](.github/MAIN-MIGRATION.md) for existing `develop` PRs.
 
-The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
+Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata and successful CI on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release does not deploy to WordPress.org under this workflow. An authorized maintainer must separately run **Deploy to WordPress.org** from `main`, providing the existing stable tag and the confirmation `deploy-to-wordpress-org`. The workflow checks main ancestry, version metadata, and successful CI for that exact commit before deployment. See the [release checklist](.github/RELEASING.md).
+
+The WordPress.org release workflow retains the 10up deploy action and uploads its generated ZIP to the matching GitHub release. `gh release upload --clobber` provides upload replacement, not content-correct idempotence. Prereleases retain the separate artifact-only workflow; they do not deploy to WordPress.org.
+
+Do not rerun deployment for a stale published version after SVN trunk has advanced. The existing 10up action generates its ZIP from current SVN trunk even when the requested version's SVN tag already exists, so a rerun can replace an older GitHub release asset with newer contents. Before any approved retry, inspect SVN trunk and the requested SVN tag, and verify the artifact's version and contents against the intended release. Follow the [retry checks](.github/RELEASING.md); this pre-existing action behavior is unchanged by the pilot.
 
 CI also builds the production package from `.distignore`, validates the package shape, and runs Plugin Check against the generated package directory rather than the raw source checkout.
 

@@ -1,19 +1,76 @@
 name: Deploy to WordPress.org
 
 on:
-  release:
-    types: [ released ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing stable release tag (X.Y.Z or vX.Y.Z)'
+        required: true
+        type: string
+      confirmation:
+        description: 'Type deploy-to-wordpress-org after owner approval'
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
+
+# Do not interrupt an in-flight SVN deployment or allow concurrent releases.
+concurrency:
+  group: wordpress-org-release
+  cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Validate approved release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Require deliberate dispatch from main
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$DISPATCH_REF" = refs/heads/main
+          test "$CONFIRMATION" = deploy-to-wordpress-org
+          [[ "$RELEASE_TAG" =~ ^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+
+      - name: Checkout release validation code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag, version metadata and exact-commit CI
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          sha=$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+          gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f head_sha="$sha" -f branch=main -f event=push -f per_page=100 > "$RUNNER_TEMP/runs.json"
+          python3 .github/scripts/check-release.py --tag "$RELEASE_TAG" \
+            --release-json "$RUNNER_TEMP/release.json" --runs-json "$RUNNER_TEMP/runs.json"
+
   tag:
     name: New release
+    needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout code
+      - name: Checkout validated commit
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
 
       - name: Install composer dependencies
         uses: php-actions/composer@v2
@@ -29,6 +86,13 @@ jobs:
         run: |
           npm ci
           npm run build
+
+      - name: Validate production package shape
+        run: |
+          mkdir -p build
+          rsync -rc --exclude-from="$GITHUB_WORKSPACE/.distignore" "$GITHUB_WORKSPACE/" build/wp-distraction-free-view/ --delete --delete-excluded
+          bash .github/scripts/check-production-package.sh build/wp-distraction-free-view
+
       - name: WordPress Plugin Deploy
         id: deploy
         uses: 10up/action-wordpress-plugin-deploy@stable
@@ -38,8 +102,12 @@ jobs:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: wp-distraction-free-view
+          # workflow_dispatch has a branch ref; use the verified tag's version.
+          VERSION: ${{ needs.validate.outputs.version }}
 
       - name: Upload release asset idempotently
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" "${{ github.workspace }}/wp-distraction-free-view.zip#${{ github.event.repository.name }}.zip" --clobber
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          ZIP_PATH: ${{ steps.deploy.outputs.zip-path }}
+        run: gh release upload "$RELEASE_TAG" "$ZIP_PATH#wp-distraction-free-view.zip" --clobber
