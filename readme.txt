@@ -13,147 +13,50 @@ Adds frontend Reader Mode so visitors can focus on posts, pages, and selected pu
 
 == Description ==
 
-**WP Distraction Free View** adds a clean frontend Reader Mode to WordPress, helping visitors focus on your content without sidebars, widgets, navigation, and visual clutter.
+Give visitors a **Read in Reader Mode** button that opens the article over the current page. They can read without the theme’s navigation or sidebar, then close the reader to return to the page.
 
-WordPress core already includes distraction-free writing tools for the admin editor. This plugin is for the frontend visitor reading experience.
+Readers can adjust the theme, text size, and width, hide media, embeds, or comments when controls are enabled, and print or use fullscreen. Optional reading tools include progress, reading time, a table of contents, resume reading, and browser read-aloud. Read-aloud requires a matching local browser voice.
 
-Use it to offer focused reading for posts, pages, and selected public custom post types. Visitors can open content in a polished Reader Mode overlay, use the Reader settings control in the modal header to adjust font size, switch between light/dark/sepia themes, choose a comfortable content width, print the reader view, or use browser fullscreen.
+Add a Reader Mode Toggle block or `[wpdfv]` shortcode, choose an automatic button placement, or open enabled content with `?reader-mode=1`. New installations start with manual placement.
 
-= Features =
+Under **Settings > Reader Mode > Configure**, use **General** to choose post types and button placement, **Appearance** for reader defaults, **Reading tools** for optional controls, and **Advanced** for scoped custom CSS. Individual content can override availability and the reader template. Block themes can also use Reader Mode templates.
 
-1. Frontend Reader Mode for posts, pages, and selected public custom post types.
-2. Clean reading column with comfortable typography, spacing, and width.
-3. Reader Mode Toggle block for posts, pages, custom post types, and Query Loop templates.
-4. Shortcode support with `[wpdfv]`.
-5. Optional automatic toggle placement before content, after content, or as a floating button.
-6. URL activation with `?reader-mode=1`.
-7. Visitor preferences for font size, theme, and content width saved in localStorage only.
-8. Optional reading progress indicator.
-9. Optional estimated reading time.
-10. Block-based Reader Mode templates for full site editing themes.
-11. Scoped Reader Mode custom CSS for administrators with the WordPress CSS editing capability.
-12. WordPress-components settings screen.
-13. Visitor controls to hide media, embeds, or comments while reading, with preferences stored in the visitor browser.
-14. Optional browser-based read-aloud controls.
-15. Structured public Reader Mode content for integrations, with opt-in discovery metadata.
-16. Per-content Reader Mode availability and template overrides.
-17. Lightweight frontend assets with no external tracking, telemetry, or third-party libraries.
-
-= Settings Overview =
-
-Go to **Settings > Reader Mode** to configure:
-
-The settings screen is organized into **About**, **Configure**, and **More Plugins** tabs. Reader Mode configuration lives under **Configure**.
-
-* Enable Reader Mode for selected public post types.
-* Toggle placement: manual only, before content, after content, or floating.
-* Reading progress.
-* Estimated reading time.
-* Reader preference controls.
-* Default reader theme: light, dark, or sepia.
-* Default content width: narrow, default, or wide.
-* Default font size: small, default, or large.
-* Custom toggle label.
-* Custom exit label.
-* Reader Mode custom CSS.
-* Reader template.
-* Optional read-aloud controls and public discovery metadata.
-
-Each public content editor can inherit the global Reader Mode settings or override availability and template choice for that item.
-
-Automatic toggle insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
-
-= Usage =
-
-Use the Reader Mode Toggle block in posts, pages, public custom post types, single templates, and Query Loop templates.
-
-Use the shortcode:
-
-`[wpdfv]`
-
-Reader Mode can also open from the URL on enabled single content:
-
-`https://example.com/my-post/?reader-mode=1`
-
-Setup and troubleshooting guide:
-
-https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/reader-mode-setup.md
-
-= Template Customization =
-
-The Reader Mode content is rendered through block-based templates. The plugin registers a default Reader Mode layout and a `WP Distraction Free View` pattern category for block themes.
-
-Themes and site-specific code can add templates with the `wpdfv_modal_templates` filter.
-
-Template definitions accept a non-empty block-markup `content` string and optional `label`, `description`, `category`, and `preview` image and alt text. See [the developer API guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/developer-api.md) for the structured content endpoint, WordPress Abilities API integration, template contract, and extension filters.
+See the [setup and troubleshooting guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/reader-mode-setup.md) or the [developer API guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/developer-api.md) for integration details.
 
 == Installation ==
 
-1. Upload `wp-distraction-free-view` to the `wp-content/plugins/` directory.
-2. Activate the plugin through the **Plugins** menu in WordPress.
-3. Configure the plugin from **Settings > Reader Mode**.
-4. Add the Reader Mode Toggle block or shortcode where needed, or enable automatic toggle insertion.
+1. Install and activate WP Distraction Free View through WordPress, or upload the plugin directory to `wp-content/plugins/` and activate it.
+2. Open **Settings > Reader Mode > Configure > General** and select the post types where Reader Mode should be available. Save your changes.
+3. Add the **Reader Mode Toggle** block or `[wpdfv]` shortcode to content, or choose an automatic placement under **General**.
+4. Visit an enabled post or page and select the toggle to open Reader Mode.
 
 == Frequently Asked Questions ==
 
-= Is this the same as WordPress editor distraction-free mode? =
+= Why is the toggle missing? =
 
-No. WordPress core distraction-free mode is for writing in the admin editor. WP Distraction Free View is for the frontend visitor reading experience.
+Check the enabled post types and button placement in **Settings > Reader Mode > Configure > General**. Automatic placement is disabled on new installations, so add a block or shortcode or choose an automatic placement. Existing installations retain their previous automatic placement setting during upgrade unless it was already disabled.
 
-= Can I place the Reader Mode toggle manually? =
+= Can I open Reader Mode with a link? =
 
-Yes. Use the Reader Mode Toggle block or the `[wpdfv]` shortcode.
+Yes. Open Reader Mode on an enabled post or page and use **Copy Reader Mode link** in the toolbar. You can also add `?reader-mode=1` to a permalink, or `&reader-mode=1` if the URL already has a query string.
 
-= Can Reader Mode open from a URL? =
+= Where are visitor preferences saved? =
 
-Yes. Add `?reader-mode=1` to enabled single posts, pages, or selected public custom post types.
+Theme, text size, width, and content visibility preferences are saved in the visitor's browser using localStorage when available. When resume reading is enabled, reading position is also stored there. A visitor's saved choices take precedence over the administrator's defaults while reader preference controls are enabled.
 
-= Are visitor preferences stored on the server? =
+= Can I change the Reader Mode design? =
 
-No. Font size, theme, and content width preferences are saved only in the visitor browser with localStorage.
+Choose defaults under **Configure > Appearance**. Administrators with the WordPress CSS editing capability can add scoped styles under **Configure > Advanced > Custom CSS**. Block themes and site-specific code can also add templates; see the [developer API guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/developer-api.md).
 
-= Why does a returning visitor see a different theme from the admin default? =
+= Where can I get help? =
 
-Admin settings provide the initial reading defaults. A visitor's explicit theme, font size, and width choices take precedence in that browser while reader preference controls are enabled. A fresh browser without saved choices uses the admin defaults.
-
-= Does Reader Mode support print and fullscreen? =
-
-Yes. Reader Mode includes icon-only print and fullscreen controls in the modal header.
-
-= Can block themes customize the Reader Mode layout? =
-
-Yes. The plugin registers a default block-based Reader Mode template and a WP Distraction Free View pattern category. Themes and site-specific code can add more templates with the `wpdfv_modal_templates` filter.
-
-= Can I customize Reader Mode styles? =
-
-Yes. Users who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from Settings > Reader Mode > Configure > Custom CSS.
-
-Scope selectors to Reader Mode containers, for example:
-
-`
-.wpdfv-reader-modal .wpdfv-reader-content {
-	font-family: Georgia, serif;
-}
-
-.wpdfv-reader-modal .wpdfv-reader-content h1,
-.wpdfv-reader-modal .wpdfv-reader-content h2 {
-	color: #1f2937;
-}
-
-.wpdfv-reader-modal {
-	--wpdfv-reader-accent-color: #3858e9;
-}
-`
-
-= Will old settings keep working? =
-
-Yes. Existing saved settings remain in the `wpdfv_settings` option and old `wpdfv_general` values are migrated during upgrade. The supported shortcode remains `[wpdfv]`.
+See the [setup and troubleshooting guide](https://github.com/mehul0810/wp-distraction-free-view/blob/main/docs/reader-mode-setup.md) or ask in the [WordPress.org support forum](https://wordpress.org/support/plugin/wp-distraction-free-view/).
 
 == Screenshots ==
 
-1. Reader Mode settings screen.
-2. Reader Mode toggle on frontend content.
-3. Reader Mode modal with reading time, print/fullscreen controls, and the Reader settings side panel.
+1. Choose which content types offer Reader Mode and where the button appears under Configure > General.
+2. The Read in Reader Mode button on a published article, placed with the shortcode.
+3. The same article in the sepia reader theme, with reading time, reader settings, link, print, and fullscreen controls in the toolbar.
 
 == Changelog ==
 
