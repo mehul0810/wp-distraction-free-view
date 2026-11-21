@@ -33,6 +33,9 @@ jobs:
       - name: PHP coding standards
         run: composer lint
 
+      - name: PHP static analysis
+        run: composer analyse
+
       - name: PHPUnit
         run: composer test
 
