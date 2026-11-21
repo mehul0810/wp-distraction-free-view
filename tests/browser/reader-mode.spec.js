@@ -1038,6 +1038,136 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( modalSelector ) ).toBeVisible();
 		await expect( page.getByText( /Resume from/ ) ).toHaveCount( 0 );
 	} );
+
+	test( 'ignores superseded content requests after close and reopen', async ( {
+		page,
+	} ) => {
+		const releaseStale = [];
+		let requestCount = 0;
+
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			async ( route ) => {
+				requestCount += 1;
+				const isStale = 1 === requestCount;
+
+				if ( isStale ) {
+					// Hold the first (stale) response until the test releases it.
+					await new Promise( ( resolve ) =>
+						releaseStale.push( resolve )
+					);
+				}
+
+				await route
+					.fulfill( {
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify( {
+							id: 1,
+							title: isStale
+								? 'Stale Article'
+								: 'Current Article',
+							permalink: isStale
+								? 'https://example.com/stale/'
+								: 'https://example.com/current/',
+							content: `<div class="wp-block-post-content"><p>${
+								isStale ? 'Stale body' : 'Current body'
+							}</p></div>`,
+							scripts: [],
+							toc: [],
+							readingTime: { minutes: 1, label: '1 min read' },
+						} ),
+					} )
+					.catch( () => {} );
+			}
+		);
+
+		// Open A, then close while it is still loading.
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( modalSelector ) ).toBeVisible();
+		await expect.poll( () => releaseStale.length ).toBe( 1 );
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.first()
+			.click();
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+
+		// Open B (the current session) and let it finish.
+		await openReader( page );
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+
+		// Releasing the stale response must not change the current session.
+		releaseStale[ 0 ]();
+		await page.waitForTimeout( 300 );
+
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+		await expect(
+			page.locator( '.wpdfv-reader-content' )
+		).not.toContainText( 'Stale body' );
+		await expect(
+			page.locator( '.wpdfv-reader-notice--error' )
+		).toHaveCount( 0 );
+	} );
+
+	test( 'does not show a load error for an intentionally cancelled request', async ( {
+		page,
+	} ) => {
+		let requestCount = 0;
+
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			async ( route ) => {
+				requestCount += 1;
+
+				if ( 1 === requestCount ) {
+					await route.fulfill( {
+						status: 500,
+						contentType: 'application/json',
+						body: JSON.stringify( { code: 'stale_failure' } ),
+					} );
+					return;
+				}
+
+				await new Promise( ( resolve ) => setTimeout( resolve, 600 ) );
+				await route
+					.fulfill( {
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify( {
+							id: 1,
+							title: 'Current Article',
+							permalink: 'https://example.com/current/',
+							content:
+								'<div class="wp-block-post-content"><p>Current body</p></div>',
+							scripts: [],
+							toc: [],
+							readingTime: { minutes: 1, label: '1 min read' },
+						} ),
+					} )
+					.catch( () => {} );
+			}
+		);
+
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( modalSelector ) ).toBeVisible();
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.first()
+			.click();
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+		await expect(
+			page.locator( '.wpdfv-reader-notice--error' )
+		).toHaveCount( 0 );
+	} );
 } );
 
 async function openReader( page ) {
