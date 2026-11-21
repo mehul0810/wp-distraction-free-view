@@ -1123,6 +1123,7 @@ const ReaderApp = () => {
 	);
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
+	const activeRequestRef = useRef( null );
 	const utteranceRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
 	const feedbackTimeoutRef = useRef( null );
@@ -1471,7 +1472,18 @@ const ReaderApp = () => {
 		}
 	};
 
+	const cancelActiveRequest = useCallback( () => {
+		const activeRequest = activeRequestRef.current;
+
+		activeRequestRef.current = null;
+
+		if ( activeRequest && activeRequest.controller ) {
+			activeRequest.controller.abort();
+		}
+	}, [] );
+
 	const closeReader = useCallback( () => {
+		cancelActiveRequest();
 		stopReadAloud();
 		setIsOpen( false );
 		setIsSettingsOpen( false );
@@ -1481,7 +1493,7 @@ const ReaderApp = () => {
 		setTocItems( [] );
 		setResumePosition( null );
 		setLinkFeedback( null );
-	}, [ stopReadAloud ] );
+	}, [ cancelActiveRequest, stopReadAloud ] );
 
 	const openReader = useCallback(
 		( postId ) => {
@@ -1500,6 +1512,19 @@ const ReaderApp = () => {
 				return;
 			}
 
+			// Each open owns its response lifecycle; any older request is
+			// invalidated and aborted where supported.
+			cancelActiveRequest();
+			const request = {
+				controller:
+					'undefined' !== typeof window.AbortController
+						? new window.AbortController()
+						: null,
+			};
+			const isCurrent = () => activeRequestRef.current === request;
+
+			activeRequestRef.current = request;
+
 			stopReadAloud();
 			setIsOpen( true );
 			setIsLoading( true );
@@ -1516,8 +1541,17 @@ const ReaderApp = () => {
 			setProgress( 0 );
 			setLinkFeedback( null );
 
-			apiFetch( { path: `${ CONTENT_PATH }${ normalizedPostId }` } )
+			apiFetch( {
+				path: `${ CONTENT_PATH }${ normalizedPostId }`,
+				signal: request.controller
+					? request.controller.signal
+					: undefined,
+			} )
 				.then( ( response ) => {
+					if ( ! isCurrent() ) {
+						return;
+					}
+
 					setTitle( response.title );
 					setPermalink( response.permalink || '' );
 					setContent( response.content );
@@ -1532,6 +1566,11 @@ const ReaderApp = () => {
 					setReadingTime( response.readingTime );
 				} )
 				.catch( () => {
+					// Superseded or intentionally cancelled requests are not failures.
+					if ( ! isCurrent() ) {
+						return;
+					}
+
 					setError(
 						__(
 							'This content could not be loaded in Reader Mode.',
@@ -1539,9 +1578,14 @@ const ReaderApp = () => {
 						)
 					);
 				} )
-				.finally( () => setIsLoading( false ) );
+				.finally( () => {
+					if ( isCurrent() ) {
+						activeRequestRef.current = null;
+						setIsLoading( false );
+					}
+				} );
 		},
-		[ stopReadAloud ]
+		[ cancelActiveRequest, stopReadAloud ]
 	);
 
 	useEffect( () => {
