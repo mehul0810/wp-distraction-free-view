@@ -1,0 +1,13 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    paths:
+        - wp-distraction-free-view.php
+        - uninstall.php
+        - src
+    treatPhpDocTypesAsCertain: false
