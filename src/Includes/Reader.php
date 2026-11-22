@@ -1468,7 +1468,7 @@ class Reader {
 				}
 
 				if ( '>' === $current ) {
-					$tag .= '>';
+					$tag   .= '>';
 					$closed = true;
 					++$cursor;
 					break;
