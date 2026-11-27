@@ -501,7 +501,7 @@ const getStoredReaderPosition = ( postId ) => {
 		? {
 				scrollTop: Number( entry.scrollTop ),
 				progress: Number( entry.progress ),
-		  }
+			}
 		: null;
 };
 
@@ -558,7 +558,7 @@ const getFocusableElements = ( container ) =>
 		}
 	);
 
-const ReaderButton = forwardRef( function ReaderButton(
+const ReaderButton = forwardRef( function ReaderButtonWithRef(
 	{
 		ariaLabel,
 		children,
@@ -1852,11 +1852,11 @@ const ReaderApp = () => {
 									? __(
 											'Exit fullscreen',
 											'wp-distraction-free-view'
-									  )
+										)
 									: __(
 											'Fullscreen',
 											'wp-distraction-free-view'
-									  )
+										)
 							}
 							onClick={ toggleFullscreen }
 						/>
