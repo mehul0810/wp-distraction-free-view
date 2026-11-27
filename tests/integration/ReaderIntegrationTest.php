@@ -694,14 +694,12 @@ class ReaderIntegrationTest extends TestCase {
 		$post_id = $this->create_post(
 			[
 				'post_status' => 'publish',
+				'post_title'  => 'ReaderToggleQueryFixture',
 			]
 		);
 
 		$markup = do_blocks(
-			sprintf(
-				'<!-- wp:query {"queryId":1,"query":{"perPage":1,"postType":"post","include":[%1$d]}} --><!-- wp:post-template --><!-- wp:wpdfv/reader-button {"buttonText":"Open Reader"} /--><!-- /wp:post-template --><!-- /wp:query -->',
-				$post_id
-			)
+			'<!-- wp:query {"queryId":1,"query":{"perPage":1,"postType":"post","search":"ReaderToggleQueryFixture"}} --><!-- wp:post-template --><!-- wp:wpdfv/reader-button {"buttonText":"Open Reader"} /--><!-- /wp:post-template --><!-- /wp:query -->'
 		);
 
 		$this->assertStringContainsString( 'wpdfv-reader-toggle', $markup );

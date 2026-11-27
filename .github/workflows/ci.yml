@@ -72,7 +72,7 @@ jobs:
     name: WordPress integration tests
     runs-on: ubuntu-latest
 
-    services:
+    services: &wordpress-services
       mysql:
         image: mysql:8.4
         env:
@@ -128,6 +128,40 @@ jobs:
           ln -s "$GITHUB_WORKSPACE" "$core/wp-content/plugins/wp-distraction-free-view"
           wp plugin activate wp-distraction-free-view --path="$core"
           vendor/bin/phpunit --no-configuration --bootstrap "$core/wp-load.php" tests/integration/ReaderMarkupIntegrationTest.php
+
+  compatibility:
+    name: Compatibility (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    services: *wordpress-services
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.2'
+            wordpress: '6.0 6.1 6.2 6.3 6.4 6.5 6.6 6.7 6.8 6.9 7.0 7.1 7.2'
+          - php: '8.3'
+            wordpress: '6.4 6.5 6.6 6.7 6.8 6.9 7.0 7.1 7.2'
+          - php: '8.4'
+            wordpress: '6.7 6.8 6.9 7.0 7.1 7.2'
+          - php: '8.5'
+            wordpress: '6.9 7.0 7.1 7.2'
+          - php: '8.6'
+            wordpress: '7.2'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2, wp-cli
+
+      - run: composer install --prefer-dist --no-progress
+      - run: composer test
+      - name: Test installed WordPress releases
+        env:
+          WP_SERIES: ${{ matrix.wordpress }}
+        run: bash .github/scripts/test-wordpress-versions.sh
 
   production-package:
     name: Production package and Plugin Check
