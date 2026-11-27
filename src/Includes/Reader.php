@@ -746,6 +746,7 @@ class Reader {
 		 */
 		$content = (string) apply_filters( 'wpdfv_modal_content_before_kses', $content, $post );
 
+		$content = self::encode_markup_inside_tag_attributes( $content );
 		$content = wp_kses_post( $content );
 		$content = self::restore_supported_provider_iframes( $content, $protected_iframes );
 
@@ -1397,6 +1398,101 @@ class Reader {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Entity-encode angle brackets that appear inside quoted tag attribute values.
+	 *
+	 * WordPress KSES splits tags with a naive matcher that treats the first
+	 * ">" as the end of a tag, even when it falls inside a quoted attribute
+	 * value. For spec-valid markup such as `<h2 title="a > b">` that drops the
+	 * attribute entirely and leaks the remainder as text. Encoding the bare
+	 * "<" and ">" characters inside quoted attribute values to entities keeps
+	 * the tag boundaries unambiguous so KSES preserves the attribute while
+	 * still stripping anything genuinely unsafe. Content outside tag attribute
+	 * values is returned byte-for-byte unchanged.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $content HTML content to normalize before KSES.
+	 *
+	 * @return string
+	 */
+	protected static function encode_markup_inside_tag_attributes( $content ) {
+		$content = (string) $content;
+		$length  = strlen( $content );
+
+		if ( 0 === $length ) {
+			return $content;
+		}
+
+		$result = '';
+		$index  = 0;
+
+		while ( $index < $length ) {
+			$character = $content[ $index ];
+
+			if ( '<' !== $character || $index + 1 >= $length || 1 !== preg_match( '/[a-zA-Z\/!?]/', $content[ $index + 1 ] ) ) {
+				$result .= $character;
+				++$index;
+				continue;
+			}
+
+			$tag    = '<';
+			$quote  = '';
+			$closed = false;
+			$cursor = $index + 1;
+
+			for ( ; $cursor < $length; ++$cursor ) {
+				$current = $content[ $cursor ];
+
+				if ( '' !== $quote ) {
+					if ( $quote === $current ) {
+						$quote = '';
+						$tag  .= $current;
+					} elseif ( '>' === $current ) {
+						$tag .= '&gt;';
+					} elseif ( '<' === $current ) {
+						$tag .= '&lt;';
+					} else {
+						$tag .= $current;
+					}
+
+					continue;
+				}
+
+				if ( '"' === $current || "'" === $current ) {
+					$quote = $current;
+					$tag  .= $current;
+					continue;
+				}
+
+				if ( '>' === $current ) {
+					$tag   .= '>';
+					$closed = true;
+					++$cursor;
+					break;
+				}
+
+				if ( '<' === $current ) {
+					break;
+				}
+
+				$tag .= $current;
+			}
+
+			if ( $closed ) {
+				$result .= $tag;
+				$index   = $cursor;
+				continue;
+			}
+
+			// Not a well-formed tag; emit the "<" literally and keep scanning.
+			$result .= '<';
+			++$index;
+		}
+
+		return $result;
 	}
 
 	/**
