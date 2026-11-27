@@ -94,12 +94,12 @@ class Actions {
 		wp_enqueue_style( 'wpdfv-core' );
 		wp_enqueue_script( 'wpdfv-core' );
 		self::enqueue_reader_interactivity_modules();
-		self::add_custom_css();
 
 		if ( self::$frontend_settings_added ) {
 			return;
 		}
 
+		self::add_custom_css();
 		wp_add_inline_script( 'wpdfv-core', 'window.wpdfvReaderMode = ' . wp_json_encode( self::get_frontend_settings() ) . ';', 'before' );
 		self::$frontend_settings_added = true;
 	}
@@ -204,11 +204,7 @@ class Actions {
 	 * @return bool
 	 */
 	protected function is_supported_reader_context( \WP_Post $post ) {
-		if ( function_exists( 'is_singular' ) && ! is_singular( $post->post_type ) ) {
-			return false;
-		}
-
-		return Reader::is_post_enabled_for_post( $post );
+		return Helpers::is_supported_reader_context( $post );
 	}
 
 	/**

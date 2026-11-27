@@ -49,8 +49,7 @@ class Filters {
 			return $content;
 		}
 
-		// Bailout, if not to show on specific post type.
-		if ( ! Reader::is_post_enabled_for_post( $post ) ) {
+		if ( ! Helpers::is_supported_reader_context( $post ) ) {
 			return $content;
 		}
 

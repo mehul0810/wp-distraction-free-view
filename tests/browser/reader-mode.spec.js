@@ -427,6 +427,50 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( commentsToggle ).not.toBeChecked();
 	} );
 
+	test( 'keeps protected media visible and scales with sibling images', async ( {
+		page,
+	} ) => {
+		await setContentSelectors( page, {
+			media: [ 'img', 'picture', '.media-container' ],
+			protected: [ '.protected' ],
+		} );
+		await mockReaderContentResponse(
+			page,
+			'<div class="media-container"><picture><img alt="nested"></picture></div>' +
+				'<div class="media-container"><span class="protected">Protected child</span></div>' +
+				'<div class="protected"><img alt="protected ancestor"></div>' +
+				Array.from(
+					{ length: 1000 },
+					( _, index ) => `<img alt="Image ${ index }">`
+				).join( '' )
+		);
+		await page.evaluate(
+			( key ) => localStorage.removeItem( key ),
+			storageKey
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await page.evaluate( () => {
+			window.wpdfvContainsCalls = 0;
+			const contains = Element.prototype.contains;
+			Element.prototype.contains = function ( node ) {
+				window.wpdfvContainsCalls += 1;
+				return contains.call( this, node );
+			};
+		} );
+		await page.getByLabel( 'Show images and media' ).uncheck();
+		await expect(
+			page.locator( '.wpdfv-reader-hidden-media' )
+		).toHaveCount( 1001 );
+		await expect( page.getByText( 'Protected child' ) ).toBeVisible();
+		await expect( page.getByAltText( 'protected ancestor' ) ).toBeVisible();
+		await expect( page.getByAltText( 'nested' ) ).toBeHidden();
+		expect(
+			await page.evaluate( () => window.wpdfvContainsCalls )
+		).toBeLessThan( 10000 );
+	} );
+
 	test( 'keeps content visible while its controls are disabled and restores saved choices', async ( {
 		page,
 	} ) => {
@@ -785,6 +829,49 @@ test.describe( 'Reader Mode smoke', () => {
 				)
 			)
 			.toBe( true );
+	} );
+
+	test( 'navigates to a reader heading when another element has the same id', async ( {
+		page,
+	} ) => {
+		await page.addInitScript( () => {
+			let config;
+			Object.defineProperty( window, 'wpdfvReaderMode', {
+				configurable: true,
+				get: () => config,
+				set: ( value ) => {
+					config = { ...value, readerTocEnabled: true };
+				},
+			} );
+		} );
+		await page.reload();
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			( route ) =>
+				route.fulfill( {
+					json: {
+						id: 1,
+						title: 'Reader example',
+						permalink: 'https://example.com/article/',
+						content:
+							'<p id="introduction">Start</p><h2 id="introduction">Introduction</h2><h2 id="conclusion">Conclusion</h2>',
+						scripts: [],
+						toc: [
+							{
+								id: 'introduction',
+								level: 2,
+								text: 'Introduction',
+							},
+							{ id: 'conclusion', level: 2, text: 'Conclusion' },
+						],
+					},
+				} )
+		);
+		await openReader( page );
+		await page.getByRole( 'link', { name: 'Introduction' } ).click();
+		await expect(
+			page.locator( '.wpdfv-reader-content h2#introduction' )
+		).toBeFocused();
 	} );
 
 	test( 'uses reader-friendly print media output', async ( { page } ) => {
@@ -1325,7 +1412,7 @@ async function setDisabledContentControls( page, disabledConfig ) {
 									embeds: true,
 									comments: true,
 								},
-						  };
+							};
 			},
 		} );
 	}, disabledConfig );

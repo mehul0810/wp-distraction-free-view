@@ -89,8 +89,14 @@ Reader Mode discovery metadata is disabled by default. Integrations can opt in
 for eligible public singular content with the
 wpdfv_discovery_metadata_enabled filter. When enabled, the plugin emits an
 alternate JSON link to the structured content route and JSON-LD describing that
-public content. The wpdfv_discovery_metadata filter can adjust the generated
-metadata.
+public content. The built-in JSON-LD uses the post's written excerpt for its
+optional description. When the excerpt is empty, it omits the description so
+generating the page head does not render the article.
+
+Callbacks on `wpdfv_structured_reader_content` or `wpdfv_discovery_metadata`
+still receive the complete Reader payload, including rendered HTML and text.
+The structured content route continues to use WordPress's normal excerpt
+generation.
 
 ## Abilities API
 

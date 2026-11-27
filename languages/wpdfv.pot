@@ -70,6 +70,14 @@ msgstr ""
 msgid "Sorry, you are not allowed to activate plugins."
 msgstr ""
 
+#: src/Admin/PluginActions.php:186
+msgid "Sorry, you are not allowed to activate this plugin."
+msgstr ""
+
+#: src/Admin/PluginActions.php:204
+msgid "This plugin must be activated from the network administration screen."
+msgstr ""
+
 #: src/Admin/SettingsApi.php:208
 msgid "Plugin action is not supported."
 msgstr ""
@@ -661,6 +669,11 @@ msgstr ""
 #: assets/dist/js/wpdfv-admin.js:4
 #: assets/src/js/admin/wpdfv-admin.js:152
 msgid "Settings saved."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:4
+#: assets/src/js/admin/wpdfv-admin.js:258
+msgid "Settings saved. You have unsaved changes."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:4

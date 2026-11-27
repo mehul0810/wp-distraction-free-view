@@ -629,7 +629,18 @@ class Reader {
 		$content = strip_shortcodes( (string) $content );
 		$content = function_exists( 'strip_blocks' ) ? strip_blocks( $content ) : preg_replace( '/<!--\s+\/?wp:.*?-->/s', ' ', $content );
 		$content = wp_strip_all_tags( html_entity_decode( $content, ENT_QUOTES, get_bloginfo( 'charset' ) ) );
-		$words   = self::count_reading_time_units( $content );
+
+		return self::calculate_plain_text_reading_time( $content );
+	}
+
+	/**
+	 * Estimate reading time for text that has already been extracted from markup.
+	 *
+	 * @param string $content Visible article text.
+	 * @return int
+	 */
+	public static function calculate_plain_text_reading_time( $content ) {
+		$words = self::count_reading_time_units( $content );
 
 		/**
 		 * Filter the content unit count used for Reader Mode estimates.
@@ -1285,56 +1296,102 @@ class Reader {
 	 * @return array{content:string,items:array}
 	 */
 	public static function prepare_table_of_contents( $content ) {
-		$content        = (string) $content;
-		$items          = [];
-		$used           = [];
-		$prepared       = '';
-		$content_offset = 0;
-		$search_offset  = 0;
+		$content = (string) $content;
 
-		while ( preg_match( '/<h([1-6])\b/i', $content, $opening_match, PREG_OFFSET_CAPTURE, $search_offset ) ) {
-			$opening_tag   = (string) $opening_match[0][0];
-			$opening_start = (int) $opening_match[0][1];
-			$level         = absint( $opening_match[1][0] );
-			$attributes_at = $opening_start + strlen( $opening_tag );
-			$opening_end   = self::find_html_tag_end( $content, $attributes_at );
+		if ( ! preg_match( '~<h[1-6](?=[\s/>])~i', $content ) ) {
+			return [
+				'content' => $content,
+				'items'   => [],
+			];
+		}
 
-			if ( false === $opening_end ) {
+		$items               = [];
+		$used                = [];
+		$suffixes            = [];
+		$pending_heading_ids = [];
+		$prepared            = '';
+		$content_offset      = 0;
+		$search_offset       = 0;
+		$tags                = iterator_to_array( self::get_html_tags( $content ), false );
+
+		// Reserve existing IDs before assigning IDs to headings.
+		foreach ( $tags as $tag ) {
+			if ( $tag['closing'] ) {
+				continue;
+			}
+
+			$id = self::get_heading_attribute( $tag['attributes'], 'id' );
+
+			if ( '' === $id ) {
+				continue;
+			}
+
+			if ( preg_match( '/^h[1-6]$/', $tag['name'] ) ) {
+				$id = sanitize_title( strtolower( $id ) );
+
+				if ( '' !== $id ) {
+					$pending_heading_ids[ $id ] = ( $pending_heading_ids[ $id ] ?? 0 ) + 1;
+				}
+			} else {
+				$used[ $id ] = true;
+			}
+		}
+
+		foreach ( $tags as $tag_index => $tag ) {
+			if ( $tag['closing'] || $tag['start'] < $search_offset || ! preg_match( '/^h([1-6])$/', $tag['name'], $opening_match ) ) {
+				continue;
+			}
+
+			$opening_start = $tag['start'];
+			$level         = absint( $opening_match[1] );
+			$attributes_at = $opening_start + strlen( $tag['name'] ) + 1;
+			$opening_end   = $tag['end'] - 1;
+
+			$closing_tag = null;
+
+			for ( $closing_index = $tag_index + 1; $closing_index < count( $tags ); ++$closing_index ) {
+				if ( $tags[ $closing_index ]['closing'] && $tags[ $closing_index ]['name'] === $tag['name'] ) {
+					$closing_tag = $tags[ $closing_index ];
+					break;
+				}
+			}
+
+			if ( null === $closing_tag ) {
 				break;
 			}
 
-			$has_closing_tag = preg_match(
-				'#</h' . $level . '\s*>#i',
-				$content,
-				$closing_match,
-				PREG_OFFSET_CAPTURE,
-				$opening_end + 1
-			);
-
-			if ( 1 !== $has_closing_tag ) {
-				break;
-			}
-
-			$closing_tag   = (string) $closing_match[0][0];
-			$closing_start = (int) $closing_match[0][1];
-			$closing_end   = $closing_start + strlen( $closing_tag );
+			$closing_start = $closing_tag['start'];
+			$closing_end   = $closing_tag['end'];
 			$attributes    = substr( $content, $attributes_at, $opening_end - $attributes_at );
 			$inner_html    = substr( $content, $opening_end + 1, $closing_start - $opening_end - 1 );
-			$text          = trim( wp_strip_all_tags( html_entity_decode( $inner_html, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+			$text          = trim( html_entity_decode( wp_strip_all_tags( $inner_html ), ENT_QUOTES, get_bloginfo( 'charset' ) ) );
+			$existing_id   = self::get_heading_attribute( $attributes, 'id' );
+			$existing_base = sanitize_title( strtolower( $existing_id ) );
+
+			if ( '' !== $existing_base && isset( $pending_heading_ids[ $existing_base ] ) ) {
+				--$pending_heading_ids[ $existing_base ];
+
+				if ( 0 === $pending_heading_ids[ $existing_base ] ) {
+					unset( $pending_heading_ids[ $existing_base ] );
+				}
+			}
 
 			$prepared .= substr( $content, $content_offset, $opening_start - $content_offset );
 
 			if ( '' === $text ) {
 				$prepared .= substr( $content, $opening_start, $closing_end - $opening_start );
+
+				if ( '' !== $existing_id ) {
+					$used[ $existing_id ] = true;
+				}
 			} else {
-				$existing_id = self::get_heading_attribute( $attributes, 'id' );
-				$base_id     = '' !== $existing_id ? sanitize_title( strtolower( $existing_id ) ) : sanitize_title( strtolower( $text ) );
+				$base_id = '' !== $existing_id ? $existing_base : sanitize_title( strtolower( $text ) );
 
 				if ( '' === $base_id ) {
 					$base_id = 'reader-heading';
 				}
 
-				$id = self::get_unique_heading_id( $base_id, $used );
+				$id = self::get_unique_heading_id( $base_id, $used, $suffixes, $pending_heading_ids, '' !== $existing_id );
 
 				$items[] = [
 					'id'    => $id,
@@ -1365,10 +1422,11 @@ class Reader {
 	 *
 	 * @param string $html   HTML containing the opening tag.
 	 * @param int    $offset First byte after the tag name.
+	 * @param bool   $allow_left_angle Whether to accept a bare opening angle bracket.
 	 *
 	 * @return int|false Byte offset of the closing angle bracket, or false.
 	 */
-	protected static function find_html_tag_end( $html, $offset ) {
+	protected static function find_html_tag_end( $html, $offset, $allow_left_angle = false ) {
 		$length = strlen( $html );
 		$quote  = '';
 
@@ -1392,7 +1450,7 @@ class Reader {
 				return $index;
 			}
 
-			if ( '<' === $character ) {
+			if ( '<' === $character && ! $allow_left_angle ) {
 				return false;
 			}
 		}
@@ -1431,6 +1489,19 @@ class Reader {
 
 		while ( $index < $length ) {
 			$character = $content[ $index ];
+
+			if ( '<!--' === substr( $content, $index, 4 ) ) {
+				$end = self::get_html_comment_end( $content, $index );
+
+				if ( false === $end ) {
+					$result .= substr( $content, $index );
+					break;
+				}
+
+				$result .= substr( $content, $index, $end - $index );
+				$index   = $end;
+				continue;
+			}
 
 			if ( '<' !== $character || $index + 1 >= $length || 1 !== preg_match( '/[a-zA-Z\/!?]/', $content[ $index + 1 ] ) ) {
 				$result .= $character;
@@ -1493,6 +1564,113 @@ class Reader {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Locate the end of an HTML comment, including abbreviated closing forms.
+	 *
+	 * @param string $content Rendered HTML.
+	 * @param int    $start Position of the opening comment delimiter.
+	 * @return int|false Position after the comment, or false if it is unclosed.
+	 */
+	protected static function get_html_comment_end( $content, $start ) {
+		$offset = $start + 4;
+
+		if ( '>' === substr( $content, $offset, 1 ) ) {
+			return $offset + 1;
+		}
+
+		if ( '->' === substr( $content, $offset, 2 ) ) {
+			return $offset + 2;
+		}
+
+		if ( ! preg_match( '/--!?>/', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+			return false;
+		}
+
+		return $match[0][1] + strlen( $match[0][0] );
+	}
+
+	/**
+	 * Iterate over tags while skipping comments and raw text contents.
+	 *
+	 * This uses the existing quote-aware tag parser because WordPress 6.0 does
+	 * not provide the HTML tag processor. Offsets refer to the original string.
+	 *
+	 * @param string $content Rendered HTML.
+	 * @return \Generator<array{name:string,attributes:string,closing:bool,start:int,end:int}>
+	 */
+	protected static function get_html_tags( $content ) {
+		$offset   = 0;
+		$length   = strlen( $content );
+		$raw_text = '';
+
+		while ( $offset < $length ) {
+			if ( '' !== $raw_text ) {
+				if ( 'plaintext' === $raw_text || ! preg_match( '~</' . preg_quote( $raw_text, '~' ) . '(?=[\s/>])~i', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+					break;
+				}
+
+				$offset   = $match[0][1];
+				$raw_text = '';
+			}
+
+			if ( ! preg_match( '~<!--|<!|<\?|</?[a-zA-Z]~', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+				break;
+			}
+
+			$start = $match[0][1];
+
+			if ( '<!--' === $match[0][0] ) {
+				$end = self::get_html_comment_end( $content, $start );
+
+				if ( false === $end ) {
+					break;
+				}
+
+				$offset = $end;
+				continue;
+			}
+
+			if ( '<!' === $match[0][0] || '<?' === $match[0][0] ) {
+				$end = strpos( $content, '>', $start + 2 );
+
+				if ( false === $end ) {
+					break;
+				}
+
+				$offset = $end + 1;
+				continue;
+			}
+
+			if ( ! preg_match( '~\G<(/?)([a-zA-Z][a-zA-Z0-9:-]*)~', $content, $name_match, 0, $start ) ) {
+				$offset = $start + 1;
+				continue;
+			}
+
+			$attributes_start = $start + strlen( $name_match[0] );
+			$end              = self::find_html_tag_end( $content, $attributes_start, true );
+
+			if ( false === $end ) {
+				break;
+			}
+
+			$name    = strtolower( $name_match[2] );
+			$closing = '/' === $name_match[1];
+			$offset  = $end + 1;
+
+			yield [
+				'name'       => $name,
+				'attributes' => substr( $content, $attributes_start, $end - $attributes_start ),
+				'closing'    => $closing,
+				'start'      => $start,
+				'end'        => $offset,
+			];
+
+			if ( ! $closing && in_array( $name, [ 'script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'noscript', 'plaintext' ], true ) ) {
+				$raw_text = $name;
+			}
+		}
 	}
 
 	/**
@@ -1565,21 +1743,25 @@ class Reader {
 	 *
 	 * @since 1.8.0
 	 *
-	 * @param string $base_id Base heading ID.
-	 * @param array  $used    Used IDs keyed by ID.
+	 * @param string $base_id             Base heading ID.
+	 * @param array  $used                Used IDs keyed by ID.
+	 * @param array  $suffixes            Next suffix for each base ID.
+	 * @param array  $pending_heading_ids IDs reserved for later headings.
+	 * @param bool   $is_existing         Whether the heading supplied an ID.
 	 *
 	 * @return string
 	 */
-	protected static function get_unique_heading_id( $base_id, array &$used ) {
+	protected static function get_unique_heading_id( $base_id, array &$used, array &$suffixes, array $pending_heading_ids, $is_existing ) {
 		$id     = $base_id;
-		$suffix = 2;
+		$suffix = $suffixes[ $base_id ] ?? 2;
 
-		while ( isset( $used[ $id ] ) ) {
+		while ( isset( $used[ $id ] ) || ( isset( $pending_heading_ids[ $id ] ) && ( ! $is_existing || $id !== $base_id ) ) ) {
 			$id = $base_id . '-' . $suffix;
 			++$suffix;
 		}
 
-		$used[ $id ] = true;
+		$used[ $id ]          = true;
+		$suffixes[ $base_id ] = $suffix;
 
 		return $id;
 	}
@@ -1634,19 +1816,46 @@ class Reader {
 	 */
 	protected static function extract_rendered_scripts( $content, ?\WP_Post $post = null ) {
 		$scripts = [];
-		$content = (string) preg_replace_callback(
-			'#<script\b([^>]*)>(.*?)</script>#is',
-			static function ( $matches ) use ( &$scripts ) {
-				$script = self::normalize_rendered_script( $matches[1], $matches[2] );
+
+		if ( false !== stripos( $content, '<script' ) ) {
+			$prepared       = '';
+			$copied_until   = 0;
+			$template_depth = 0;
+			$script_start   = null;
+
+			foreach ( self::get_html_tags( $content ) as $tag ) {
+				if ( 'template' === $tag['name'] ) {
+					$template_depth = $tag['closing'] ? max( 0, $template_depth - 1 ) : $template_depth + 1;
+					continue;
+				}
+
+				if ( 'script' !== $tag['name'] || $template_depth > 0 ) {
+					continue;
+				}
+
+				if ( ! $tag['closing'] ) {
+					$script_start = $tag;
+					continue;
+				}
+
+				if ( null === $script_start ) {
+					continue;
+				}
+
+				$body   = substr( $content, $script_start['end'], $tag['start'] - $script_start['end'] );
+				$script = self::normalize_rendered_script( $script_start['attributes'], $body );
 
 				if ( ! empty( $script ) ) {
 					$scripts[] = $script;
 				}
 
-				return '';
-			},
-			$content
-		);
+				$prepared    .= substr( $content, $copied_until, $script_start['start'] - $copied_until );
+				$copied_until = $tag['end'];
+				$script_start = null;
+			}
+
+			$content = $prepared . substr( $content, $copied_until );
+		}
 
 		/**
 		 * Filter scripts extracted from rendered Reader Mode content.

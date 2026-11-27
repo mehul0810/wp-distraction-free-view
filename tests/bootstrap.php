@@ -27,6 +27,9 @@ $GLOBALS['wpdfv_test_posts']                = [];
 $GLOBALS['wpdfv_test_post_meta']            = [];
 $GLOBALS['wpdfv_test_shortcodes']           = [];
 $GLOBALS['wpdfv_test_user_caps']            = [];
+$GLOBALS['wpdfv_test_multisite']            = false;
+$GLOBALS['wpdfv_test_network_only_plugins'] = [];
+$GLOBALS['wpdfv_test_activation_calls']     = [];
 
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
@@ -82,6 +85,9 @@ function wpdfv_tests_reset_state() {
 	$GLOBALS['wpdfv_test_post_meta']            = [];
 	$GLOBALS['wpdfv_test_shortcodes']           = [];
 	$GLOBALS['wpdfv_test_user_caps']            = [];
+	$GLOBALS['wpdfv_test_multisite']            = false;
+	$GLOBALS['wpdfv_test_network_only_plugins'] = [];
+	$GLOBALS['wpdfv_test_activation_calls']     = [];
 	$_GET                                       = [];
 
 	if ( class_exists( '\WPDFV\Includes\Actions' ) ) {
@@ -184,7 +190,11 @@ function current_user_can( $capability, ...$args ) {
 }
 
 function is_multisite() {
-	return false;
+	return $GLOBALS['wpdfv_test_multisite'];
+}
+
+function is_network_only_plugin( $plugin ) {
+	return in_array( $plugin, $GLOBALS['wpdfv_test_network_only_plugins'], true );
 }
 
 function wp_register_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
@@ -248,8 +258,9 @@ function is_plugin_active( $plugin ) {
 }
 
 function activate_plugin( $plugin, $redirect = '', $network_wide = false, $silent = false ) {
-	$GLOBALS['wpdfv_test_active_plugins'][] = $plugin;
-	$GLOBALS['wpdfv_test_active_plugins']   = array_values( array_unique( $GLOBALS['wpdfv_test_active_plugins'] ) );
+	$GLOBALS['wpdfv_test_activation_calls'][] = [ $plugin, $network_wide, $silent ];
+	$GLOBALS['wpdfv_test_active_plugins'][]   = $plugin;
+	$GLOBALS['wpdfv_test_active_plugins']     = array_values( array_unique( $GLOBALS['wpdfv_test_active_plugins'] ) );
 
 	return null;
 }

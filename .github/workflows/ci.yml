@@ -57,6 +57,17 @@ jobs:
       - name: Build assets
         run: npm run build
 
+      - name: Install WordPress 6.0 browser fixtures
+        run: |
+          curl -fsSL https://wordpress.org/wordpress-6.0.tar.gz -o "$RUNNER_TEMP/wordpress-6.0.tar.gz"
+          tar -xzf "$RUNNER_TEMP/wordpress-6.0.tar.gz" -C "$RUNNER_TEMP"
+          npx playwright install --with-deps chromium
+
+      - name: Reader and settings browser regressions
+        env:
+          WPDFV_WP_JS_DIR: ${{ runner.temp }}/wordpress/wp-includes/js/dist
+        run: npx playwright test tests/browser/reader-components.spec.js tests/browser/settings-save.spec.js
+
   integration-tests:
     name: WordPress integration tests
     runs-on: ubuntu-latest
