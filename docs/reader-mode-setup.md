@@ -1,30 +1,26 @@
 # Reader Mode Setup and Troubleshooting
 
-This guide covers the public Reader Mode experience in WP Distraction Free View: where Reader Mode is available, how visitors open it, and what to check when a toggle or embedded content does not behave as expected.
+Use this guide to put a Reader Mode button on your first article, choose where it appears across your site, or troubleshoot a missing button.
 
 ## Quick Setup
 
-1. Activate WP Distraction Free View.
-2. Go to **Settings > Reader Mode**.
-3. Open the **Configure** tab.
-4. Enable Reader Mode for the public post types that should support focused reading.
-5. Choose a placement:
-   - Use **manual only** when you want to place the toggle with the block or shortcode.
-   - Use **before content**, **after content**, or **floating** when the plugin should insert the toggle automatically.
-6. Save settings.
-7. Visit an enabled single post, page, or custom post type and open Reader Mode from the toggle.
+On a new installation, WP Distraction Free View enables Reader Mode for posts and pages and sets button placement to **Manual only**. Existing installations keep their saved content types and placement when you upgrade.
 
-Reader Mode is disabled for new installs until you enable post types or place a manual toggle.
+1. Edit a post or page. Add the **Reader Mode Toggle** block where you want the button, or add a **Shortcode** block containing `[wpdfv]`.
+2. Update or publish the post or page, then open it on your site.
+3. Select **Read in Reader Mode**. The article opens over the page. Close the reader to return to the page.
+
+To add the button across a whole content type, use [automatic placement](#automatic-placement).
 
 ## Block Placement
 
-Use the **WP Distraction Free View / Reader Mode Toggle** block when editing posts, pages, public custom post types, single templates, or Query Loop templates.
+Search for **Reader Mode Toggle** in the block inserter. You can place it in a post, page, enabled public custom post type, single template, or Query Loop’s Post Template block.
 
-The block is dynamic. In a single template or Query Loop, it uses the current post context so each toggle opens Reader Mode for the correct post.
+In a Query Loop, each button opens the article for that entry.
 
 ## Shortcode Usage
 
-Use the shortcode when a block is not the right fit:
+In the classic editor or a Shortcode block, enter the following shortcode on its own line.
 
 ```text
 [wpdfv]
@@ -34,37 +30,39 @@ The shortcode can be placed in post content, widget areas, template parts, or ot
 
 ## Automatic Placement
 
-Automatic placement inserts the Reader Mode toggle on supported single content without adding a block or shortcode manually.
+1. Open **Settings > Reader Mode > Configure > General**.
+2. Under **Where Reader Mode is available**, select the content types that should offer the reader.
+3. Under **Toggle placement**, choose **Before content**, **After content**, or **Floating button**. Select **Save settings**.
 
-Use automatic placement when you want the same entry point across enabled post types. Use manual placement when a theme, template, or editorial workflow needs precise control over where the toggle appears.
+Open an individual post or page of a selected type to see the button. For a button on each entry in an archive built with a Query Loop, use [block placement](#block-placement).
 
 ## Supported Post Types
 
-Reader Mode can be enabled for posts, pages, and selected public custom post types. If a toggle does not appear, confirm that the current content type is enabled in **Settings > Reader Mode > Configure**.
+Reader Mode supports posts, pages, and selected public custom post types. If the button is missing across a content type, check that the type is selected under **Configure > General**. For **Manual only**, also check that the content or its template includes the block or shortcode.
 
-Reader Mode is intended for single content views. Archive pages, search results, unsupported post types, and unrelated admin screens should not load the frontend Reader Mode assets.
+If the button is missing on just one item, edit it and open **Reader Mode > Availability**. Choose **Use global settings** to follow the site setting or **Enabled for this content** to turn Reader Mode on for that item. Save the post or page. The same panel lets you choose a reader template for that item.
 
 ## URL Activation
 
-Reader Mode can open directly from a URL on enabled single content:
+Open the reader on an enabled post or page and select **Copy Reader Mode link** in the toolbar. To build a link like the one below, append `?reader-mode=1` to the permalink.
 
 ```text
 https://example.com/my-post/?reader-mode=1
 ```
 
-Use this for direct links to a focused reading view. The URL parameter uses the same Reader Mode experience as the toggle.
+If the permalink already has a query string, append `&reader-mode=1`.
 
 ## Reader Preferences and Privacy
 
-Visitors can adjust font size, theme, and content width when preference controls are enabled. These preferences are stored in the visitor browser with `localStorage`.
+Set the default theme, font size, and content width under **Configure > Appearance**. When **Show reader preference controls** is enabled, visitors can change their own reading layout. The plugin saves those choices only in the visitor’s browser, using local storage when available. Previously saved appearance choices still apply if you later hide the controls.
 
-WP Distraction Free View does not store Reader Mode preference choices on the server.
+Visitors can also hide media, embeds, or comments when you offer those controls. Reader Mode applies saved visibility choices only while the corresponding control is available.
+
+Under **Configure > Reading tools**, you can enable **Resume reading** so visitors can return to their place in an unfinished article in the same browser. This section also offers read-aloud. To use it, the visitor’s browser must have a local voice that matches the article’s language.
 
 ## Custom CSS
 
-Users who can manage plugin settings and have the WordPress `edit_css` capability can add Reader Mode CSS from **Settings > Reader Mode > Configure > Custom CSS**.
-
-This CSS is an escape hatch for the Reader Mode output only. Keep selectors scoped to Reader Mode containers so the original theme page is unchanged:
+Users who can manage plugin settings and edit CSS can add styles under **Settings > Reader Mode > Configure > Advanced > Custom CSS**. The stylesheet loads on pages that use Reader Mode. A selector such as `h2` can also affect headings on the surrounding page. Start each selector with `.wpdfv-reader-modal` to limit its effect to the open reader.
 
 ```css
 .wpdfv-reader-modal .wpdfv-reader-content {
@@ -81,13 +79,11 @@ This CSS is an escape hatch for the Reader Mode output only. Keep selectors scop
 }
 ```
 
-The plugin strips pasted `<style>` wrappers before saving and prints the saved CSS through the Reader Mode stylesheet handle only when Reader Mode assets are loaded.
+Enter CSS rules directly and select **Save settings**. Open an article in Reader Mode to check the result.
 
 ## Shortcode and Embed Troubleshooting
 
-Version 1.7.1 strips complete `script`, `style`, and `noscript` blocks from Reader Mode content before final sanitization. This prevents common shortcode embed configuration from appearing as raw text inside the Reader Mode view.
-
-If embedded content still looks wrong:
+If a shortcode, video, or other embed looks different in Reader Mode, use these checks to narrow down the cause.
 
 1. Confirm the original post content renders correctly outside Reader Mode.
 2. Confirm the plugin, theme, and shortcode provider are updated.
@@ -101,4 +97,4 @@ Do not paste private embed keys, tokens, or account identifiers into public supp
 
 Use the [WordPress.org support forum](https://wordpress.org/support/plugin/wp-distraction-free-view/) for user support, setup questions, and compatibility reports.
 
-Use [GitHub issues](https://github.com/mehul0810/wp-distraction-free-view/issues) for reproducible development issues, release-train work, and code-level reports.
+Use [GitHub issues](https://github.com/mehul0810/wp-distraction-free-view/issues) for reproducible bugs or code-level reports.
