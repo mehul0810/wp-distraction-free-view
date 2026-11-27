@@ -180,6 +180,14 @@ class PluginActions {
 			);
 		}
 
+		if ( ! current_user_can( 'activate_plugin', $plugin_file ) ) {
+			return new WP_Error(
+				'wpdfv_activate_plugin_forbidden',
+				__( 'Sorry, you are not allowed to activate this plugin.', 'wp-distraction-free-view' ),
+				[ 'status' => 403 ]
+			);
+		}
+
 		if ( $this->catalog->is_plugin_active_file( $plugin_file ) ) {
 			return true;
 		}
@@ -190,7 +198,15 @@ class PluginActions {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		$result = activate_plugin( $plugin_file, '', false, true );
+		if ( is_multisite() && is_network_only_plugin( $plugin_file ) ) {
+			return new WP_Error(
+				'wpdfv_network_only_plugin',
+				__( 'This plugin must be activated from the network administration screen.', 'wp-distraction-free-view' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$result = activate_plugin( $plugin_file );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;

@@ -28,7 +28,7 @@ Under **Configure**, use **Appearance** for defaults, **Reading tools** for opti
 
 ## Requirements
 
-- WordPress 6.0 or later, tested up to 7.1
+- WordPress 6.0 or later, tested up to 7.2 (initially verified with 7.2-RC3)
 - PHP 8.2 or later
 
 For development, use Node.js 26.13.1 LTS, its bundled npm 11.20.0, and Composer 2. The Node version is pinned in `.nvmrc` and `.node-version`.
@@ -84,6 +84,14 @@ WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
 ```
 
 The integration suite is intentionally separate from `composer test`. It boots real WordPress APIs for REST routing, block registration/rendering, options, migrations, and multisite activation coverage.
+
+CI runs the plugin's unit tests on PHP 8.2 through 8.6. The compatibility jobs
+install and activate the plugin on each WordPress release line from 6.0 through
+7.2 and run the single-site integration suite. They use the latest patch on
+each line and a pinned 7.2 release candidate until a stable 7.2 is available.
+The PHP pairings follow WordPress core compatibility, with separate coverage
+for the plugin's declared WordPress 6.0/PHP 8.2 minimum and for PHP 8.6 on
+WordPress 7.2. CI also runs the multisite suite on the current stable release.
 
 ## Release Workflow
 

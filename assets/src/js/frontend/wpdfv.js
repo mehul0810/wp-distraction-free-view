@@ -995,6 +995,17 @@ const applyReaderContentPreferences = ( container, preferences ) => {
 		container,
 		selectors.protected
 	);
+	const protectedSet = new Set( protectedElements );
+	const protectedAncestors = new Set();
+	protectedElements.forEach( ( element ) => {
+		for (
+			let ancestor = element;
+			ancestor && ancestor !== container;
+			ancestor = ancestor.parentElement
+		) {
+			protectedAncestors.add( ancestor );
+		}
+	} );
 
 	[ 'media', 'embeds', 'comments' ].forEach( ( category ) => {
 		const hiddenClass = `wpdfv-reader-hidden-${ category }`;
@@ -1015,20 +1026,22 @@ const applyReaderContentPreferences = ( container, preferences ) => {
 			container,
 			selectors[ category ]
 		);
+		const candidateSet = new Set( candidates );
 		candidates.forEach( ( element ) => {
-			if (
-				candidates.some(
-					( parent ) =>
-						parent !== element && parent.contains( element )
-				) ||
-				protectedElements.some(
-					( protectedElement ) =>
-						protectedElement === element ||
-						protectedElement.contains( element ) ||
-						element.contains( protectedElement )
-				)
-			) {
+			if ( protectedAncestors.has( element ) ) {
 				return;
+			}
+			for (
+				let ancestor = element.parentElement;
+				ancestor && ancestor !== container;
+				ancestor = ancestor.parentElement
+			) {
+				if (
+					candidateSet.has( ancestor ) ||
+					protectedSet.has( ancestor )
+				) {
+					return;
+				}
 			}
 
 			element.classList.add( hiddenClass );
@@ -1716,8 +1729,11 @@ const ReaderApp = () => {
 	};
 
 	const navigateToHeading = ( headingId ) => {
-		const target =
-			contentRef.current?.ownerDocument.getElementById( headingId );
+		const target = Array.from(
+			contentRef.current?.querySelectorAll(
+				'h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'
+			) || []
+		).find( ( heading ) => heading.id === headingId );
 
 		if ( ! target || ! contentRef.current?.contains( target ) ) {
 			return;
