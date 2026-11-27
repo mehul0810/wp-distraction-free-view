@@ -1,39 +1,37 @@
 # WP Distraction Free View
 
-WP Distraction Free View adds a clean frontend Reader Mode to WordPress, helping visitors focus on your content without sidebars, widgets, navigation, comments, and visual clutter.
+WP Distraction Free View adds a frontend Reader Mode to WordPress, giving visitors a focused reading view for posts, pages, and selected public post types.
 
 [Download WP Distraction Free View on WordPress.org](https://wordpress.org/plugins/wp-distraction-free-view/)
 
 ![WordPress version](https://img.shields.io/wordpress/plugin/v/wp-distraction-free-view.svg)
 ![WordPress Rating](https://img.shields.io/wordpress/plugin/r/wp-distraction-free-view.svg)
 ![WordPress Downloads](https://img.shields.io/wordpress/plugin/dt/wp-distraction-free-view.svg)
-[![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](https://github.com/mehul0810/wp-distraction-free-view/blob/master/license.txt)
 
-## Positioning
+## Getting Started
 
-WordPress core already includes distraction-free writing tools for the admin editor. This plugin is for the frontend visitor reading experience: posts, pages, and selected public custom post types can open in a focused Reader Mode overlay.
+1. Install and activate the plugin from the WordPress.org plugin directory.
+2. Open **Settings > Reader Mode > Configure > General**, select the post types you want to support, and save.
+3. Add a **Reader Mode Toggle** block or `[wpdfv]` shortcode to an enabled post, or choose an automatic button placement in **General**.
+4. Visit the post and select the toggle. To link directly to Reader Mode, add `reader-mode=1` to the post’s query string.
+
+New installations use manual placement. Existing installations retain their previous automatic placement setting during upgrade unless it was already disabled. If the toggle is missing, check the enabled post types and placement in **General**. See the [setup and troubleshooting guide](docs/reader-mode-setup.md) for more examples.
 
 ## Features
 
-- Frontend Reader Mode for posts, pages, and enabled public custom post types.
-- Manual placement with the Reader Mode Toggle block or the `[wpdfv]` shortcode.
-- Optional automatic toggle insertion before content, after content, or as a floating button.
-- URL activation with `?reader-mode=1` on enabled single content.
-- Visitor preferences for font size, theme, and content width from the Reader settings control in the modal header, stored in localStorage.
-- Optional reading progress and estimated reading time.
-- Block-based Reader Mode template support for full site editing themes.
-- WordPress-components settings screen and REST-backed settings persistence.
+- Reader Mode overlay for posts, pages, and enabled public custom post types, with block, shortcode, automatic button, and URL entry points.
+- Reader preferences for theme, text size, width, and content visibility, saved in the browser when available.
+- Optional progress, reading time, table of contents, resume reading, and browser read-aloud. Sharing is available when supported by the browser.
+- Per-content availability and template overrides, scoped custom CSS, and opt-in discovery metadata for integrations.
+
+Under **Configure**, use **Appearance** for defaults, **Reading tools** for optional controls, and **Advanced** for custom CSS. The [developer API guide](docs/developer-api.md) covers templates and integrations.
 
 ## Requirements
 
-- WordPress 6.0 or later
-- Tested up to WordPress 7.1.2
+- WordPress 6.0 or later, tested up to 7.2 (initially verified with 7.2-RC3)
 - PHP 8.2 or later
-- Node.js 24.15.0
-- npm 11 or later
-- Composer for PHP autoloading and development tooling
 
-The Node version is pinned in `.nvmrc` and `.node-version`.
+For development, use Node.js 26.13.1 LTS, its bundled npm 11.20.0, and Composer 2. The Node version is pinned in `.nvmrc` and `.node-version`.
 
 ## Local Development
 
@@ -49,8 +47,10 @@ Install dependencies:
 
 ```bash
 composer install
-npm install
+npm ci
 ```
+
+WordPress Scripts supplies webpack. The npm overrides update Markdown linting, math parsing dependencies, and the serializer used by the webpack copy cache. Recheck these overrides when updating WordPress Scripts. Composer resolves development dependencies for the minimum supported PHP version, 8.2.
 
 Build assets:
 
@@ -85,6 +85,14 @@ WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
 
 The integration suite is intentionally separate from `composer test`. It boots real WordPress APIs for REST routing, block registration/rendering, options, migrations, and multisite activation coverage.
 
+CI runs the plugin's unit tests on PHP 8.2 through 8.6. The compatibility jobs
+install and activate the plugin on each WordPress release line from 6.0 through
+7.2 and run the single-site integration suite. They use the latest patch on
+each line and a pinned 7.2 release candidate until a stable 7.2 is available.
+The PHP pairings follow WordPress core compatibility, with separate coverage
+for the plugin's declared WordPress 6.0/PHP 8.2 minimum and for PHP 8.6 on
+WordPress 7.2. CI also runs the multisite suite on the current stable release.
+
 ## Release Workflow
 
 Prepare milestone work on `release/<version>` and open its release PR into `main`. Validate the exact candidate and production package before requesting owner approval. After approval, merge the release PR, verify version metadata on the resulting `main` commit, and create the stable tag from that commit. Publishing the GitHub release triggers deployment to WordPress.org.
@@ -92,53 +100,6 @@ Prepare milestone work on `release/<version>` and open its release PR into `main
 The WordPress.org release workflow generates `wp-distraction-free-view.zip` through the 10up deploy action and uploads that ZIP to the matching GitHub release. Uploads use `gh release upload --clobber`, so rerunning a release or prerelease workflow replaces the existing ZIP asset instead of failing when the asset name already exists.
 
 CI also builds the production package from `.distignore`, validates the package shape, and runs Plugin Check against the generated package directory rather than the raw source checkout.
-
-## Settings
-
-The settings page is available at **Settings > Reader Mode**.
-
-The screen is organized into **About**, **Configure**, and **More Plugins** tabs. Reader Mode configuration lives under **Configure**.
-
-Available settings:
-
-- Enable Reader Mode for selected public post types.
-- Toggle placement: manual only, before content, after content, or floating.
-- Reading progress.
-- Estimated reading time.
-- Reader preference controls.
-- Default reader theme: light, dark, or sepia.
-- Default content width: narrow, default, or wide.
-- Default font size: small, default, or large.
-- Custom toggle label.
-- Custom exit label.
-- Reader Mode custom CSS for scoped modal styling.
-- Reader template.
-- Visitor controls to hide media, embeds, and comments in Reader Mode.
-- Optional browser read-aloud controls.
-- Per-content availability and template overrides.
-- Structured public Reader Mode content and opt-in discovery metadata.
-
-The structured-content schema and extension hooks are documented in [the developer API guide](docs/developer-api.md).
-
-Automatic insertion is disabled for new installs. Existing installs keep their previous automatic insertion behavior during upgrade unless it was already disabled.
-
-## Shortcodes
-
-Use the shortcode:
-
-```text
-[wpdfv]
-```
-
-## Blocks
-
-Use the **WP Distraction Free View / Reader Mode Toggle** block in posts, pages, public custom post types, single templates, and Query Loop templates.
-
-The block is dynamic and uses the current post context, so it opens the correct post when placed in single templates or inside Query Loop templates.
-
-## Setup and Troubleshooting
-
-For step-by-step placement guidance, URL activation, preference privacy notes, and shortcode/embed troubleshooting, see [Reader Mode Setup and Troubleshooting](docs/reader-mode-setup.md).
 
 ## Modal Templates
 
@@ -148,7 +109,7 @@ Block themes and site-specific code can register additional Reader Mode template
 
 ## Reader Mode Custom CSS
 
-Administrators who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from **Settings > Reader Mode > Configure > Custom CSS**. The saved CSS is printed only with Reader Mode frontend assets and is attached to the plugin stylesheet handle.
+Administrators who can manage plugin settings and have the WordPress `edit_css` capability can add scoped CSS from **Settings > Reader Mode > Configure > Advanced > Custom CSS**. The saved CSS is printed only with Reader Mode frontend assets and is attached to the plugin stylesheet handle.
 
 Keep selectors scoped to Reader Mode containers:
 
@@ -218,4 +179,4 @@ This repository is for development. For user support, use the [WordPress.org sup
 - Commit `package-lock.json` whenever npm dependency metadata changes.
 - Built assets are generated into `assets/dist`.
 - Runtime plugin code uses Composer's PSR-4 autoloader. Production packages include the no-dev Composer autoload files generated from `composer.json`.
-- The plugin is licensed under GPL-2.0-or-later.
+- See the [license file](license.txt) for licensing information.

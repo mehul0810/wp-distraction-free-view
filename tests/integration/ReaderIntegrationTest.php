@@ -230,6 +230,55 @@ class ReaderIntegrationTest extends TestCase {
 		$this->assertArrayHasKey( 'readingTime', $data );
 	}
 
+	/** Automatic placement and its app must agree on archives and supported single posts. */
+	public function test_automatic_content_button_and_assets_share_page_context() {
+		update_option(
+			'wpdfv_settings',
+			array_merge(
+				Reader::get_default_settings(),
+				[
+					'automatic_button_enabled' => true,
+					'display_location'         => 'before_content',
+				]
+			)
+		);
+		global $post, $wp_query;
+		$previous_query = $wp_query;
+		$previous_post  = $post ?? null;
+		$post           = get_post( $this->create_post() );
+		$wp_query       = new \WP_Query();
+		wp_dequeue_script( 'wpdfv-core' );
+		try {
+			$wp_query->is_archive = true;
+			do_action( 'wp_enqueue_scripts' );
+			$this->assertFalse( wp_script_is( 'wpdfv-core', 'enqueued' ) );
+			$this->assertStringNotContainsString( 'wpdfv-reader-toggle', apply_filters( 'the_content', $post->post_content ) );
+
+			$wp_query->is_archive     = false;
+			$wp_query->is_singular    = true;
+			$wp_query->queried_object = $post;
+			do_action( 'wp_enqueue_scripts' );
+			$this->assertTrue( wp_script_is( 'wpdfv-core', 'enqueued' ) );
+			$this->assertStringContainsString( 'wpdfv-reader-toggle', apply_filters( 'the_content', $post->post_content ) );
+		} finally {
+			$wp_query = $previous_query;
+			$post     = $previous_post;
+			wp_dequeue_script( 'wpdfv-core' );
+			wp_dequeue_style( 'wpdfv-core' );
+		}
+	}
+
+	/** Text extraction preserves inline words, block boundaries and literal markup in code. */
+	public function test_structured_text_preserves_visible_words_and_code() {
+		$post_id  = $this->create_post( [ 'post_content' => '<p>Ready</p><p>Next<br>line</p><p>co<em>de</em></p><pre><code>&lt;div&gt;literal&lt;/div&gt;</code></pre>' ] );
+		$response = $this->dispatch_structured_content_request( $post_id );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringContainsString( 'Ready Next line code <div>literal</div>', $data['text'] );
+		$this->assertStringContainsString( '&lt;div&gt;literal&lt;/div&gt;', $data['html'] );
+	}
+
 	/**
 	 * Structured content exposes only public, sanitized Reader Mode data.
 	 *
@@ -314,8 +363,9 @@ class ReaderIntegrationTest extends TestCase {
 
 		$public                   = $this->create_post(
 			[
-				'post_status' => 'publish',
-				'post_title'  => 'Public discovery',
+				'post_status'  => 'publish',
+				'post_title'   => 'Public discovery',
+				'post_content' => '[wpdfv_discovery_probe]',
 			]
 		);
 		$post                     = get_post( $public );
@@ -328,29 +378,53 @@ class ReaderIntegrationTest extends TestCase {
 		$metadata->render();
 		$this->assertSame( '', ob_get_clean() );
 		remove_filter( 'wpdfv_discovery_metadata_enabled', $disable_metadata );
-		$remove_optional = static function ( $data ) {
+		$remove_optional   = static function ( $data ) {
 			unset( $data['author'], $data['featuredImage'], $data['excerpt'] );
 			return $data;
 		};
-		$adjust_metadata = static function ( $data ) {
-			$data['identifier'] = 'reviewed-public-metadata';
-			return $data;
+		$filtered_metadata = null;
+		$structured_data   = null;
+		$adjust_metadata   = static function ( $metadata, $data ) use ( &$filtered_metadata, &$structured_data ) {
+			$filtered_metadata = $metadata;
+			$structured_data   = $data;
+			return false;
 		};
+		$calls             = 0;
+		add_shortcode(
+			'wpdfv_discovery_probe',
+			static function () use ( &$calls ) {
+				++$calls;
+				return 'Shortcode result';
+			}
+		);
 		add_filter( 'wpdfv_structured_reader_content', $remove_optional );
-		add_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+		add_filter( 'wpdfv_discovery_metadata', $adjust_metadata, 10, 2 );
 		try {
 			ob_start();
 			$metadata->render();
+			$this->assertSame( '', ob_get_clean() );
+			$this->assertArrayNotHasKey( 'author', $filtered_metadata );
+			$this->assertArrayNotHasKey( 'image', $filtered_metadata );
+			$this->assertArrayNotHasKey( 'description', $filtered_metadata );
+			$this->assertStringContainsString( 'Shortcode result', $structured_data['text'] );
+			$this->assertArrayHasKey( 'html', $structured_data );
+			$this->assertSame( 1, $calls );
+
+			remove_filter( 'wpdfv_structured_reader_content', $remove_optional );
+			remove_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+			ob_start();
+			$metadata->render();
 			$output = ob_get_clean();
+			$this->assertStringContainsString( 'application/ld+json', $output );
+			$this->assertStringNotContainsString( '"description"', $output );
+			$this->assertSame( 1, $calls, 'Default discovery should leave the article for the theme to render.' );
+			apply_filters( 'the_content', $post->post_content );
+			$this->assertSame( 2, $calls );
 		} finally {
 			remove_filter( 'wpdfv_structured_reader_content', $remove_optional );
 			remove_filter( 'wpdfv_discovery_metadata', $adjust_metadata );
+			remove_shortcode( 'wpdfv_discovery_probe' );
 		}
-		$this->assertStringContainsString( 'application/ld+json', $output );
-		$this->assertStringNotContainsString( '"author"', $output );
-		$this->assertStringNotContainsString( '"image"', $output );
-		$this->assertStringNotContainsString( '"description"', $output );
-		$this->assertStringContainsString( 'reviewed-public-metadata', $output );
 	}
 
 	/**
@@ -483,6 +557,26 @@ class ReaderIntegrationTest extends TestCase {
 	}
 
 	/**
+	 * TOC generation cannot turn attribute-like title text into executable markup.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_keeps_attribute_text_inside_heading_title() {
+		$title    = 'Comparison > id=foo onmouseover=alert(1)//';
+		$prepared = Reader::prepare_rendered_content( '<h2 title="' . $title . '">Heading</h2>' );
+		$document = new \DOMDocument();
+
+		$document->loadHTML( $prepared['content'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+		$heading = $document->getElementsByTagName( 'h2' )->item( 0 );
+
+		$this->assertInstanceOf( \DOMElement::class, $heading );
+		$this->assertSame( $title, $heading->getAttribute( 'title' ) );
+		$this->assertSame( 'heading', $heading->getAttribute( 'id' ) );
+		$this->assertFalse( $heading->hasAttribute( 'onmouseover' ) );
+		$this->assertSame( 'heading', $prepared['toc'][0]['id'] );
+	}
+
+	/**
 	 * Registered non-YouTube/Spotify providers use the core oEmbed registry.
 	 *
 	 * @return void
@@ -600,14 +694,12 @@ class ReaderIntegrationTest extends TestCase {
 		$post_id = $this->create_post(
 			[
 				'post_status' => 'publish',
+				'post_title'  => 'ReaderToggleQueryFixture',
 			]
 		);
 
 		$markup = do_blocks(
-			sprintf(
-				'<!-- wp:query {"queryId":1,"query":{"perPage":1,"postType":"post","include":[%1$d]}} --><!-- wp:post-template --><!-- wp:wpdfv/reader-button {"buttonText":"Open Reader"} /--><!-- /wp:post-template --><!-- /wp:query -->',
-				$post_id
-			)
+			'<!-- wp:query {"queryId":1,"query":{"perPage":1,"postType":"post","search":"ReaderToggleQueryFixture"}} --><!-- wp:post-template --><!-- wp:wpdfv/reader-button {"buttonText":"Open Reader"} /--><!-- /wp:post-template --><!-- /wp:query -->'
 		);
 
 		$this->assertStringContainsString( 'wpdfv-reader-toggle', $markup );

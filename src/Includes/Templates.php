@@ -172,8 +172,8 @@ class Templates {
 
 		try {
 			$embed_filter = [ Reader::class, 'filter_supported_embed_html' ];
-			add_filter( 'embed_oembed_html', $embed_filter, 10, 4 );
-			add_filter( 'embed_handler_html', $embed_filter, 10, 3 );
+			add_filter( 'embed_oembed_html', $embed_filter, 10, 2 );
+			add_filter( 'embed_handler_html', $embed_filter, 10, 2 );
 
 			$content = Helpers::without_button_injection(
 				static function () use ( $template ) {

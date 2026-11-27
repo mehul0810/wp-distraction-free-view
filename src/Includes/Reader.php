@@ -629,7 +629,18 @@ class Reader {
 		$content = strip_shortcodes( (string) $content );
 		$content = function_exists( 'strip_blocks' ) ? strip_blocks( $content ) : preg_replace( '/<!--\s+\/?wp:.*?-->/s', ' ', $content );
 		$content = wp_strip_all_tags( html_entity_decode( $content, ENT_QUOTES, get_bloginfo( 'charset' ) ) );
-		$words   = self::count_reading_time_units( $content );
+
+		return self::calculate_plain_text_reading_time( $content );
+	}
+
+	/**
+	 * Estimate reading time for text that has already been extracted from markup.
+	 *
+	 * @param string $content Visible article text.
+	 * @return int
+	 */
+	public static function calculate_plain_text_reading_time( $content ) {
+		$words = self::count_reading_time_units( $content );
 
 		/**
 		 * Filter the content unit count used for Reader Mode estimates.
@@ -746,6 +757,7 @@ class Reader {
 		 */
 		$content = (string) apply_filters( 'wpdfv_modal_content_before_kses', $content, $post );
 
+		$content = self::encode_markup_inside_tag_attributes( $content );
 		$content = wp_kses_post( $content );
 		$content = self::restore_supported_provider_iframes( $content, $protected_iframes );
 
@@ -1285,29 +1297,101 @@ class Reader {
 	 */
 	public static function prepare_table_of_contents( $content ) {
 		$content = (string) $content;
-		$items   = [];
-		$used    = [];
 
-		$content = (string) preg_replace_callback(
-			'#<h([1-6])\b([^>]*)>(.*?)</h\1>#is',
-			static function ( $matches ) use ( &$items, &$used ) {
-				$level      = absint( $matches[1] );
-				$attributes = (string) $matches[2];
-				$inner_html = (string) $matches[3];
-				$text       = trim( wp_strip_all_tags( html_entity_decode( $inner_html, ENT_QUOTES, get_bloginfo( 'charset' ) ) ) );
+		if ( ! preg_match( '~<h[1-6](?=[\s/>])~i', $content ) ) {
+			return [
+				'content' => $content,
+				'items'   => [],
+			];
+		}
 
-				if ( '' === $text ) {
-					return $matches[0];
+		$items               = [];
+		$used                = [];
+		$suffixes            = [];
+		$pending_heading_ids = [];
+		$prepared            = '';
+		$content_offset      = 0;
+		$search_offset       = 0;
+		$tags                = iterator_to_array( self::get_html_tags( $content ), false );
+
+		// Reserve existing IDs before assigning IDs to headings.
+		foreach ( $tags as $tag ) {
+			if ( $tag['closing'] ) {
+				continue;
+			}
+
+			$id = self::get_heading_attribute( $tag['attributes'], 'id' );
+
+			if ( '' === $id ) {
+				continue;
+			}
+
+			if ( preg_match( '/^h[1-6]$/', $tag['name'] ) ) {
+				$id = sanitize_title( strtolower( $id ) );
+
+				if ( '' !== $id ) {
+					$pending_heading_ids[ $id ] = ( $pending_heading_ids[ $id ] ?? 0 ) + 1;
 				}
+			} else {
+				$used[ $id ] = true;
+			}
+		}
 
-				$existing_id = self::get_heading_attribute( $attributes, 'id' );
-				$base_id     = '' !== $existing_id ? sanitize_title( strtolower( $existing_id ) ) : sanitize_title( strtolower( $text ) );
+		foreach ( $tags as $tag_index => $tag ) {
+			if ( $tag['closing'] || $tag['start'] < $search_offset || ! preg_match( '/^h([1-6])$/', $tag['name'], $opening_match ) ) {
+				continue;
+			}
+
+			$opening_start = $tag['start'];
+			$level         = absint( $opening_match[1] );
+			$attributes_at = $opening_start + strlen( $tag['name'] ) + 1;
+			$opening_end   = $tag['end'] - 1;
+
+			$closing_tag = null;
+
+			for ( $closing_index = $tag_index + 1; $closing_index < count( $tags ); ++$closing_index ) {
+				if ( $tags[ $closing_index ]['closing'] && $tags[ $closing_index ]['name'] === $tag['name'] ) {
+					$closing_tag = $tags[ $closing_index ];
+					break;
+				}
+			}
+
+			if ( null === $closing_tag ) {
+				break;
+			}
+
+			$closing_start = $closing_tag['start'];
+			$closing_end   = $closing_tag['end'];
+			$attributes    = substr( $content, $attributes_at, $opening_end - $attributes_at );
+			$inner_html    = substr( $content, $opening_end + 1, $closing_start - $opening_end - 1 );
+			$text          = trim( html_entity_decode( wp_strip_all_tags( $inner_html ), ENT_QUOTES, get_bloginfo( 'charset' ) ) );
+			$existing_id   = self::get_heading_attribute( $attributes, 'id' );
+			$existing_base = sanitize_title( strtolower( $existing_id ) );
+
+			if ( '' !== $existing_base && isset( $pending_heading_ids[ $existing_base ] ) ) {
+				--$pending_heading_ids[ $existing_base ];
+
+				if ( 0 === $pending_heading_ids[ $existing_base ] ) {
+					unset( $pending_heading_ids[ $existing_base ] );
+				}
+			}
+
+			$prepared .= substr( $content, $content_offset, $opening_start - $content_offset );
+
+			if ( '' === $text ) {
+				$prepared .= substr( $content, $opening_start, $closing_end - $opening_start );
+
+				if ( '' !== $existing_id ) {
+					$used[ $existing_id ] = true;
+				}
+			} else {
+				$base_id = '' !== $existing_id ? $existing_base : sanitize_title( strtolower( $text ) );
 
 				if ( '' === $base_id ) {
 					$base_id = 'reader-heading';
 				}
 
-				$id = self::get_unique_heading_id( $base_id, $used );
+				$id = self::get_unique_heading_id( $base_id, $used, $suffixes, $pending_heading_ids, '' !== $existing_id );
 
 				$items[] = [
 					'id'    => $id,
@@ -1316,16 +1400,277 @@ class Reader {
 				];
 
 				$attributes = self::set_heading_id_attribute( $attributes, $id );
+				$prepared  .= '<h' . $level . $attributes . '>' . $inner_html . '</h' . $level . '>';
+			}
 
-				return '<h' . $level . $attributes . '>' . $inner_html . '</h' . $level . '>';
-			},
-			$content
-		);
+			$content_offset = $closing_end;
+			$search_offset  = $closing_end;
+		}
+
+		$content = $prepared . substr( $content, $content_offset );
 
 		return [
 			'content' => $content,
 			'items'   => $items,
 		];
+	}
+
+	/**
+	 * Find the end of an opening HTML tag without treating quoted text as markup.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $html   HTML containing the opening tag.
+	 * @param int    $offset First byte after the tag name.
+	 * @param bool   $allow_left_angle Whether to accept a bare opening angle bracket.
+	 *
+	 * @return int|false Byte offset of the closing angle bracket, or false.
+	 */
+	protected static function find_html_tag_end( $html, $offset, $allow_left_angle = false ) {
+		$length = strlen( $html );
+		$quote  = '';
+
+		for ( $index = (int) $offset; $index < $length; ++$index ) {
+			$character = $html[ $index ];
+
+			if ( '' !== $quote ) {
+				if ( $quote === $character ) {
+					$quote = '';
+				}
+
+				continue;
+			}
+
+			if ( '"' === $character || "'" === $character ) {
+				$quote = $character;
+				continue;
+			}
+
+			if ( '>' === $character ) {
+				return $index;
+			}
+
+			if ( '<' === $character && ! $allow_left_angle ) {
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Entity-encode angle brackets that appear inside quoted tag attribute values.
+	 *
+	 * WordPress KSES splits tags with a naive matcher that treats the first
+	 * ">" as the end of a tag, even when it falls inside a quoted attribute
+	 * value. For spec-valid markup such as `<h2 title="a > b">` that drops the
+	 * attribute entirely and leaks the remainder as text. Encoding the bare
+	 * "<" and ">" characters inside quoted attribute values to entities keeps
+	 * the tag boundaries unambiguous so KSES preserves the attribute while
+	 * still stripping anything genuinely unsafe. Content outside tag attribute
+	 * values is returned byte-for-byte unchanged.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $content HTML content to normalize before KSES.
+	 *
+	 * @return string
+	 */
+	protected static function encode_markup_inside_tag_attributes( $content ) {
+		$content = (string) $content;
+		$length  = strlen( $content );
+
+		if ( 0 === $length ) {
+			return $content;
+		}
+
+		$result = '';
+		$index  = 0;
+
+		while ( $index < $length ) {
+			$character = $content[ $index ];
+
+			if ( '<!--' === substr( $content, $index, 4 ) ) {
+				$end = self::get_html_comment_end( $content, $index );
+
+				if ( false === $end ) {
+					$result .= substr( $content, $index );
+					break;
+				}
+
+				$result .= substr( $content, $index, $end - $index );
+				$index   = $end;
+				continue;
+			}
+
+			if ( '<' !== $character || $index + 1 >= $length || 1 !== preg_match( '/[a-zA-Z\/!?]/', $content[ $index + 1 ] ) ) {
+				$result .= $character;
+				++$index;
+				continue;
+			}
+
+			$tag    = '<';
+			$quote  = '';
+			$closed = false;
+			$cursor = $index + 1;
+
+			for ( ; $cursor < $length; ++$cursor ) {
+				$current = $content[ $cursor ];
+
+				if ( '' !== $quote ) {
+					if ( $quote === $current ) {
+						$quote = '';
+						$tag  .= $current;
+					} elseif ( '>' === $current ) {
+						$tag .= '&gt;';
+					} elseif ( '<' === $current ) {
+						$tag .= '&lt;';
+					} else {
+						$tag .= $current;
+					}
+
+					continue;
+				}
+
+				if ( '"' === $current || "'" === $current ) {
+					$quote = $current;
+					$tag  .= $current;
+					continue;
+				}
+
+				if ( '>' === $current ) {
+					$tag   .= '>';
+					$closed = true;
+					++$cursor;
+					break;
+				}
+
+				if ( '<' === $current ) {
+					break;
+				}
+
+				$tag .= $current;
+			}
+
+			if ( $closed ) {
+				$result .= $tag;
+				$index   = $cursor;
+				continue;
+			}
+
+			// Not a well-formed tag; emit the "<" literally and keep scanning.
+			$result .= '<';
+			++$index;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Locate the end of an HTML comment, including abbreviated closing forms.
+	 *
+	 * @param string $content Rendered HTML.
+	 * @param int    $start Position of the opening comment delimiter.
+	 * @return int|false Position after the comment, or false if it is unclosed.
+	 */
+	protected static function get_html_comment_end( $content, $start ) {
+		$offset = $start + 4;
+
+		if ( '>' === substr( $content, $offset, 1 ) ) {
+			return $offset + 1;
+		}
+
+		if ( '->' === substr( $content, $offset, 2 ) ) {
+			return $offset + 2;
+		}
+
+		if ( ! preg_match( '/--!?>/', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+			return false;
+		}
+
+		return $match[0][1] + strlen( $match[0][0] );
+	}
+
+	/**
+	 * Iterate over tags while skipping comments and raw text contents.
+	 *
+	 * This uses the existing quote-aware tag parser because WordPress 6.0 does
+	 * not provide the HTML tag processor. Offsets refer to the original string.
+	 *
+	 * @param string $content Rendered HTML.
+	 * @return \Generator<array{name:string,attributes:string,closing:bool,start:int,end:int}>
+	 */
+	protected static function get_html_tags( $content ) {
+		$offset   = 0;
+		$length   = strlen( $content );
+		$raw_text = '';
+
+		while ( $offset < $length ) {
+			if ( '' !== $raw_text ) {
+				if ( 'plaintext' === $raw_text || ! preg_match( '~</' . preg_quote( $raw_text, '~' ) . '(?=[\s/>])~i', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+					break;
+				}
+
+				$offset   = $match[0][1];
+				$raw_text = '';
+			}
+
+			if ( ! preg_match( '~<!--|<!|<\?|</?[a-zA-Z]~', $content, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+				break;
+			}
+
+			$start = $match[0][1];
+
+			if ( '<!--' === $match[0][0] ) {
+				$end = self::get_html_comment_end( $content, $start );
+
+				if ( false === $end ) {
+					break;
+				}
+
+				$offset = $end;
+				continue;
+			}
+
+			if ( '<!' === $match[0][0] || '<?' === $match[0][0] ) {
+				$end = strpos( $content, '>', $start + 2 );
+
+				if ( false === $end ) {
+					break;
+				}
+
+				$offset = $end + 1;
+				continue;
+			}
+
+			if ( ! preg_match( '~\G<(/?)([a-zA-Z][a-zA-Z0-9:-]*)~', $content, $name_match, 0, $start ) ) {
+				$offset = $start + 1;
+				continue;
+			}
+
+			$attributes_start = $start + strlen( $name_match[0] );
+			$end              = self::find_html_tag_end( $content, $attributes_start, true );
+
+			if ( false === $end ) {
+				break;
+			}
+
+			$name    = strtolower( $name_match[2] );
+			$closing = '/' === $name_match[1];
+			$offset  = $end + 1;
+
+			yield [
+				'name'       => $name,
+				'attributes' => substr( $content, $attributes_start, $end - $attributes_start ),
+				'closing'    => $closing,
+				'start'      => $start,
+				'end'        => $offset,
+			];
+
+			if ( ! $closing && in_array( $name, [ 'script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'noscript', 'plaintext' ], true ) ) {
+				$raw_text = $name;
+			}
+		}
 	}
 
 	/**
@@ -1339,13 +1684,11 @@ class Reader {
 	 * @return string
 	 */
 	protected static function get_heading_attribute( $attributes, $name ) {
-		if ( ! preg_match( '/(?:^|\s)' . preg_quote( $name, '/' ) . '\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))/i', $attributes, $match ) ) {
-			return '';
-		}
+		$name = strtolower( (string) $name );
 
-		foreach ( [ 1, 2, 3 ] as $index ) {
-			if ( isset( $match[ $index ] ) && '' !== $match[ $index ] ) {
-				return html_entity_decode( $match[ $index ], ENT_QUOTES, get_bloginfo( 'charset' ) );
+		foreach ( self::parse_html_attributes( $attributes ) as $attribute ) {
+			if ( strtolower( $attribute['name'] ) === $name && 'n' === $attribute['vless'] ) {
+				return html_entity_decode( $attribute['value'], ENT_QUOTES, get_bloginfo( 'charset' ) );
 			}
 		}
 
@@ -1353,25 +1696,72 @@ class Reader {
 	}
 
 	/**
+	 * Parse an HTML attribute list without matching text inside quoted values.
+	 *
+	 * WordPress 6.0 does not include WP_HTML_Tag_Processor, so use the KSES
+	 * attribute parser available throughout the plugin's supported range.
+	 * Invalid names and case-insensitive duplicates are discarded before any
+	 * attributes are read or serialized.
+	 *
+	 * @since 1.9.1
+	 *
+	 * @param string $attributes Raw attribute string.
+	 *
+	 * @return array<int,array{name:string,value:string,vless:string}>
+	 */
+	protected static function parse_html_attributes( $attributes ) {
+		$parsed     = wp_kses_hair( trim( (string) $attributes ), wp_allowed_protocols() );
+		$attributes = [];
+		$seen       = [];
+
+		foreach ( $parsed as $attribute ) {
+			$name = isset( $attribute['name'] ) ? (string) $attribute['name'] : '';
+
+			if ( ! preg_match( '/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/D', $name ) ) {
+				continue;
+			}
+
+			$normalized_name = strtolower( $name );
+
+			if ( isset( $seen[ $normalized_name ] ) ) {
+				continue;
+			}
+
+			$seen[ $normalized_name ] = true;
+			$attributes[]             = [
+				'name'  => $name,
+				'value' => isset( $attribute['value'] ) ? (string) $attribute['value'] : '',
+				'vless' => isset( $attribute['vless'] ) && 'y' === $attribute['vless'] ? 'y' : 'n',
+			];
+		}
+
+		return $attributes;
+	}
+
+	/**
 	 * Return an ID that is unique within the rendered Reader Mode document.
 	 *
 	 * @since 1.8.0
 	 *
-	 * @param string $base_id Base heading ID.
-	 * @param array  $used    Used IDs keyed by ID.
+	 * @param string $base_id             Base heading ID.
+	 * @param array  $used                Used IDs keyed by ID.
+	 * @param array  $suffixes            Next suffix for each base ID.
+	 * @param array  $pending_heading_ids IDs reserved for later headings.
+	 * @param bool   $is_existing         Whether the heading supplied an ID.
 	 *
 	 * @return string
 	 */
-	protected static function get_unique_heading_id( $base_id, array &$used ) {
+	protected static function get_unique_heading_id( $base_id, array &$used, array &$suffixes, array $pending_heading_ids, $is_existing ) {
 		$id     = $base_id;
-		$suffix = 2;
+		$suffix = $suffixes[ $base_id ] ?? 2;
 
-		while ( isset( $used[ $id ] ) ) {
+		while ( isset( $used[ $id ] ) || ( isset( $pending_heading_ids[ $id ] ) && ( ! $is_existing || $id !== $base_id ) ) ) {
 			$id = $base_id . '-' . $suffix;
 			++$suffix;
 		}
 
-		$used[ $id ] = true;
+		$used[ $id ]          = true;
+		$suffixes[ $base_id ] = $suffix;
 
 		return $id;
 	}
@@ -1387,13 +1777,31 @@ class Reader {
 	 * @return string
 	 */
 	protected static function set_heading_id_attribute( $attributes, $id ) {
-		$id = esc_attr( $id );
+		$serialized = [];
+		$has_id     = false;
 
-		if ( preg_match( '/(?:^|\s)id\s*=/i', $attributes ) ) {
-			return preg_replace( '/\s*id\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+)/i', ' id="' . $id . '"', $attributes, 1 );
+		foreach ( self::parse_html_attributes( $attributes ) as $attribute ) {
+			$name = $attribute['name'];
+
+			if ( 'id' === strtolower( $name ) ) {
+				$name               = 'id';
+				$attribute['value'] = (string) $id;
+				$attribute['vless'] = 'n';
+				$has_id             = true;
+			}
+
+			if ( 'y' === $attribute['vless'] ) {
+				$serialized[] = $name;
+			} else {
+				$serialized[] = $name . '="' . esc_attr( $attribute['value'] ) . '"';
+			}
 		}
 
-		return rtrim( $attributes ) . ' id="' . $id . '"';
+		if ( ! $has_id ) {
+			$serialized[] = 'id="' . esc_attr( $id ) . '"';
+		}
+
+		return ' ' . implode( ' ', $serialized );
 	}
 
 	/**
@@ -1408,19 +1816,46 @@ class Reader {
 	 */
 	protected static function extract_rendered_scripts( $content, ?\WP_Post $post = null ) {
 		$scripts = [];
-		$content = (string) preg_replace_callback(
-			'#<script\b([^>]*)>(.*?)</script>#is',
-			static function ( $matches ) use ( &$scripts ) {
-				$script = self::normalize_rendered_script( $matches[1], $matches[2] );
+
+		if ( false !== stripos( $content, '<script' ) ) {
+			$prepared       = '';
+			$copied_until   = 0;
+			$template_depth = 0;
+			$script_start   = null;
+
+			foreach ( self::get_html_tags( $content ) as $tag ) {
+				if ( 'template' === $tag['name'] ) {
+					$template_depth = $tag['closing'] ? max( 0, $template_depth - 1 ) : $template_depth + 1;
+					continue;
+				}
+
+				if ( 'script' !== $tag['name'] || $template_depth > 0 ) {
+					continue;
+				}
+
+				if ( ! $tag['closing'] ) {
+					$script_start = $tag;
+					continue;
+				}
+
+				if ( null === $script_start ) {
+					continue;
+				}
+
+				$body   = substr( $content, $script_start['end'], $tag['start'] - $script_start['end'] );
+				$script = self::normalize_rendered_script( $script_start['attributes'], $body );
 
 				if ( ! empty( $script ) ) {
 					$scripts[] = $script;
 				}
 
-				return '';
-			},
-			$content
-		);
+				$prepared    .= substr( $content, $copied_until, $script_start['start'] - $copied_until );
+				$copied_until = $tag['end'];
+				$script_start = null;
+			}
+
+			$content = $prepared . substr( $content, $copied_until );
+		}
 
 		/**
 		 * Filter scripts extracted from rendered Reader Mode content.

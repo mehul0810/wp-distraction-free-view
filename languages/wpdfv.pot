@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Distraction Free View 1.9.0\n"
+"Project-Id-Version: WP Distraction Free View 1.9.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-distraction-free-view\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -68,6 +68,14 @@ msgstr ""
 
 #: src/Admin/SettingsApi.php:199
 msgid "Sorry, you are not allowed to activate plugins."
+msgstr ""
+
+#: src/Admin/PluginActions.php:186
+msgid "Sorry, you are not allowed to activate this plugin."
+msgstr ""
+
+#: src/Admin/PluginActions.php:204
+msgid "This plugin must be activated from the network administration screen."
 msgstr ""
 
 #: src/Admin/SettingsApi.php:208
@@ -661,6 +669,11 @@ msgstr ""
 #: assets/dist/js/wpdfv-admin.js:4
 #: assets/src/js/admin/wpdfv-admin.js:152
 msgid "Settings saved."
+msgstr ""
+
+#: assets/dist/js/wpdfv-admin.js:4
+#: assets/src/js/admin/wpdfv-admin.js:258
+msgid "Settings saved. You have unsaved changes."
 msgstr ""
 
 #: assets/dist/js/wpdfv-admin.js:4

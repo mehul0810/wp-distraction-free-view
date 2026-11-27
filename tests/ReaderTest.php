@@ -772,6 +772,57 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * Inert HTML must not become a script when the Reader is opened.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_extracts_only_active_script_elements() {
+		$content  = '<!-- <script>comment marker</script> -->'
+			. '<textarea><script>textarea marker</script></textarea>'
+			. '<style>/* <script>style marker</script> */</style>'
+			. '<template><template><script>template marker</script></template></template>'
+			. '<div data-example="<script>attribute marker</script>"></div>'
+			. '<script data-example="a > b">active marker</script>';
+		$prepared = Reader::prepare_rendered_content( $content );
+
+		$this->assertCount( 1, $prepared['scripts'] );
+		$this->assertSame( 'active marker', $prepared['scripts'][0]['content'] );
+		$this->assertSame( 'a > b', $prepared['scripts'][0]['attributes']['data-example'] );
+	}
+
+	/**
+	 * The script filter still runs when markup contains no script tags.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_filters_scripts_without_script_tags() {
+		\add_filter(
+			'wpdfv_modal_content_scripts',
+			static function () {
+				return [ [ 'content' => 'filter marker' ] ];
+			}
+		);
+		$prepared = Reader::prepare_rendered_content( '<p>Article</p>' );
+
+		$this->assertSame( 'filter marker', $prepared['scripts'][0]['content'] );
+	}
+
+	/**
+	 * Apostrophes in HTML comments do not hide content between comments.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_rendered_content_preserves_paragraph_between_comments() {
+		$content  = "<!-- Editor's note --><p>Visible paragraph.</p><!-- Editor's end note -->";
+		$prepared = Reader::prepare_rendered_content( $content );
+		$document = new \DOMDocument();
+		$document->loadHTML( $prepared['content'] );
+
+		$this->assertCount( 1, $document->getElementsByTagName( 'p' ) );
+		$this->assertSame( 'Visible paragraph.', $document->getElementsByTagName( 'p' )->item( 0 )->textContent );
+	}
+
+	/**
 	 * RTL and Unicode-heavy content remains intact after Reader Mode preparation.
 	 *
 	 * @return void
@@ -837,6 +888,61 @@ class ReaderTest extends TestCase {
 	}
 
 	/**
+	 * IDs belonging to ordinary content cannot be assigned to headings.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_avoids_ids_on_other_elements() {
+		$content  = '<p id="introduction">Start</p><h2>Introduction</h2><h2>Introduction</h2><span id="introduction-3">End</span>';
+		$prepared = Reader::prepare_table_of_contents( $content );
+
+		$this->assertSame( 'introduction-2', $prepared['items'][0]['id'] );
+		$this->assertSame( 'introduction-4', $prepared['items'][1]['id'] );
+		$this->assertStringContainsString( '<p id="introduction">Start</p>', $prepared['content'] );
+		$this->assertStringContainsString( '<h2 id="introduction-2">Introduction</h2>', $prepared['content'] );
+	}
+
+	/**
+	 * A generated ID must leave later authored heading IDs available.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_preserves_later_authored_ids() {
+		$content  = '<h2>Introduction</h2><h2 id="introduction">Details</h2><h2 id="introduction-2">More</h2>';
+		$prepared = Reader::prepare_table_of_contents( $content );
+
+		$this->assertSame( 'introduction-3', $prepared['items'][0]['id'] );
+		$this->assertSame( 'introduction', $prepared['items'][1]['id'] );
+		$this->assertSame( 'introduction-2', $prepared['items'][2]['id'] );
+	}
+
+	/**
+	 * Literal code in a heading remains readable in its navigation label.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_preserves_literal_code_in_headings() {
+		$prepared = Reader::prepare_table_of_contents( '<h2>Use <code>&lt;example&gt;</code></h2>' );
+
+		$this->assertSame( 'Use <example>', $prepared['items'][0]['text'] );
+		$this->assertStringContainsString( '<code>&lt;example&gt;</code>', $prepared['content'] );
+	}
+
+	/**
+	 * Headings inside comments or attributes do not appear in navigation.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_ignores_inert_tag_like_text() {
+		$content  = '<!-- <h2 id="ignored">Ignored</h2> --><p title="<h2>Ignored</h2>">Text</p><h2>Visible</h2>';
+		$prepared = Reader::prepare_table_of_contents( $content );
+
+		$this->assertCount( 1, $prepared['items'] );
+		$this->assertSame( 'Visible', $prepared['items'][0]['text'] );
+		$this->assertStringContainsString( '<h2 id="visible">Visible</h2>', $prepared['content'] );
+	}
+
+	/**
 	 * Empty headings are ignored so the navigation only contains useful labels.
 	 *
 	 * @return void
@@ -848,6 +954,39 @@ class ReaderTest extends TestCase {
 		$this->assertSame( 'Visible', $prepared['items'][0]['text'] );
 		$this->assertStringContainsString( '<h2><span></span></h2>', $prepared['content'] );
 		$this->assertStringContainsString( '<h2 id="visible">Visible</h2>', $prepared['content'] );
+	}
+
+	/**
+	 * Text resembling attributes inside a title cannot escape into heading markup.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_does_not_promote_title_text_to_attributes() {
+		$title    = 'Comparison > id=foo onmouseover=alert(1)//';
+		$prepared = Reader::prepare_table_of_contents( '<h2 title="' . $title . '">Heading</h2>' );
+		$document = new \DOMDocument();
+
+		$document->loadHTML( $prepared['content'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+		$heading = $document->getElementsByTagName( 'h2' )->item( 0 );
+
+		$this->assertInstanceOf( \DOMElement::class, $heading );
+		$this->assertSame( $title, $heading->getAttribute( 'title' ) );
+		$this->assertSame( 'heading', $heading->getAttribute( 'id' ) );
+		$this->assertFalse( $heading->hasAttribute( 'onmouseover' ) );
+		$this->assertSame( 'heading', $prepared['items'][0]['id'] );
+	}
+
+	/**
+	 * Malformed headings are preserved without erasing surrounding content.
+	 *
+	 * @return void
+	 */
+	public function test_prepare_table_of_contents_preserves_an_unclosed_heading() {
+		$content  = '<p>Before</p><h2 class="section" ' . str_repeat( 'a', 200 ) . '><p>After</p>';
+		$prepared = Reader::prepare_table_of_contents( $content );
+
+		$this->assertSame( $content, $prepared['content'] );
+		$this->assertSame( [], $prepared['items'] );
 	}
 
 	/**

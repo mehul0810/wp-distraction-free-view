@@ -501,7 +501,7 @@ const getStoredReaderPosition = ( postId ) => {
 		? {
 				scrollTop: Number( entry.scrollTop ),
 				progress: Number( entry.progress ),
-		  }
+			}
 		: null;
 };
 
@@ -558,7 +558,7 @@ const getFocusableElements = ( container ) =>
 		}
 	);
 
-const ReaderButton = forwardRef( function ReaderButton(
+const ReaderButton = forwardRef( function ReaderButtonWithRef(
 	{
 		ariaLabel,
 		children,
@@ -995,6 +995,17 @@ const applyReaderContentPreferences = ( container, preferences ) => {
 		container,
 		selectors.protected
 	);
+	const protectedSet = new Set( protectedElements );
+	const protectedAncestors = new Set();
+	protectedElements.forEach( ( element ) => {
+		for (
+			let ancestor = element;
+			ancestor && ancestor !== container;
+			ancestor = ancestor.parentElement
+		) {
+			protectedAncestors.add( ancestor );
+		}
+	} );
 
 	[ 'media', 'embeds', 'comments' ].forEach( ( category ) => {
 		const hiddenClass = `wpdfv-reader-hidden-${ category }`;
@@ -1015,20 +1026,22 @@ const applyReaderContentPreferences = ( container, preferences ) => {
 			container,
 			selectors[ category ]
 		);
+		const candidateSet = new Set( candidates );
 		candidates.forEach( ( element ) => {
-			if (
-				candidates.some(
-					( parent ) =>
-						parent !== element && parent.contains( element )
-				) ||
-				protectedElements.some(
-					( protectedElement ) =>
-						protectedElement === element ||
-						protectedElement.contains( element ) ||
-						element.contains( protectedElement )
-				)
-			) {
+			if ( protectedAncestors.has( element ) ) {
 				return;
+			}
+			for (
+				let ancestor = element.parentElement;
+				ancestor && ancestor !== container;
+				ancestor = ancestor.parentElement
+			) {
+				if (
+					candidateSet.has( ancestor ) ||
+					protectedSet.has( ancestor )
+				) {
+					return;
+				}
 			}
 
 			element.classList.add( hiddenClass );
@@ -1123,6 +1136,7 @@ const ReaderApp = () => {
 	);
 	const [ linkFeedback, setLinkFeedback ] = useState( null );
 	const contentRef = useRef( null );
+	const activeRequestRef = useRef( null );
 	const utteranceRef = useRef( null );
 	const scriptNodesRef = useRef( [] );
 	const feedbackTimeoutRef = useRef( null );
@@ -1471,7 +1485,18 @@ const ReaderApp = () => {
 		}
 	};
 
+	const cancelActiveRequest = useCallback( () => {
+		const activeRequest = activeRequestRef.current;
+
+		activeRequestRef.current = null;
+
+		if ( activeRequest && activeRequest.controller ) {
+			activeRequest.controller.abort();
+		}
+	}, [] );
+
 	const closeReader = useCallback( () => {
+		cancelActiveRequest();
 		stopReadAloud();
 		setIsOpen( false );
 		setIsSettingsOpen( false );
@@ -1481,13 +1506,37 @@ const ReaderApp = () => {
 		setTocItems( [] );
 		setResumePosition( null );
 		setLinkFeedback( null );
-	}, [ stopReadAloud ] );
+	}, [ cancelActiveRequest, stopReadAloud ] );
 
 	const openReader = useCallback(
 		( postId ) => {
-			if ( ! postId ) {
+			const normalizedPostId =
+				'number' === typeof postId &&
+				Number.isSafeInteger( postId ) &&
+				postId > 0
+					? String( postId )
+					: postId;
+			const isCanonicalPostId =
+				'string' === typeof normalizedPostId &&
+				/^[1-9]/.test( normalizedPostId ) &&
+				! /[^0-9]/.test( normalizedPostId );
+
+			if ( ! isCanonicalPostId ) {
 				return;
 			}
+
+			// Each open owns its response lifecycle; any older request is
+			// invalidated and aborted where supported.
+			cancelActiveRequest();
+			const request = {
+				controller:
+					'undefined' !== typeof window.AbortController
+						? new window.AbortController()
+						: null,
+			};
+			const isCurrent = () => activeRequestRef.current === request;
+
+			activeRequestRef.current = request;
 
 			stopReadAloud();
 			setIsOpen( true );
@@ -1499,14 +1548,23 @@ const ReaderApp = () => {
 			setScripts( [] );
 			setTocItems( [] );
 			setReadingTime( null );
-			setCurrentPostId( String( postId ) );
+			setCurrentPostId( normalizedPostId );
 			setResumePosition( null );
 			setIsSettingsOpen( false );
 			setProgress( 0 );
 			setLinkFeedback( null );
 
-			apiFetch( { path: `${ CONTENT_PATH }${ postId }` } )
+			apiFetch( {
+				path: `${ CONTENT_PATH }${ normalizedPostId }`,
+				signal: request.controller
+					? request.controller.signal
+					: undefined,
+			} )
 				.then( ( response ) => {
+					if ( ! isCurrent() ) {
+						return;
+					}
+
 					setTitle( response.title );
 					setPermalink( response.permalink || '' );
 					setContent( response.content );
@@ -1521,6 +1579,11 @@ const ReaderApp = () => {
 					setReadingTime( response.readingTime );
 				} )
 				.catch( () => {
+					// Superseded or intentionally cancelled requests are not failures.
+					if ( ! isCurrent() ) {
+						return;
+					}
+
 					setError(
 						__(
 							'This content could not be loaded in Reader Mode.',
@@ -1528,9 +1591,14 @@ const ReaderApp = () => {
 						)
 					);
 				} )
-				.finally( () => setIsLoading( false ) );
+				.finally( () => {
+					if ( isCurrent() ) {
+						activeRequestRef.current = null;
+						setIsLoading( false );
+					}
+				} );
 		},
-		[ stopReadAloud ]
+		[ cancelActiveRequest, stopReadAloud ]
 	);
 
 	useEffect( () => {
@@ -1661,8 +1729,11 @@ const ReaderApp = () => {
 	};
 
 	const navigateToHeading = ( headingId ) => {
-		const target =
-			contentRef.current?.ownerDocument.getElementById( headingId );
+		const target = Array.from(
+			contentRef.current?.querySelectorAll(
+				'h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'
+			) || []
+		).find( ( heading ) => heading.id === headingId );
 
 		if ( ! target || ! contentRef.current?.contains( target ) ) {
 			return;
@@ -1797,11 +1868,11 @@ const ReaderApp = () => {
 									? __(
 											'Exit fullscreen',
 											'wp-distraction-free-view'
-									  )
+										)
 									: __(
 											'Fullscreen',
 											'wp-distraction-free-view'
-									  )
+										)
 							}
 							onClick={ toggleFullscreen }
 						/>

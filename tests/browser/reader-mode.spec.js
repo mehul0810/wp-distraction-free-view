@@ -44,6 +44,42 @@ test.describe( 'Reader Mode smoke', () => {
 		);
 	} );
 
+	test( 'rejects non-canonical post IDs before making a REST request', async ( {
+		page,
+	} ) => {
+		const readerRequests = [];
+		const invalidPostIds = [
+			'../../../wp/v2/users?_method=POST',
+			'..%2f..%2fwp%2fv2%2fusers?_method=POST',
+			'1?context=edit',
+			'1#fragment',
+			'01',
+			'1e2',
+			'1\n',
+		];
+
+		page.on( 'request', ( request ) => {
+			if ( request.url().includes( '/wp-json/' ) ) {
+				readerRequests.push( request.url() );
+			}
+		} );
+
+		for ( const postId of invalidPostIds ) {
+			await page.evaluate( ( value ) => {
+				const trigger = document.createElement( 'button' );
+				trigger.className = 'wpdfv-fullscreen-btn';
+				trigger.dataset.postId = value;
+				document.body.appendChild( trigger );
+				trigger.click();
+				trigger.remove();
+			}, postId );
+		}
+
+		await page.waitForTimeout( 100 );
+		expect( readerRequests ).toEqual( [] );
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+	} );
+
 	test( 'keeps the modal close target clickable without a hover tooltip layer', async ( {
 		page,
 	} ) => {
@@ -389,6 +425,50 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( mediaToggle ).not.toBeChecked();
 		await expect( embedToggle ).not.toBeChecked();
 		await expect( commentsToggle ).not.toBeChecked();
+	} );
+
+	test( 'keeps protected media visible and scales with sibling images', async ( {
+		page,
+	} ) => {
+		await setContentSelectors( page, {
+			media: [ 'img', 'picture', '.media-container' ],
+			protected: [ '.protected' ],
+		} );
+		await mockReaderContentResponse(
+			page,
+			'<div class="media-container"><picture><img alt="nested"></picture></div>' +
+				'<div class="media-container"><span class="protected">Protected child</span></div>' +
+				'<div class="protected"><img alt="protected ancestor"></div>' +
+				Array.from(
+					{ length: 1000 },
+					( _, index ) => `<img alt="Image ${ index }">`
+				).join( '' )
+		);
+		await page.evaluate(
+			( key ) => localStorage.removeItem( key ),
+			storageKey
+		);
+		await openReader( page );
+		await waitForReaderContent( page );
+		await page.getByRole( 'button', { name: 'Reader settings' } ).click();
+		await page.evaluate( () => {
+			window.wpdfvContainsCalls = 0;
+			const contains = Element.prototype.contains;
+			Element.prototype.contains = function ( node ) {
+				window.wpdfvContainsCalls += 1;
+				return contains.call( this, node );
+			};
+		} );
+		await page.getByLabel( 'Show images and media' ).uncheck();
+		await expect(
+			page.locator( '.wpdfv-reader-hidden-media' )
+		).toHaveCount( 1001 );
+		await expect( page.getByText( 'Protected child' ) ).toBeVisible();
+		await expect( page.getByAltText( 'protected ancestor' ) ).toBeVisible();
+		await expect( page.getByAltText( 'nested' ) ).toBeHidden();
+		expect(
+			await page.evaluate( () => window.wpdfvContainsCalls )
+		).toBeLessThan( 10000 );
 	} );
 
 	test( 'keeps content visible while its controls are disabled and restores saved choices', async ( {
@@ -751,6 +831,49 @@ test.describe( 'Reader Mode smoke', () => {
 			.toBe( true );
 	} );
 
+	test( 'navigates to a reader heading when another element has the same id', async ( {
+		page,
+	} ) => {
+		await page.addInitScript( () => {
+			let config;
+			Object.defineProperty( window, 'wpdfvReaderMode', {
+				configurable: true,
+				get: () => config,
+				set: ( value ) => {
+					config = { ...value, readerTocEnabled: true };
+				},
+			} );
+		} );
+		await page.reload();
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			( route ) =>
+				route.fulfill( {
+					json: {
+						id: 1,
+						title: 'Reader example',
+						permalink: 'https://example.com/article/',
+						content:
+							'<p id="introduction">Start</p><h2 id="introduction">Introduction</h2><h2 id="conclusion">Conclusion</h2>',
+						scripts: [],
+						toc: [
+							{
+								id: 'introduction',
+								level: 2,
+								text: 'Introduction',
+							},
+							{ id: 'conclusion', level: 2, text: 'Conclusion' },
+						],
+					},
+				} )
+		);
+		await openReader( page );
+		await page.getByRole( 'link', { name: 'Introduction' } ).click();
+		await expect(
+			page.locator( '.wpdfv-reader-content h2#introduction' )
+		).toBeFocused();
+	} );
+
 	test( 'uses reader-friendly print media output', async ( { page } ) => {
 		await openReader( page );
 		await page.emulateMedia( { media: 'print' } );
@@ -1002,6 +1125,136 @@ test.describe( 'Reader Mode smoke', () => {
 		await expect( page.locator( modalSelector ) ).toBeVisible();
 		await expect( page.getByText( /Resume from/ ) ).toHaveCount( 0 );
 	} );
+
+	test( 'ignores superseded content requests after close and reopen', async ( {
+		page,
+	} ) => {
+		const releaseStale = [];
+		let requestCount = 0;
+
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			async ( route ) => {
+				requestCount += 1;
+				const isStale = 1 === requestCount;
+
+				if ( isStale ) {
+					// Hold the first (stale) response until the test releases it.
+					await new Promise( ( resolve ) =>
+						releaseStale.push( resolve )
+					);
+				}
+
+				await route
+					.fulfill( {
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify( {
+							id: 1,
+							title: isStale
+								? 'Stale Article'
+								: 'Current Article',
+							permalink: isStale
+								? 'https://example.com/stale/'
+								: 'https://example.com/current/',
+							content: `<div class="wp-block-post-content"><p>${
+								isStale ? 'Stale body' : 'Current body'
+							}</p></div>`,
+							scripts: [],
+							toc: [],
+							readingTime: { minutes: 1, label: '1 min read' },
+						} ),
+					} )
+					.catch( () => {} );
+			}
+		);
+
+		// Open A, then close while it is still loading.
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( modalSelector ) ).toBeVisible();
+		await expect.poll( () => releaseStale.length ).toBe( 1 );
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.first()
+			.click();
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+
+		// Open B (the current session) and let it finish.
+		await openReader( page );
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+
+		// Releasing the stale response must not change the current session.
+		releaseStale[ 0 ]();
+		await page.waitForTimeout( 300 );
+
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+		await expect(
+			page.locator( '.wpdfv-reader-content' )
+		).not.toContainText( 'Stale body' );
+		await expect(
+			page.locator( '.wpdfv-reader-notice--error' )
+		).toHaveCount( 0 );
+	} );
+
+	test( 'does not show a load error for an intentionally cancelled request', async ( {
+		page,
+	} ) => {
+		let requestCount = 0;
+
+		await page.route(
+			'**/wp-json/wp-distraction-free-view/v1/content/**',
+			async ( route ) => {
+				requestCount += 1;
+
+				if ( 1 === requestCount ) {
+					await route.fulfill( {
+						status: 500,
+						contentType: 'application/json',
+						body: JSON.stringify( { code: 'stale_failure' } ),
+					} );
+					return;
+				}
+
+				await new Promise( ( resolve ) => setTimeout( resolve, 600 ) );
+				await route
+					.fulfill( {
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify( {
+							id: 1,
+							title: 'Current Article',
+							permalink: 'https://example.com/current/',
+							content:
+								'<div class="wp-block-post-content"><p>Current body</p></div>',
+							scripts: [],
+							toc: [],
+							readingTime: { minutes: 1, label: '1 min read' },
+						} ),
+					} )
+					.catch( () => {} );
+			}
+		);
+
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( modalSelector ) ).toBeVisible();
+		await page
+			.getByRole( 'button', { name: /exit reader mode|close/i } )
+			.first()
+			.click();
+		await expect( page.locator( modalSelector ) ).toBeHidden();
+
+		await page.locator( toggleSelector ).first().click();
+		await expect( page.locator( '.wpdfv-reader-content' ) ).toContainText(
+			'Current body'
+		);
+		await expect(
+			page.locator( '.wpdfv-reader-notice--error' )
+		).toHaveCount( 0 );
+	} );
 } );
 
 async function openReader( page ) {
@@ -1159,7 +1412,7 @@ async function setDisabledContentControls( page, disabledConfig ) {
 									embeds: true,
 									comments: true,
 								},
-						  };
+							};
 			},
 		} );
 	}, disabledConfig );

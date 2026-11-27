@@ -35,6 +35,18 @@ class ActionsTest extends TestCase {
 		$this->assertSame( 'replace', $GLOBALS['wpdfv_test_enqueued']['style_data']['wpdfv-core']['rtl'] );
 	}
 
+	/** Multiple Reader toggles share one copy of the custom stylesheet and settings. */
+	public function test_repeated_enqueues_attach_inline_assets_once() {
+		$css = '.wpdfv-reader { color: teal; }';
+		update_option( 'wpdfv_settings', [ 'custom_css' => $css ] );
+		for ( $i = 0; $i < 10; ++$i ) {
+			FrontendActions::enqueue_frontend_assets();
+		}
+
+		$this->assertSame( [ $css ], $GLOBALS['wpdfv_test_enqueued']['inline_styles']['wpdfv-core'] );
+		$this->assertCount( 1, $GLOBALS['wpdfv_test_enqueued']['inline']['wpdfv-core'] );
+	}
+
 	/**
 	 * Admin styles opt into WordPress RTL replacement.
 	 *

@@ -37,6 +37,8 @@
 .huskyrc.json
 .lintstagedrc.json
 .distignore
+phpstan.neon.dist
+phpstan-baseline.neon
 .stylelintignore
 .phpunit.result.cache
 npm-debug.log*

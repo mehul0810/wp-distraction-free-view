@@ -126,6 +126,17 @@ class Helpers {
 	}
 
 	/**
+	 * Check the singular page context shared by automatic placement and asset loading.
+	 *
+	 * @param \WP_Post $post Post being displayed.
+	 * @return bool
+	 */
+	public static function is_supported_reader_context( \WP_Post $post ) {
+		return ( ! function_exists( 'is_singular' ) || is_singular( $post->post_type ) )
+			&& Reader::is_post_enabled_for_post( $post );
+	}
+
+	/**
 	 * Get Settings.
 	 *
 	 * @since  1.6.0

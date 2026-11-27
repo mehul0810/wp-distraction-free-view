@@ -91,6 +91,7 @@ const SettingsApp = () => {
 	const [ notice, setNotice ] = useState( null );
 	const adminNoticesRef = useRef( null );
 	const [ isDirty, setIsDirty ] = useState( false );
+	const settingVersionsRef = useRef( {} );
 	const tabs = [
 		{
 			name: 'about',
@@ -106,28 +107,45 @@ const SettingsApp = () => {
 		},
 	];
 
-	const applySettingsResponse = useCallback( ( response ) => {
-		setSettings( response.settings );
-		setIsDirty( false );
-		setPostTypes( response.postTypes );
-		setDisplayLocations( response.displayLocations );
-		setReaderThemes( response.readerThemes );
-		setContentWidths( response.contentWidths );
-		setFontSizes( response.fontSizes );
-		setModalTemplates( response.modalTemplates );
-		setCanEditCustomCss( !! response.canEditCustomCss );
-		setMorePlugins(
-			normalizeMorePlugins(
-				response.morePlugins || response.recommendedPlugins || []
-			)
-		);
-		setAboutInfo( {
-			brandIconUrl: response.brandIconUrl,
-			minimumPhp: response.minimumPhp,
-			minimumWordPress: response.minimumWordPress,
-			pluginVersion: response.pluginVersion,
-		} );
-	}, [] );
+	const applySettingsResponse = useCallback(
+		( response, submittedVersions ) => {
+			const currentVersions = settingVersionsRef.current;
+			const changedKeys = submittedVersions
+				? Object.keys( currentVersions ).filter(
+						( key ) =>
+							currentVersions[ key ] !== submittedVersions[ key ]
+					)
+				: [];
+
+			setSettings( ( current ) => {
+				const next = { ...response.settings };
+				changedKeys.forEach( ( key ) => {
+					next[ key ] = current[ key ];
+				} );
+				return next;
+			} );
+			setIsDirty( changedKeys.length > 0 );
+			setPostTypes( response.postTypes );
+			setDisplayLocations( response.displayLocations );
+			setReaderThemes( response.readerThemes );
+			setContentWidths( response.contentWidths );
+			setFontSizes( response.fontSizes );
+			setModalTemplates( response.modalTemplates );
+			setCanEditCustomCss( !! response.canEditCustomCss );
+			setMorePlugins(
+				normalizeMorePlugins(
+					response.morePlugins || response.recommendedPlugins || []
+				)
+			);
+			setAboutInfo( {
+				brandIconUrl: response.brandIconUrl,
+				minimumPhp: response.minimumPhp,
+				minimumWordPress: response.minimumWordPress,
+				pluginVersion: response.pluginVersion,
+			} );
+		},
+		[]
+	);
 
 	const loadSettings = useCallback( () => {
 		setIsLoading( true );
@@ -195,6 +213,8 @@ const SettingsApp = () => {
 	);
 
 	const updateSetting = ( key, value ) => {
+		settingVersionsRef.current[ key ] =
+			( settingVersionsRef.current[ key ] || 0 ) + 1;
 		setIsDirty( true );
 		setSettings( ( current ) => ( {
 			...current,
@@ -207,12 +227,13 @@ const SettingsApp = () => {
 			? [ ...selectedPostTypes, slug ]
 			: selectedPostTypes.filter(
 					( selectedSlug ) => selectedSlug !== slug
-			  );
+				);
 
 		updateSetting( 'where_to_display', [ ...new Set( nextSelection ) ] );
 	};
 
 	const saveSettings = () => {
+		const submittedVersions = { ...settingVersionsRef.current };
 		setIsSaving( true );
 		setNotice( null );
 
@@ -222,13 +243,22 @@ const SettingsApp = () => {
 			data: settings,
 		} )
 			.then( ( response ) => {
-				applySettingsResponse( response );
+				const hasNewerEdits = Object.keys(
+					settingVersionsRef.current
+				).some(
+					( key ) =>
+						settingVersionsRef.current[ key ] !==
+						submittedVersions[ key ]
+				);
+				applySettingsResponse( response, submittedVersions );
 				setNotice( {
 					status: 'success',
-					message: __(
-						'Settings saved.',
-						'wp-distraction-free-view'
-					),
+					message: hasNewerEdits
+						? __(
+								'Settings saved. You have unsaved changes.',
+								'wp-distraction-free-view'
+							)
+						: __( 'Settings saved.', 'wp-distraction-free-view' ),
 				} );
 			} )
 			.catch( () => {
@@ -264,11 +294,11 @@ const SettingsApp = () => {
 							? __(
 									'Plugin installed. You can activate it now.',
 									'wp-distraction-free-view'
-							  )
+								)
 							: __(
 									'Plugin activated.',
 									'wp-distraction-free-view'
-							  ),
+								),
 				} );
 			} )
 			.catch( ( error ) => {
@@ -625,7 +655,7 @@ const ConfigurePanel = ( {
 							: __(
 									'Save settings',
 									'wp-distraction-free-view'
-							  ) }
+								) }
 					</Button>
 				</div>
 			</div>
@@ -1157,7 +1187,6 @@ const ConfigurePanel = ( {
 							>
 								<CustomCssControl
 									value={ settings.custom_css || '' }
-									isDirty={ isDirty }
 									codeEditorSettings={
 										window.wpdfvAdminSettings?.codeEditor
 									}
@@ -1327,23 +1356,19 @@ const getPlacementDescription = ( value ) => {
 	return descriptions[ value ] || '';
 };
 
-const CustomCssControl = ( {
-	value,
-	isDirty,
-	codeEditorSettings,
-	onChange,
-} ) => {
+const CustomCssControl = ( { value, codeEditorSettings, onChange } ) => {
 	const textareaRef = useRef();
 	const editorRef = useRef();
 	const initialValueRef = useRef( value );
 	const onChangeRef = useRef( onChange );
 	const isSyncingRef = useRef( false );
+	const pendingChangeRef = useRef( null );
 	onChangeRef.current = onChange;
 	const textareaId = 'wpdfv-custom-css';
 	const hasCodeEditor = Boolean(
 		codeEditorSettings &&
-			typeof window !== 'undefined' &&
-			window.wp?.codeEditor
+		typeof window !== 'undefined' &&
+		window.wp?.codeEditor
 	);
 	const exampleCss = `.wpdfv-reader-modal .wpdfv-reader-content {
 \tfont-family: Georgia, serif;
@@ -1376,7 +1401,9 @@ const CustomCssControl = ( {
 		editorRef.current = editor;
 		const handleChange = () => {
 			if ( ! isSyncingRef.current ) {
-				onChangeRef.current( editor.codemirror.getValue() );
+				const nextValue = editor.codemirror.getValue();
+				pendingChangeRef.current = nextValue;
+				onChangeRef.current( nextValue );
 			}
 		};
 		editor.codemirror.on( 'change', handleChange );
@@ -1389,8 +1416,13 @@ const CustomCssControl = ( {
 	}, [ codeEditorSettings ] );
 
 	useEffect( () => {
+		if ( null !== pendingChangeRef.current ) {
+			if ( pendingChangeRef.current !== value ) {
+				return;
+			}
+			pendingChangeRef.current = null;
+		}
 		if (
-			! isDirty &&
 			editorRef.current &&
 			editorRef.current.codemirror.getValue() !== value
 		) {
@@ -1398,7 +1430,7 @@ const CustomCssControl = ( {
 			editorRef.current.codemirror.setValue( value );
 			isSyncingRef.current = false;
 		}
-	}, [ value, isDirty ] );
+	}, [ value ] );
 
 	return (
 		<div className="wpdfv-custom-css">

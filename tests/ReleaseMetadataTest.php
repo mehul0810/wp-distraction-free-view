@@ -43,8 +43,25 @@ class ReleaseMetadataTest extends TestCase {
 			'pot'           => $pot_match[1] ?? null,
 		];
 
-		$this->assertSame( '1.9.0', $versions['plugin header'] );
+		$this->assertSame( '1.9.1', $versions['plugin header'] );
 		$this->assertSame( 1, count( array_unique( $versions ) ), print_r( $versions, true ) );
+	}
+
+	/**
+	 * The action receiving WordPress.org credentials is pinned immutably.
+	 *
+	 * @return void
+	 */
+	public function test_wordpress_org_deploy_action_is_pinned_to_verified_commit() {
+		$workflow = $this->read_file( dirname( __DIR__ ) . '/.github/workflows/release.yml' );
+		$matched  = preg_match(
+			'/^\s*uses:\s*10up\/action-wordpress-plugin-deploy@([0-9a-f]{40})\s+#\s+v2\.3\.0\s*$/m',
+			$workflow,
+			$matches
+		);
+
+		$this->assertSame( 1, $matched );
+		$this->assertSame( '54bd289b8525fd23a5c365ec369185f2966529c2', $matches[1] );
 	}
 
 	/**

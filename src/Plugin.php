@@ -36,6 +36,7 @@ final class Plugin {
 		add_action( 'add_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
 		add_action( 'update_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
 		add_action( 'delete_option_wpdfv_settings', [ $this, 'invalidate_request_caches' ] );
+		add_action( 'switch_blog', [ $this, 'invalidate_request_caches' ] );
 
 		// Load text domain.
 		add_action( 'init', [ $this, 'load_plugin_textdomain' ] );
@@ -154,9 +155,10 @@ final class Plugin {
 		do {
 			$site_ids = get_sites(
 				[
-					'fields' => 'ids',
-					'number' => $number,
-					'offset' => $offset,
+					'fields'     => 'ids',
+					'number'     => $number,
+					'offset'     => $offset,
+					'network_id' => get_current_network_id(),
 				]
 			);
 

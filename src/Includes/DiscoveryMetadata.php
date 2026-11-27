@@ -67,7 +67,10 @@ class DiscoveryMetadata {
 			return;
 		}
 
-		$data = Content::get_structured_data( $post );
+		// These extension points receive the complete structured payload, including rendered content.
+		$data = has_filter( 'wpdfv_structured_reader_content' ) || has_filter( 'wpdfv_discovery_metadata' )
+			? Content::get_structured_data( $post )
+			: Content::get_article_metadata( $post, false );
 		if ( ! is_array( $data ) || empty( $data['canonicalUrl'] ) || ! is_string( $data['canonicalUrl'] ) || empty( $data['title'] ) || ! is_string( $data['title'] ) ) {
 			return;
 		}
