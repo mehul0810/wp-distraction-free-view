@@ -28,7 +28,7 @@ Under **Configure**, use **Appearance** for defaults, **Reading tools** for opti
 
 ## Requirements
 
-- WordPress 6.0 or later, tested up to 7.2 (currently 7.2-RC3)
+- WordPress 6.0 or later, tested up to 7.2 (initially verified with 7.2-RC3)
 - PHP 8.2 or later
 
 For development, use Node.js 26.13.1 LTS, its bundled npm 11.20.0, and Composer 2. The Node version is pinned in `.nvmrc` and `.node-version`.

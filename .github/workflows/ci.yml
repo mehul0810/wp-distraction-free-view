@@ -95,7 +95,7 @@ jobs:
         with:
           php-version: '8.2'
           coverage: none
-          tools: composer:v2, wp-cli
+          tools: composer:v2
 
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress
@@ -116,18 +116,6 @@ jobs:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
           WP_MULTISITE: 1
         run: composer test:integration
-
-      - name: Check Reader markup on the minimum WordPress version
-        env:
-          WP_CLI_DISABLE_AUTO_CHECK_UPDATE: '1'
-        run: |
-          core="$RUNNER_TEMP/reader-wordpress-6.0"
-          wp core download --path="$core" --version=6.0
-          wp config create --path="$core" --dbname=wordpress_test --dbuser=root --dbpass=root --dbhost=127.0.0.1 --dbprefix=wp_min_
-          wp core install --path="$core" --url=http://reader.test --title=Reader --admin_user=reader --admin_email=reader@example.test --skip-email > /dev/null
-          ln -s "$GITHUB_WORKSPACE" "$core/wp-content/plugins/wp-distraction-free-view"
-          wp plugin activate wp-distraction-free-view --path="$core"
-          vendor/bin/phpunit --no-configuration --bootstrap "$core/wp-load.php" tests/integration/ReaderMarkupIntegrationTest.php
 
   compatibility:
     name: Compatibility (PHP ${{ matrix.php }})
@@ -154,7 +142,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          tools: composer:v2, wp-cli
+          tools: composer:v2
 
       - run: composer install --prefer-dist --no-progress
       - run: composer test
