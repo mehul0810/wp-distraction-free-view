@@ -31,7 +31,7 @@ Under **Configure**, use **Appearance** for defaults, **Reading tools** for opti
 - WordPress 6.0 or later, tested up to 7.1
 - PHP 8.2 or later
 
-For development, use Node.js 24.15.0, npm 11 or later, and Composer. The Node version is pinned in `.nvmrc` and `.node-version`.
+For development, use Node.js 26.13.1 LTS, its bundled npm 11.20.0, and Composer 2. The Node version is pinned in `.nvmrc` and `.node-version`.
 
 ## Local Development
 
@@ -49,6 +49,8 @@ Install dependencies:
 composer install
 npm ci
 ```
+
+WordPress Scripts supplies webpack. The npm overrides update Markdown linting, math parsing dependencies, and the serializer used by the webpack copy cache. Recheck these overrides when updating WordPress Scripts. Composer resolves development dependencies for the minimum supported PHP version, 8.2.
 
 Build assets:
 

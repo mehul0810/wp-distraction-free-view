@@ -207,7 +207,7 @@ const SettingsApp = () => {
 			? [ ...selectedPostTypes, slug ]
 			: selectedPostTypes.filter(
 					( selectedSlug ) => selectedSlug !== slug
-			  );
+				);
 
 		updateSetting( 'where_to_display', [ ...new Set( nextSelection ) ] );
 	};
@@ -264,11 +264,11 @@ const SettingsApp = () => {
 							? __(
 									'Plugin installed. You can activate it now.',
 									'wp-distraction-free-view'
-							  )
+								)
 							: __(
 									'Plugin activated.',
 									'wp-distraction-free-view'
-							  ),
+								),
 				} );
 			} )
 			.catch( ( error ) => {
@@ -625,7 +625,7 @@ const ConfigurePanel = ( {
 							: __(
 									'Save settings',
 									'wp-distraction-free-view'
-							  ) }
+								) }
 					</Button>
 				</div>
 			</div>
@@ -1342,8 +1342,8 @@ const CustomCssControl = ( {
 	const textareaId = 'wpdfv-custom-css';
 	const hasCodeEditor = Boolean(
 		codeEditorSettings &&
-			typeof window !== 'undefined' &&
-			window.wp?.codeEditor
+		typeof window !== 'undefined' &&
+		window.wp?.codeEditor
 	);
 	const exampleCss = `.wpdfv-reader-modal .wpdfv-reader-content {
 \tfont-family: Georgia, serif;
