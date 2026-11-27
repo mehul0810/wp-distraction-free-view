@@ -147,6 +147,8 @@ class PluginActionsIntegrationTest extends TestCase {
 			$this->assertSame( 1, $inserted );
 			$network_id = (int) $wpdb->insert_id;
 			$this->assertNotSame( get_current_network_id(), $network_id );
+			require_once ABSPATH . 'wp-admin/includes/schema.php';
+			populate_network_meta( $network_id );
 
 			foreach ( [ get_current_network_id(), $network_id ] as $target_network_id ) {
 				$site_id = wp_insert_site(
